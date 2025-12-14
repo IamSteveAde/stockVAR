@@ -51,13 +51,13 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="text-gray-400 hover:text-primary transition">
-                    Terms & Privacy
+                  <Link href="/#how" className="text-gray-400 hover:text-primary transition">
+                    How it Works
                   </Link>
                 </li>
                 <li>
-                  <Link href="/support" className="text-gray-400 hover:text-primary transition">
-                    Contact Support
+                  <Link href="/#services" className="text-gray-400 hover:text-primary transition">
+                    Services
                   </Link>
                 </li>
               </ul>
@@ -69,24 +69,14 @@ export default function Footer() {
 
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="flex items-center gap-2 text-gray-400 hover:text-primary transition">
+                  <a href="https://api.whatsapp.com/send?phone=2348107942363" className="flex items-center gap-2 text-gray-400 hover:text-primary transition">
                     <MessageCircle className="w-5 h-5" />
                     Chat on WhatsApp
                   </a>
                 </li>
               </ul>
 
-              <div className="flex gap-4 mt-5">
-                <a href="#" aria-label="Instagram">
-                  <Instagram className="w-5 h-5 text-gray-400 hover:text-primary transition" />
-                </a>
-                <a href="#" aria-label="Twitter">
-                  <Twitter className="w-5 h-5 text-gray-400 hover:text-primary transition" />
-                </a>
-                <a href="#" aria-label="LinkedIn">
-                  <Linkedin className="w-5 h-5 text-gray-400 hover:text-primary transition" />
-                </a>
-              </div>
+              
             </div>
 
           </div>

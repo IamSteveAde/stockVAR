@@ -44,14 +44,15 @@ export default function InsuranceServices() {
   ];
 
   return (
-    <section className="relative py-24 overflow-hidden bg-[#0b0e1a] dark:bg-[#050816]" id="services">
-      
+    <section
+      className="relative py-24 overflow-hidden bg-[#0b0e1a] dark:bg-[#050816]"
+      id="services"
+    >
       {/* Soft Glow Blobs */}
       <div className="pointer-events-none absolute -top-40 -right-32 h-96 w-96 rounded-full bg-primary/20 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-[-150px] -left-10 h-80 w-80 rounded-full bg-sky-400/20 blur-[120px]" />
 
       <div className="relative z-10 container mx-auto lg:max-w-screen-xl md:max-w-screen-md px-4">
-        
         {/* Section Header */}
         <div className="max-w-2xl mb-14">
           <p className="text-sm uppercase tracking-[0.2em] text-primary/80 mb-3">
@@ -66,7 +67,8 @@ export default function InsuranceServices() {
           </h2>
 
           <p className="text-base md:text-lg text-slate-300">
-            Choose the coverage you want and let Chuks AI handle everything — instantly through WhatsApp.
+            Choose the coverage you want and let Chuks AI handle everything —
+            instantly through WhatsApp.
           </p>
         </div>
 
@@ -101,12 +103,17 @@ export default function InsuranceServices() {
                   {service.desc}
                 </p>
 
-                {/* WhatsApp CTA */}
-                <button className="mt-auto inline-flex items-center justify-center px-5 py-2 rounded-xl 
+                {/* WhatsApp CTA (Now a Link) */}
+                <a
+                  href="https://api.whatsapp.com/send?phone=2348107942363"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-auto inline-flex items-center justify-center px-5 py-2 rounded-xl 
                                    bg-primary text-white text-sm font-medium 
-                                   hover:bg-primary/90 transition-all">
+                                   hover:bg-primary/90 transition-all"
+                >
                   Start on WhatsApp
-                </button>
+                </a>
               </div>
             );
           })}

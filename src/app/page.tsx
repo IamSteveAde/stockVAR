@@ -35,9 +35,9 @@ export const metadata = {
 
   openGraph: {
     title:
-      "Chuks AI – Smart WhatsApp Assistant for Property Search, Services & Insurance",
+      "Chuks AI – Instant Insurance on Whatsapp",
     description:
-      "Use Chuks AI on WhatsApp for property discovery, service assistance, insurance processing, and secure automated support—fast, simple, and always available.",
+      "Chuks AI offers instant insurance on WhatsApp—get quotes, buy policies, file claims, and access support in seconds. Fast, simple, and available 24/7.",
     url: "https://www.chuks.ai",
     siteName: "Chuks AI",
     type: "website",
