@@ -68,7 +68,7 @@ export default function Header() {
 
             {/* DESKTOP NAV */}
             <nav className="hidden md:flex items-center gap-10">
-              <NavItem onDark={onDark} href="#">Home</NavItem>
+              <NavItem onDark={onDark} href="/">Home</NavItem>
               <NavItem onDark={onDark} href="/about">About</NavItem>
               <NavItem onDark={onDark} href="/services">Our Services</NavItem>
               <NavItem onDark={onDark} href="/donate">Donate</NavItem>
@@ -103,7 +103,7 @@ export default function Header() {
       {menuOpen && (
         <div className="fixed inset-0 z-40 bg-black/90 backdrop-blur-2xl">
           <nav className="h-full flex flex-col items-center justify-center">
-            <MobileNavItem delay={0} href="#" onClick={() => setMenuOpen(false)}>
+            <MobileNavItem delay={0} href="/" onClick={() => setMenuOpen(false)}>
               Home
             </MobileNavItem>
 
