@@ -44,7 +44,7 @@ export default function AboutPage() {
         </div>
 
         {/* ================== CONTENT ================== */}
-        <div className="relative z-10 w-full">
+        <div className="relative z-10 w-full py-16">
           <div className="container mx-auto px-6 lg:max-w-screen-xl">
             <div className="max-w-4xl">
               {/* Eyebrow */}

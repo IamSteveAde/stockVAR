@@ -7,7 +7,7 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function OurImpact() {
   return (
-    <section className="relative overflow-hidden bg-white">
+    <section className="relative bg-white">
       {/* ================= BRAND GRADIENT ================= */}
       <div
         className="absolute inset-0"
@@ -26,14 +26,14 @@ export default function OurImpact() {
       {/* Subtle grain */}
       <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:3px_3px]" />
 
-      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-28 md:py-36">
+      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-24 md:py-36">
         {/* ================= HEADER ================= */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ amount: 0.6 }}
+          viewport={{ amount: 0.4, once: true }}
           transition={{ duration: 0.9, ease }}
-          className="max-w-3xl mb-20"
+          className="max-w-3xl mb-16 md:mb-20"
         >
           <span className="block text-[11px] tracking-[0.5em] uppercase text-black/60 mb-6">
             Our Impact (to date)
@@ -74,7 +74,7 @@ export default function OurImpact() {
         </div>
 
         {/* ================= FOOTNOTE ================= */}
-        <p className="mt-16 text-xs text-black/60 max-w-xl">
+        <p className="mt-14 text-xs text-black/60 max-w-xl">
           *Placement and income outcomes include employment, freelancing,
           paid internships, and entrepreneurial income reported by programme
           graduates.
@@ -85,7 +85,7 @@ export default function OurImpact() {
 }
 
 /* ======================================================
-   COUNTER — REPEATS EVERY TIME IN VIEW
+   COUNTER — MOBILE SAFE, DESKTOP SAFE
 ====================================================== */
 function Counter({
   value,
@@ -102,20 +102,17 @@ function Counter({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isInView = useInView(containerRef, {
-    margin: "-120px",
-    amount: 0.6,
+    amount: 0.3, // MOBILE SAFE
   });
 
   useEffect(() => {
     if (!numberRef.current) return;
 
-    // Reset when leaving view
     if (!isInView) {
       numberRef.current.textContent = "0";
       return;
     }
 
-    // Animate on enter
     const controls = animate(0, value, {
       duration: 2,
       ease: "easeOut",
@@ -132,8 +129,8 @@ function Counter({
   return (
     <motion.div
       ref={containerRef}
-      initial={{ opacity: 0, y: 20 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      initial={{ opacity: 1, y: 20 }}
+      animate={{ opacity: 1, y: isInView ? 0 : 20 }}
       transition={{ duration: 0.6, ease }}
       className="relative"
     >

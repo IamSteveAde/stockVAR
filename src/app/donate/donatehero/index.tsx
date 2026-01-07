@@ -7,7 +7,7 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function DonateHero() {
   return (
-    <section className="relative min-h-screen overflow-hidden flex items-center">
+    <section className="relative min-h-screen overflow-hidden flex items-center ">
       {/* ================= BACKGROUND IMAGE WITH ZOOM ================= */}
       <motion.div
         initial={{ scale: 1 }}
@@ -46,7 +46,7 @@ export default function DonateHero() {
       <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:3px_3px]" />
 
       {/* ================= CONTENT ================= */}
-      <div className="relative z-10 w-full">
+      <div className="relative z-10 w-full py-16">
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
           <div className="max-w-4xl text-white">
             {/* Eyebrow */}

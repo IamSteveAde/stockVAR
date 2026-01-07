@@ -46,7 +46,7 @@ function PartnerHero() {
         />
       </div>
 
-      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl">
+      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-16">
         <div className="max-w-4xl">
           <motion.span
             initial={{ opacity: 0, y: 10 }}

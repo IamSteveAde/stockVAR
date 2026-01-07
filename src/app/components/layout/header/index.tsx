@@ -69,10 +69,11 @@ export default function Header() {
             {/* DESKTOP NAV */}
             <nav className="hidden md:flex items-center gap-10">
               <NavItem onDark={onDark} href="/about">About</NavItem>
+              <NavItem onDark={onDark} href="/services">Our Services</NavItem>
               <NavItem onDark={onDark} href="/donate">Donate</NavItem>
               <NavItem onDark={onDark} href="/partner">Partner</NavItem>
               <NavItem onDark={onDark} href="/blog">Blog and Case Studies</NavItem>
-              <NavItem onDark={onDark} href="/services">Our Services</NavItem>
+              
             </nav>
 
             {/* MOBILE TOGGLE BUTTON */}
@@ -105,6 +106,12 @@ export default function Header() {
               About Us
             </MobileNavItem>
 
+             <Divider />
+
+            <MobileNavItem delay={4} href="/services" onClick={() => setMenuOpen(false)}>
+              OUR SERVICES
+            </MobileNavItem>
+
             <Divider />
 
             <MobileNavItem delay={1} href="/donate" onClick={() => setMenuOpen(false)}>
@@ -123,11 +130,9 @@ export default function Header() {
               BLOGS & CASE STUDIES
             </MobileNavItem>
 
-            <Divider />
+           
 
-            <MobileNavItem delay={4} href="/services" onClick={() => setMenuOpen(false)}>
-              OUR SERVICES
-            </MobileNavItem>
+            
           </nav>
         </div>
       )}
