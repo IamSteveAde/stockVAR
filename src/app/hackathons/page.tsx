@@ -123,7 +123,7 @@ export default function HackathonsPage() {
         <div className="container mx-auto px-6 lg:max-w-screen-xl grid gap-20 lg:grid-cols-2">
 
           <div>
-            <h3 className="text-2xl font-semibold mb-8">Eligibility</h3>
+            <h3 className="text-2xl text-black/70 font-semibold mb-8">Eligibility</h3>
             <ul className="space-y-4 text-black/70 leading-relaxed">
               <li>• Open to students, early-career professionals & founders</li>
               <li>• Teams of 3–5 (solo applicants will be matched)</li>
@@ -132,7 +132,7 @@ export default function HackathonsPage() {
           </div>
 
           <div>
-            <h3 className="text-2xl font-semibold mb-8">Code of Conduct</h3>
+            <h3 className="text-2xl text-black/70 font-semibold mb-8">Code of Conduct</h3>
             <p className="text-black/70 leading-relaxed">
               We foster an inclusive, respectful space. Harassment or plagiarism
               is not tolerated. Teams must own or have rights to any assets used.
@@ -245,7 +245,7 @@ function Info({
     <div className="flex gap-4">
       <Icon className="text-[#5f3b86]" size={20} />
       <div>
-        <h4 className="font-semibold mb-1">{title}</h4>
+        <h4 className="font-semibold text-black/70 mb-1">{title}</h4>
         <p className="text-sm text-black/70">{children}</p>
       </div>
     </div>
@@ -255,7 +255,7 @@ function Info({
 function Track({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="border border-black/10 rounded-2xl p-6 hover:border-[#5f3b86]/40 transition">
-      <h4 className="font-semibold mb-2">{title}</h4>
+      <h4 className="font-semibold text-black/70 mb-2">{title}</h4>
       <p className="text-sm text-black/70">{desc}</p>
     </div>
   );

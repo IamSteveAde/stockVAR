@@ -16,13 +16,13 @@ export default function EventsPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-[#bcc8d7]/20 via-transparent to-transparent" />
         </div>
 
-        <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl">
+        <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl ">
           <div className="max-w-4xl">
             <motion.span
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
-              className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-10"
+              className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-10 my-20 "
             >
               Digital Inclusion Initiative • Community Events
             </motion.span>

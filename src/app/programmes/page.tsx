@@ -137,7 +137,7 @@ export default function ProgrammesPage() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl font-semibold mb-4">
+                  <h3 className="text-xl text-black/70 font-semibold mb-4">
                     {programme.title}
                   </h3>
 

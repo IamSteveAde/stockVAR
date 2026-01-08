@@ -236,7 +236,7 @@ function WhyCard({
   return (
     <div className="border-t border-black/10 pt-8">
       <Icon className="h-6 w-6 text-[#5f3b86] mb-6" />
-      <h3 className="text-xl font-semibold mb-4">{title}</h3>
+      <h3 className="text-xl text-black/70  font-semibold mb-4">{title}</h3>
       <p className="text-black/70 leading-relaxed">{text}</p>
     </div>
   );
@@ -259,7 +259,7 @@ function RoleCard({
       <span className="block text-xs tracking-[0.3em] uppercase text-[#5f3b86] mb-3">
         {category}
       </span>
-      <h3 className="text-xl font-semibold mb-6">{title}</h3>
+      <h3 className="text-xl text-black/70 font-semibold mb-6">{title}</h3>
       <ul className="space-y-3 text-black/70">
         {bullets.map((b, i) => (
           <li key={i}>• {b}</li>
