@@ -36,7 +36,7 @@ export default function WorkWithUs() {
             transition={{ duration: 0.9, ease }}
             className="lg:col-span-7 max-w-3xl"
           >
-            <span className="block text-[11px] tracking-[0.5em] uppercase text-black/60 mb-8">
+            <span className="section-eyebrow">
               Work With Us
             </span>
 

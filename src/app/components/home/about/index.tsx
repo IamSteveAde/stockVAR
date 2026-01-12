@@ -43,11 +43,11 @@ const actions = [
 
 export default function SupportSection() {
   return (
-    <section className="relative bg-white py-32">
+    <section className="relative bg-white py-12">
       <div className="container mx-auto px-6 lg:max-w-screen-xl">
         {/* Section Header */}
         <div className="max-w-3xl mb-20">
-          <span className="block text-[11px] tracking-[0.45em] uppercase text-black/40 mb-4">
+          <span className="section-eyebrow">
             Get Involved
           </span>
           <h2 className="text-4xl md:text-5xl font-light leading-tight text-black">

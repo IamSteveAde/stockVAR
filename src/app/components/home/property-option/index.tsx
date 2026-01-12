@@ -59,7 +59,7 @@ export default function MentorSection() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 py-32">
+      <div className="relative z-10 py-6">
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
           <div className="grid gap-20 lg:grid-cols-12 items-center">
             {/* LEFT — TEXT */}
@@ -72,8 +72,8 @@ export default function MentorSection() {
             >
               <div className="flex items-center gap-3 text-white/80 mb-6">
                 <Sparkles size={18} />
-                <span className="text-[11px] tracking-[0.45em] uppercase">
-                  Leadership Through Mentorship
+                <span className="sectionw-eyebrow">
+                  Mentorship
                 </span>
               </div>
 

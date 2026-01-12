@@ -12,7 +12,13 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function OurStory() {
   return (
-    <section className="relative bg-white overflow-hidden">
+    <section className="relative overflow-hidden"  style={{
+    background: `
+      radial-gradient(circle at top right, rgba(97,171,187,0.22) 0%, transparent 42%),
+      radial-gradient(circle at bottom left, rgba(188,200,215,0.18) 0%, transparent 45%),
+      linear-gradient(135deg, #241033 0%, #4f2f78 55%, #6b46a1 100%)
+    `,
+  }}>
       <div className="container mx-auto px-6 lg:max-w-screen-xl py-2 md:py-2">
 
         {/* ================= OUR STORY ================= */}
@@ -23,25 +29,25 @@ export default function OurStory() {
           transition={{ duration: 1, ease }}
           className="max-w-4xl"
         >
-          <span className="block text-[11px] tracking-[0.5em] uppercase text-black/50 mb-8">
+          <span className="sectionw-eyebrow">
             Our Story
           </span>
 
-          <h2 className="text-3xl md:text-4xl font-semibold leading-tight text-black max-w-3xl">
+          <h2 className="text-3xl md:text-4xl font-semibold leading-tight text-white max-w-3xl">
             Closing the gap between talent and opportunity
           </h2>
 
-          <p className="mt-8 text-black/70 leading-relaxed max-w-3xl text-lg">
+          <p className="mt-8 text-white/70 leading-relaxed max-w-3xl text-lg">
             The Digital Inclusion Initiative was founded to close the gap between
             talent and opportunity. We partner with communities, companies, and
             government to deliver device access, connectivity, and practical
             bootcamps in{" "}
-            <span className="text-black font-medium">
+            <span className="text-white font-medium">
               AI & productivity, Virtual Assistance, and Digital Marketing.
             </span>
           </p>
 
-          <p className="mt-6 text-black/70 leading-relaxed max-w-3xl text-lg">
+          <p className="mt-6 text-white/70 leading-relaxed max-w-3xl text-lg">
             Our programmes combine skills training, mentoring, and employability
             pathways — so learners can move confidently into work, freelancing,
             or entrepreneurship.
@@ -56,7 +62,7 @@ export default function OurStory() {
           transition={{ delay: 0.1, duration: 1, ease }}
           className="mt-28"
         >
-          <span className="block text-[11px] tracking-[0.5em] uppercase text-black/50 mb-10">
+          <span className="sectionw-eyebrow">
             What We Do
           </span>
 
@@ -94,11 +100,11 @@ export default function OurStory() {
         >
           {/* Mission */}
           <div>
-            <span className="block text-[11px] tracking-[0.5em] uppercase text-black/50 mb-6">
+            <span className="sectionw-eyebrow">
               Our Mission
             </span>
 
-            <p className="text-xl leading-relaxed text-black/80 max-w-xl">
+            <p className="text-xl leading-relaxed text-white/80 max-w-xl">
               To empower women and underserved learners in Africa with the
               devices, connectivity, and practical digital skills needed to
               access work, build businesses, and thrive in an inclusive digital
@@ -110,11 +116,11 @@ export default function OurStory() {
 
           {/* Vision */}
           <div>
-            <span className="block text-[11px] tracking-[0.5em] uppercase text-black/50 mb-6">
+            <span className="sectionw-eyebrow">
               Our Vision
             </span>
 
-            <p className="text-xl leading-relaxed text-black/80 max-w-xl">
+            <p className="text-xl leading-relaxed text-white/80 max-w-xl">
               A digitally inclusive Africa where no one is left behind — every
               learner connected, skilled, and confident to participate and lead
               in the future of work.
@@ -140,15 +146,15 @@ function Feature({
 }) {
   return (
     <div className="group relative">
-      <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#bcc8d7]/30 text-black group-hover:bg-[#5f3b86]/10 transition">
+      <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#bcc8d7]/30 text-white group-hover:bg-[#5f3b86]/10 transition">
         <Icon size={20} />
       </div>
 
-      <h3 className="text-base font-semibold text-black mb-2">
+      <h3 className="text-base font-semibold text-white mb-2">
         {title}
       </h3>
 
-      <p className="text-sm text-black/65 leading-relaxed">
+      <p className="text-sm text-white/65 leading-relaxed">
         {text}
       </p>
     </div>

@@ -26,7 +26,7 @@ export default function DonateBankTransfer() {
           transition={{ duration: 0.9, ease }}
           className="max-w-3xl mb-20"
         >
-          <span className="block text-[11px] tracking-[0.5em] uppercase text-black/60 mb-6">
+          <span className="section-eyebrow">
             Donate by Bank Transfer
           </span>
 

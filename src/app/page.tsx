@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 
+
 // Home sections
 import Hero from "./components/home/hero";
 import About from "./components/home/about";

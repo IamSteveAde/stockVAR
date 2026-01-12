@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   ArrowLeft,
@@ -12,23 +13,11 @@ import {
 } from "lucide-react";
 import { getImgPath } from "@/utils/pathUtils";
 
-/* -------------------------------------
-   BRAND COLORS
-------------------------------------- */
 const BRAND = {
   teal: "#61abbb",
   purple: "#5f3b86",
-  mist: "#bcc8d7",
 };
 
-/* -------------------------------------
-   EASING (STRICTLY TYPED — FIXES TS ERROR)
-------------------------------------- */
-const easeEditorial: [number, number, number, number] = [0.22, 1, 0.36, 1];
-
-/* -------------------------------------
-   SLIDES
-------------------------------------- */
 const slides = [
   {
     title: "Digital Access",
@@ -38,6 +27,7 @@ const slides = [
     image: "/images/hero/every.png",
     icon: Wifi,
     accent: BRAND.teal,
+    cta: { label: "Our Work", href: "/about" },
   },
   {
     title: "Digital Skills",
@@ -47,6 +37,7 @@ const slides = [
     image: "/images/hero/tutor.png",
     icon: GraduationCap,
     accent: BRAND.purple,
+    cta: { label: "Explore Programmes", href: "/programmes" },
   },
   {
     title: "Digital Opportunity",
@@ -56,184 +47,111 @@ const slides = [
     image: "/images/hero/access.png",
     icon: Briefcase,
     accent: BRAND.teal,
+    cta: { label: "Learn More", href: "/about" },
+  },
+  {
+    title: "Global Learning Access",
+    headline: "World-class skills. Real opportunity.",
+    description:
+      "Through DII’s Coursera onboarding, women and underserved learners access globally recognised courses that build job-ready skills and open doors to work.",
+    image: "/images/hero/coursera.png",
+    icon: Briefcase,
+    accent: BRAND.purple,
+    cta: { label: "Coursera Onboarding", href: "/coursera" },
   },
 ];
 
-/* -------------------------------------
-   VARIANTS (TYPE-SAFE)
-------------------------------------- */
-const fade: Variants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-  exit: { opacity: 0 },
-};
-
-const content: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 28,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.9,
-      ease: easeEditorial,
-    },
-  },
-};
-
 export default function Hero() {
   const [index, setIndex] = useState(0);
-
-  const next = () => setIndex((i) => (i + 1) % slides.length);
-  const prev = () =>
-    setIndex((i) => (i - 1 + slides.length) % slides.length);
-
-  useEffect(() => {
-    const timer = setInterval(next, 8000);
-    return () => clearInterval(timer);
-  }, []);
-
   const slide = slides[index];
   const Icon = slide.icon;
 
+  useEffect(() => {
+    const t = setInterval(
+      () => setIndex((i) => (i + 1) % slides.length),
+      8000
+    );
+    return () => clearInterval(t);
+  }, []);
+
   return (
-    <section className="relative h-screen w-full overflow-hidden group">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={index}
-          variants={fade}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          transition={{ duration: 1.1, ease: "easeInOut" }}
-          className="absolute inset-0"
-        >
-          {/* Background Image */}
-          <Image
-            src={getImgPath(slide.image)}
-            alt={slide.title}
-            fill
-            priority
-            className="object-cover"
-          />
+    <section className="relative h-screen w-full overflow-hidden">
+      {/* BACKGROUND IMAGE (NON-INTERACTIVE) */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Image
+          src={getImgPath(slide.image)}
+          alt={slide.title}
+          fill
+          priority
+          className="object-cover"
+        />
+      </div>
 
-          {/* Brand Overlay */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(
-                120deg,
-                rgba(0,0,0,0.78),
-                ${slide.accent}55
-              )`,
-            }}
-          />
+      {/* GRADIENT OVERLAY (NON-INTERACTIVE) */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `linear-gradient(
+            120deg,
+            rgba(0,0,0,0.78),
+            ${slide.accent}55
+          )`,
+        }}
+      />
 
-          {/* Content */}
-          <div className="relative z-10 h-full flex items-center">
-            <div className="container mx-auto px-6 lg:max-w-screen-xl">
-              <motion.div
-                variants={content}
-                initial="hidden"
-                animate="visible"
-                className="max-w-2xl space-y-6"
+      {/* CONTENT (INTERACTIVE) */}
+      <div className="relative z-20 h-full flex items-center">
+        <div className="container mx-auto px-6 lg:max-w-screen-xl">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="max-w-2xl space-y-6"
+            >
+              <div className="flex items-center gap-3 text-white/80">
+                <Icon size={20} />
+                <span className="sectionw-eyebrow">
+                  {slide.title}
+                </span>
+              </div>
+
+              <h1 className="text-4xl md:text-6xl font-light leading-tight">
+                <span className="text-white">
+                  {slide.headline.split(" ")[0]}
+                </span>
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: `linear-gradient(90deg, #fff, ${BRAND.purple})`,
+                  }}
+                >
+                  {" " +
+                    slide.headline.split(" ").slice(1).join(" ")}
+                </span>
+              </h1>
+
+              <p className="text-white/80 max-w-lg">
+                {slide.description}
+              </p>
+
+              {/* CTA — NOW GUARANTEED */}
+              <Link
+                href={slide.cta.href}
+                className="inline-flex cursor-pointer items-center gap-3 px-8 py-4 rounded-xl text-xs tracking-[0.25em] uppercase transition hover:opacity-90"
+                style={{
+                  backgroundColor: slide.accent,
+                  color: "#fff",
+                }}
               >
-                {/* Eyebrow */}
-                <div className="flex items-center gap-3 text-white/80">
-                  <Icon size={20} />
-                  <span className="text-[11px] tracking-[0.4em] uppercase">
-                    {slide.title}
-                  </span>
-                </div>
-
-                {/* H1 — WHITE + PURPLE */}
-                <h1 className="text-4xl md:text-6xl font-light leading-tight">
-                  <span className="text-white"> {slide.headline.split(" ")[0]} </span>
-                  <span
-                    className="bg-clip-text text-transparent"
-                    style={{
-                      backgroundImage: `linear-gradient(90deg, #ffffff, ${BRAND.purple})`,
-                    }}
-                  >
-                    {" " + slide.headline.split(" ").slice(1).join(" ")}
-                  </span>
-                </h1>
-
-                <p className="text-white/80 max-w-lg leading-relaxed">
-                  {slide.description}
-                </p>
-
-                <div className="pt-6">
-                  <a
-                    href="/about"
-                    className="inline-flex items-center gap-3 px-8 py-4 rounded-xl text-xs tracking-[0.25em] uppercase transition-all hover:opacity-90"
-                    style={{
-                      backgroundColor: BRAND.purple,
-                      color: "#fff",
-                    }}
-                  >
-                    Learn More
-                    <ArrowRight size={16} />
-                  </a>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* ================= DESKTOP ARROWS ================= */}
-<div className="absolute inset-y-0 w-full hidden md:flex items-center justify-between px-6 z-20">
-  <button
-    onClick={prev}
-    aria-label="Previous slide"
-    className="h-12 w-12 rounded-full bg-white/10 backdrop-blur text-white flex items-center justify-center hover:bg-white hover:text-black transition-all"
-  >
-    <ArrowLeft size={20} />
-  </button>
-
-  <button
-    onClick={next}
-    aria-label="Next slide"
-    className="h-12 w-12 rounded-full bg-white/10 backdrop-blur text-white flex items-center justify-center hover:bg-white hover:text-black transition-all"
-  >
-    <ArrowRight size={20} />
-  </button>
-</div>
-
-{/* ================= MOBILE ARROWS ================= */}
-<div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex md:hidden items-center gap-6 z-20">
-  <button
-    onClick={prev}
-    aria-label="Previous slide"
-    className="h-11 w-11 rounded-full bg-white/15 backdrop-blur text-white flex items-center justify-center active:scale-95 transition"
-  >
-    <ArrowLeft size={18} />
-  </button>
-
-  <button
-    onClick={next}
-    aria-label="Next slide"
-    className="h-11 w-11 rounded-full bg-white/15 backdrop-blur text-white flex items-center justify-center active:scale-95 transition"
-  >
-    <ArrowRight size={18} />
-  </button>
-</div>
-
-
-      {/* Progress Bars */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-20">
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setIndex(i)}
-            className={`h-[3px] w-10 transition-all ${
-              i === index ? "bg-white" : "bg-white/30"
-            }`}
-          />
-        ))}
+                {slide.cta.label}
+                <ArrowRight size={16} />
+              </Link>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </section>
   );

@@ -74,6 +74,7 @@ export default function Header() {
               <NavItem onDark={onDark} href="/donate">Donate</NavItem>
               <NavItem onDark={onDark} href="/partner">Partner</NavItem>
               <NavItem onDark={onDark} href="/blog">Blog and Case Studies</NavItem>
+              <NavItem onDark={onDark} href="/coursera">Coursera Onboarding</NavItem>
               
             </nav>
 
@@ -135,6 +136,10 @@ export default function Header() {
 
             <MobileNavItem delay={3} href="/blog" onClick={() => setMenuOpen(false)}>
               BLOGS & CASE STUDIES
+            </MobileNavItem>
+
+            <MobileNavItem delay={3} href="/coursera" onClick={() => setMenuOpen(false)}>
+              Coursera Onboarding
             </MobileNavItem>
 
            

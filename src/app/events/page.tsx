@@ -22,7 +22,7 @@ export default function EventsPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
-              className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-10 my-20 "
+              className="block text-[14px] tracking-[0.55em] uppercase text-[#5f3b86] mb-10 my-20 "
             >
               Digital Inclusion Initiative • Community Events
             </motion.span>
@@ -44,68 +44,70 @@ export default function EventsPage() {
       </section>
 
       {/* ================= EVENTS LIST ================= */}
-      <section className="py-32">
-        <div className="container mx-auto px-6 lg:max-w-screen-xl space-y-24">
+      {/* ================= EVENTS LIST ================= */}
+<section className="py-32">
+  <div className="container mx-auto px-6 lg:max-w-screen-xl space-y-24">
 
-          {/* EVENT 1 */}
-          <EventCard
-            day="Fri"
-            month="Jan"
-            date="16"
-            title="Digital Skills to Digital Income: Freelancing Pathways"
-            speakers="Blossom Ubochi"
-            description="Freelancing is reshaping how people earn, and Africa is joining the movement. This hands-on webinar introduces participants to freelancing platforms, essential digital tools, and success stories from women building sustainable careers online."
-            takeaways={[
-              "How to identify marketable digital skills",
-              "The best freelancing platforms for beginners",
-              "Strategies to stand out and build a personal brand online",
-            ]}
-            time="2:00 PM (WAT)"
-            duration="13:00 – 14:30"
-            link="https://meet.google.com/mid-webu-ytg"
-            tags={["#Freelancing", "#DigitalIncome", "#WomenInTech", "#DIIEvents"]}
-          />
+    {/* EVENT 1 */}
+    <EventCard
+      day="Fri"
+      month="Jan"
+      date="16"
+      title="Digital Skills to Digital Income: Freelancing Pathways"
+      speakers="Blossom Ubochi"
+      description="Freelancing is reshaping how people earn, and Africa is joining the movement. This hands-on webinar introduces participants to freelancing platforms, essential digital tools, and success stories from women who have built sustainable careers online."
+      takeaways={[
+        "How to identify marketable digital skills",
+        "The best freelancing platforms for beginners",
+        "Strategies to stand out and build a personal brand online",
+      ]}
+      time="2:00 PM (WAT)"
+      duration="January 16, 2026"
+      link="#"
+      tags={["#Freelancing", "#DigitalIncome", "#WomenInTech", "#DIIEvents"]}
+    />
 
-          {/* EVENT 2 */}
-          <EventCard
-            day="Fri"
-            month="Feb"
-            date="20"
-            title="Building Digital Confidence: Beyond Skills to Mindset"
-            speakers="Adeyinka Adeyefa & Maureen Ikeji"
-            description="Confidence is the missing link between skills and success. This interactive session explores how to overcome self-doubt, imposter syndrome, and fear of technology, blending digital know-how with mindset tools."
-            takeaways={[
-              "Mindset techniques for confidence in digital spaces",
-              "How to overcome limiting beliefs",
-              "Stories of women who transitioned into tech with courage",
-            ]}
-            time="10:00 AM (WAT)"
-            duration="09:00 – 10:30"
-            link="https://meet.google.com/vsx-ytaz-ffw"
-            tags={["#DigitalConfidence", "#MindsetMatters", "#WomenInTech", "#DIIEvents"]}
-          />
+    {/* EVENT 2 */}
+    <EventCard
+      day="Fri"
+      month="Feb"
+      date="20"
+      title="Building Digital Confidence: Beyond Skills to Mindset"
+      speakers="Adeyinka Adeyefa & Maureen Ikeji"
+      description="Confidence is the missing link between skills and success. This interactive session focuses on overcoming self-doubt, imposter syndrome, and fear of technology while building the mindset needed to thrive in digital careers."
+      takeaways={[
+        "Mindset techniques to build confidence in digital spaces",
+        "How to overcome limiting beliefs and embrace learning",
+        "Real-life stories of women who transitioned into tech",
+      ]}
+      time="10:00 AM (WAT)"
+      duration="February 20, 2026"
+      link="#"
+      tags={["#DigitalConfidence", "#MindsetMatters", "#WomenInTech", "#DIIEvents"]}
+    />
 
-          {/* EVENT 3 */}
-          <EventCard
-            day="Fri"
-            month="Mar"
-            date="20"
-            title="Tech for Good: How Corporates Can Drive Inclusion"
-            speakers="Seun Oyedeji"
-            description="Corporate innovation and social responsibility go hand in hand. This conversation explores how businesses can leverage technology to empower underserved communities and create shared value."
-            takeaways={[
-              "Case studies on tech-driven corporate impact",
-              "How to build effective CSR partnerships",
-              "Insights from leaders driving inclusive growth in Africa",
-            ]}
-            time="10:00 AM (WAT)"
-            duration="10:00 – 11:30"
-            link="https://meet.google.com/hhb-wtrq-qik"
-            tags={["#TechForGood", "#DigitalInclusion", "#CorporateImpact", "#DIIEvents"]}
-          />
+    {/* EVENT 3 */}
+    <EventCard
+      day="Fri"
+      month="Mar"
+      date="20"
+      title="Tech for Good: How Corporates Can Drive Inclusion"
+      speakers="Seun Oyedeji"
+      description="This session explores how businesses can leverage technology to drive inclusion, empower underserved communities, and create shared value through purpose-driven partnerships."
+      takeaways={[
+        "Case studies on tech-driven corporate impact",
+        "How to build effective CSR partnerships for digital inclusion",
+        "Insights from leaders driving inclusive growth in Africa",
+      ]}
+      time="10:00 AM (WAT)"
+      duration="March 20, 2026"
+      link="#"
+      tags={["#TechForGood", "#DigitalInclusion", "#CorporateImpact", "#DIIEvents"]}
+    />
 
-        </div>
-      </section>
+  </div>
+</section>
+
     </main>
   );
 }
@@ -176,7 +178,7 @@ function EventCard({
           rel="noopener noreferrer"
           className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-[#5f3b86] text-white text-xs tracking-[0.3em] uppercase transition hover:opacity-90"
         >
-          Join via Google Meet
+          Apply Now
           <ExternalLink size={14} />
         </a>
 

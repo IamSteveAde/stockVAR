@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import {
   Users,
   Network,
@@ -43,7 +45,7 @@ export default function MentorPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
-              className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-10"
+              className="block text-[14px] tracking-[0.55em] uppercase text-[#5f3b86] mb-10"
             >
               Now Recruiting Mentors
             </motion.span>
@@ -65,13 +67,27 @@ export default function MentorPage() {
       </section>
 
       {/* ================= WHY MENTOR ================= */}
-      <section className="py-32">
+      <section className="py-26" style={{
+    background: `
+      radial-gradient(
+        circle at top left,
+        rgba(155,120,210,0.25),
+        transparent 45%
+      ),
+      linear-gradient(
+        135deg,
+        #2a123f 0%,
+        #5f3b86 55%,
+        #7b5bb3 100%
+      )
+    `,
+  }}>
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
           <div className="max-w-3xl mb-20">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
+            <span className="sectionw-eyebrow">
               Why Mentor with DII?
             </span>
-            <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
+            <h2 className="text-3xl text-white md:text-4xl font-semibold leading-tight">
               Purpose, leverage, and lasting impact
             </h2>
           </div>
@@ -97,10 +113,10 @@ export default function MentorPage() {
       </section>
 
       {/* ================= WHO SHOULD APPLY ================= */}
-      <section className="bg-[#f9fafb] py-32">
+      <section className="bg-[#f9fafb] py-15">
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
           <div className="max-w-3xl mb-16">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
+            <span className="section-eyebrow">
               Who Should Apply
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
@@ -118,10 +134,10 @@ export default function MentorPage() {
       </section>
 
       {/* ================= MENTOR ROLES ================= */}
-      <section className="py-32">
+      <section className="py-15">
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
           <div className="max-w-3xl mb-20">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
+            <span className="section-eyebrow">
               Mentor Roles
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
@@ -174,7 +190,7 @@ export default function MentorPage() {
       </section>
 
       {/* ================= EXPECTATIONS & GAINS ================= */}
-      <section className="bg-[#f9fafb] py-32">
+      <section className="bg-[#f9fafb] py-6">
         <div className="container mx-auto px-6 lg:max-w-screen-xl grid gap-20 md:grid-cols-2">
           <div>
             <h3 className="text-2xl font-semibold text-black/70 mb-8">Expectations</h3>
@@ -197,36 +213,64 @@ export default function MentorPage() {
       </section>
 
       {/* ================= APPLY FORM ================= */}
-      <section className="py-32">
-        <div className="container mx-auto px-6 lg:max-w-screen-xl">
-          <div className="max-w-3xl mb-16">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
-              Apply to Mentor
-            </span>
-            <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
-              Complete the application below
-            </h2>
-            <p className="mt-6 text-black/70">
-              Our team responds within 5–7 working days.
-            </p>
-          </div>
+      
 
-          {/* GOOGLE FORM */}
-          <iframe
-            src="https://docs.google.com/forms/d/e/1FAIpQLScBNWkZ2Osc7z366Y_WHhhyTPpo8yRKTVs5VqnB0LOHlZlh4A/viewform?embedded=true"
-            style={{
-              width: "100%",
-              height: "1200px",
-              border: "1px solid #e6e9f2",
-              borderRadius: "16px",
-              background: "#fff",
-            }}
-            frameBorder="0"
+
+    <section className="bg-[#f9fafb] py-24 md:py-32">
+      <div className="container mx-auto px-6 lg:max-w-screen-xl">
+
+        <div className="max-w-3xl">
+          {/* Eyebrow */}
+          <span className="section-eyebrow">
+            Apply to Mentor
+          </span>
+
+          {/* Heading */}
+          <h2 className="text-3xl md:text-4xl font-semibold leading-tight mb-8">
+            Share your expertise. Shape the future.
+          </h2>
+
+          {/* Body */}
+          <p className="text-black/70 leading-relaxed mb-14 max-w-2xl">
+            Complete our mentor application form to tell us about your experience,
+            availability, and the areas you’d like to support.  
+            Our team carefully reviews each application and typically responds
+            within <strong>5–7 working days</strong>.
+          </p>
+
+          {/* CTA */}
+          <Link
+            href="https://docs.google.com/forms/d/e/1FAIpQLScBNWkZ2Osc7z366Y_WHhhyTPpo8yRKTVs5VqnB0LOHlZlh4A/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="
+              inline-flex items-center gap-4
+              px-12 py-5
+              rounded-2xl
+              bg-[#5f3b86]
+              text-white
+              text-xs
+              tracking-[0.35em]
+              uppercase
+              font-medium
+              transition-all
+              hover:bg-[#4e2f72]
+            "
           >
-            Loading…
-          </iframe>
+            Open Mentor Application
+            <ArrowRight size={16} />
+          </Link>
+
+          {/* Helper note */}
+          <p className="mt-6 text-xs text-black/50">
+            Takes about 5 minutes to complete
+          </p>
         </div>
-      </section>
+
+      </div>
+    </section>
+ 
+
     </main>
   );
 }
@@ -236,9 +280,9 @@ export default function MentorPage() {
 function WhyCard({ icon: Icon, title, text }: any) {
   return (
     <div className="border-t border-black/10 pt-8">
-      <Icon className="h-6 w-6 text-[#5f3b86] mb-6" />
-      <h3 className="text-xl text-black/70 font-semibold mb-4">{title}</h3>
-      <p className="text-black/70 leading-relaxed">{text}</p>
+      <Icon className="h-6 w-6 text-white mb-6" />
+      <h3 className="text-xl text-white/70 font-semibold mb-4">{title}</h3>
+      <p className="text-white/70 leading-relaxed">{text}</p>
     </div>
   );
 }

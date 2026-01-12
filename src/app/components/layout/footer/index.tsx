@@ -67,6 +67,14 @@ export default function Footer() {
               </li>
               <li>
                 <Link
+                  href="/coursera"
+                  className="text-white/70 hover:text-white transition"
+                >
+                  Coursera Onboarding
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/partner"
                   className="text-white/70 hover:text-white transition"
                 >

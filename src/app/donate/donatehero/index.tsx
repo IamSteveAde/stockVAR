@@ -54,7 +54,7 @@ export default function DonateHero() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6, ease }}
-              className="block text-[11px] tracking-[0.55em] uppercase text-white/80 mb-10"
+              className="sectionw-eyebrow"
             >
               Donate
             </motion.span>

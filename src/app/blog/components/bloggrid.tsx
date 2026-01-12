@@ -7,7 +7,7 @@ export default function BlogGrid() {
     <section className="bg-white pb-32">
       <div className="container mx-auto px-6 lg:max-w-screen-xl">
 
-        <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-20">
+        <span className="section-eyebrow">
           My Blog
         </span>
 

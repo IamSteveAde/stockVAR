@@ -52,7 +52,7 @@ function ServicesHero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease }}
-            className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-10"
+            className="section-eyebrow"
           >
             Our Services
           </motion.span>
@@ -99,45 +99,76 @@ function ServicesHero() {
 ====================================================== */
 function DIIAcademy() {
   return (
-    <section className="bg-white py-28 md:py-36">
-      <div className="container mx-auto px-6 lg:max-w-screen-xl">
-        <div className="grid gap-20 lg:grid-cols-12 items-start">
-          <div className="lg:col-span-6">
-            <h2 className="text-3xl md:text-4xl font-semibold text-black mb-8">
-              DII Academy
-            </h2>
+   <section
+  className="relative py-15 md:py-15 overflow-hidden"
+  style={{
+    background: `
+      radial-gradient(circle at top left, rgba(188,200,215,0.22) 0%, transparent 40%),
+      radial-gradient(circle at bottom right, rgba(97,171,187,0.18) 0%, transparent 45%),
+      linear-gradient(135deg, #2a123f 0%, #5f3b86 55%, #7b4db3 100%)
+    `,
+  }}
+>
+  {/* Soft atmospheric grain */}
+  <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:3px_3px]" />
 
-            <p className="text-black/70 leading-relaxed max-w-xl mb-10">
-              Job-ready bootcamps and clinics in AI & Productivity, Virtual
-              Assistance, and Digital Marketing — paired with mentoring, career
-              clinics, and portfolio support for women and underserved learners.
-            </p>
+  <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+    <div className="grid gap-20 lg:grid-cols-12 items-start">
 
-            <ul className="space-y-4 text-sm text-black/70">
-              <li>• Hands-on, employer-informed curriculum</li>
-              <li>• Mentors, career Q&A, and mock interviews</li>
-              <li>• Device and data support for eligible learners</li>
-            </ul>
+      {/* LEFT */}
+      <div className="lg:col-span-6">
+        <h2 className="text-3xl md:text-4xl font-semibold text-white mb-8">
+          DII Academy
+        </h2>
 
-            <div className="mt-12">
-              <Link
-                href="/programmes"
-                className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[#5f3b86] text-white text-xs tracking-[0.35em] uppercase hover:opacity-90 transition"
-              >
-                Explore Programmes
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
+        <p className="text-white/80 leading-relaxed max-w-xl mb-10">
+          Job-ready bootcamps and clinics in AI &amp; Productivity, Virtual
+          Assistance, and Digital Marketing — paired with mentoring, career
+          clinics, and portfolio support for women and underserved learners.
+        </p>
 
-          <ServiceCard
-            icon={GraduationCap}
-            title="Skills → Employment"
-            text="Curriculum designed with employers to ensure relevance, confidence, and employability."
-          />
+        <ul className="space-y-4 text-sm text-white/75">
+          <li>• Hands-on, employer-informed curriculum</li>
+          <li>• Mentors, career Q&amp;A, and mock interviews</li>
+          <li>• Device and data support for eligible learners</li>
+        </ul>
+
+        <div className="mt-14">
+          <Link
+            href="/programmes"
+            className="
+              inline-flex items-center gap-3
+              px-12 py-5
+              rounded-2xl
+              bg-white
+              text-[#5f3b86]
+              text-xs
+              tracking-[0.35em]
+              uppercase
+              font-medium
+              shadow-[0_20px_50px_rgba(0,0,0,0.35)]
+              hover:bg-white/90
+              transition
+            "
+          >
+            Explore Programmes
+            <ArrowRight size={16} />
+          </Link>
         </div>
       </div>
-    </section>
+
+      {/* RIGHT CARD */}
+      <ServiceCard
+        icon={GraduationCap}
+        title="Skills → Employment"
+        text="Curriculum designed with employers to ensure relevance, confidence, and employability."
+       
+      />
+
+    </div>
+  </div>
+</section>
+
   );
 }
 
@@ -146,7 +177,7 @@ function DIIAcademy() {
 ====================================================== */
 function DataDeviceBank() {
   return (
-    <section className="bg-[#f7f8fb] py-28 md:py-36">
+    <section className="bg-[#f7f8fb] py-15 md:py-15">
       <div className="container mx-auto px-6 lg:max-w-screen-xl">
         <div className="grid gap-20 lg:grid-cols-12 items-start">
           <div className="lg:col-span-6">
@@ -173,7 +204,7 @@ function DataDeviceBank() {
 
             <div className="mt-12">
               <Link
-                href="/donate"
+                href="/donate-devices"
                 className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl border border-black/30 text-xs tracking-[0.35em] uppercase hover:bg-black hover:text-white transition"
               >
                 Donate Devices
@@ -198,45 +229,76 @@ function DataDeviceBank() {
 ====================================================== */
 function Hackathons() {
   return (
-    <section className="bg-white py-28 md:py-36">
-      <div className="container mx-auto px-6 lg:max-w-screen-xl">
-        <div className="grid gap-20 lg:grid-cols-12 items-start">
-          <div className="lg:col-span-6">
-            <h2 className="text-3xl md:text-4xl font-semibold text-black mb-8">
-              DII Hackathons & BeatCode Club
-            </h2>
+    <section
+  className="relative py-15 md:py-15 overflow-hidden"
+  style={{
+    background: `
+      radial-gradient(circle at top right, rgba(97,171,187,0.22) 0%, transparent 42%),
+      radial-gradient(circle at bottom left, rgba(188,200,215,0.18) 0%, transparent 45%),
+      linear-gradient(135deg, #241033 0%, #4f2f78 55%, #6b46a1 100%)
+    `,
+  }}
+>
+  {/* Subtle grain for depth */}
+  <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:3px_3px]" />
 
-            <p className="text-black/70 leading-relaxed max-w-xl mb-10">
-              Fast-paced, problem-solving events where teams build solutions for
-              real community challenges — mentored by industry experts and
-              employers.
-            </p>
+  <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+    <div className="grid gap-20 lg:grid-cols-12 items-start">
 
-            <ul className="space-y-4 text-sm text-black/70">
-              <li>• High-energy build sprints (1–3 days)</li>
-              <li>• Tracks: inclusion, education, micro-enterprise, civic tech</li>
-              <li>• Prizes, mentorship, and pilot opportunities</li>
-            </ul>
+      {/* LEFT */}
+      <div className="lg:col-span-6">
+        <h2 className="text-3xl md:text-4xl font-semibold text-white mb-8">
+          DII Hackathons &amp; BeatCode Club
+        </h2>
 
-            <div className="mt-12">
-              <Link
-                href="/hackathons"
-                className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[#61abbb] text-black text-xs tracking-[0.35em] uppercase hover:opacity-90 transition"
-              >
-                Upcoming Hackathons
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
+        <p className="text-white/80 leading-relaxed max-w-xl mb-10">
+          Fast-paced, problem-solving events where teams build solutions for
+          real community challenges — mentored by industry experts and
+          employers.
+        </p>
 
-          <ServiceCard
-            icon={Hammer}
-            title="Innovation in Action"
-            text="Learners collaborate to build real-world solutions with employer mentorship."
-          />
+        <ul className="space-y-4 text-sm text-white/75">
+          <li>• High-energy build sprints (1–3 days)</li>
+          <li>• Tracks: inclusion, education, micro-enterprise, civic tech</li>
+          <li>• Prizes, mentorship, and pilot opportunities</li>
+        </ul>
+
+        <div className="mt-14">
+          <Link
+            href="/hackathons"
+            className="
+              inline-flex items-center gap-3
+              px-12 py-5
+              rounded-2xl
+              bg-white
+              text-[#5f3b86]
+              text-xs
+              tracking-[0.35em]
+              uppercase
+              font-medium
+              shadow-[0_20px_50px_rgba(0,0,0,0.35)]
+              hover:bg-white/90
+              transition
+            "
+          >
+            Upcoming Hackathons
+            <ArrowRight size={16} />
+          </Link>
         </div>
       </div>
-    </section>
+
+      {/* RIGHT CARD */}
+      <ServiceCard
+        icon={Hammer}
+        title="Innovation in Action"
+        text="Learners collaborate to design, prototype, and pitch real-world solutions with employer mentorship."
+        
+      />
+
+    </div>
+  </div>
+</section>
+
   );
 }
 

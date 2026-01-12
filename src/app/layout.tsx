@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 
+
 import { ThemeProvider } from "next-themes";
 import NextTopLoader from "nextjs-toploader";
 
@@ -12,6 +13,7 @@ import Footer from "./components/layout/footer";
 import ScrollToTop from "./components/scroll-to-top";
 import Aoscompo from "@/utils/aos";
 import ChatWidget from "./components/ChatbotEmbed";
+import PartnersMarquee from "./components/PartnersMarquee";
 
 /* -------------------------------------
    FONT
@@ -51,6 +53,7 @@ export default function RootLayout({
               <Header />
               <NextTopLoader />
               {children}
+              <PartnersMarquee />
               <Footer />
             </Aoscompo>
 

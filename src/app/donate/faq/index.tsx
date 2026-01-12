@@ -52,7 +52,7 @@ export default function TransparencyAndFAQs() {
           transition={{ duration: 1, ease }}
           className="max-w-4xl mb-28"
         >
-          <span className="block text-[11px] tracking-[0.55em] uppercase text-white/70 mb-10">
+          <span className="sectionw-eyebrow">
             Transparency & Impact
           </span>
 
@@ -95,7 +95,7 @@ export default function TransparencyAndFAQs() {
           transition={{ duration: 1, ease }}
           className="max-w-4xl"
         >
-          <span className="block text-[11px] tracking-[0.55em] uppercase text-white/70 mb-10">
+          <span className="sectionw-eyebrow">
             FAQs
           </span>
 

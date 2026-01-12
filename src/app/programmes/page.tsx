@@ -74,7 +74,7 @@ export default function ProgrammesPage() {
       <section className="py-24">
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
           <div className="max-w-3xl mb-16">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
+            <span className="section-eyebrow">
               Our Programmes
             </span>
             <h1 className="text-3xl md:text-4xl font-semibold leading-tight mb-6">

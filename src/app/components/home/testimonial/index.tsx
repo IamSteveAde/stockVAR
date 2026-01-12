@@ -5,7 +5,7 @@ import { Mail, Send } from "lucide-react";
 
 export default function ContactSection() {
   return (
-    <section className="relative bg-white py-32">
+    <section className="relative bg-white py-6">
       <div className="container mx-auto px-6 lg:max-w-screen-xl">
         <div className="grid gap-20 lg:grid-cols-12 items-start">
           {/* LEFT — INTRO */}
@@ -18,7 +18,7 @@ export default function ContactSection() {
           >
             <div className="flex items-center gap-3 text-black/60 mb-6">
               <Mail size={18} />
-              <span className="text-[11px] tracking-[0.45em] uppercase">
+              <span className="section-eyebrow">
                 Contact
               </span>
             </div>

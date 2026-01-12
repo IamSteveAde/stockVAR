@@ -261,3 +261,21 @@ section {
   font-size: 1.05rem;
   font-weight: 600;
 }
+
+.section-eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #5f3b86;
+  margin-bottom: 20px;
+}
+
+.sectionw-eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 20px;
+}

@@ -17,7 +17,7 @@ export default function DonateOptions() {
         }}
       />
 
-      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-2 md:py-2">
+      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-0 md:py-0">
         <div className="grid gap-20 lg:grid-cols-12 items-start">
           {/* ================= LEFT — IMPACT ================= */}
           <motion.div
@@ -27,7 +27,7 @@ export default function DonateOptions() {
             transition={{ duration: 0.9, ease }}
             className="lg:col-span-5"
           >
-            <span className="block text-[11px] tracking-[0.5em] uppercase text-black/60 mb-8">
+            <span className="section-eyebrow">
               What Your Donation Supports
             </span>
 

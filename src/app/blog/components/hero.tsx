@@ -6,21 +6,21 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function BlogHero() {
   return (
-    <section className="relative overflow-hidden bg-white h-[520px]">
+    <section className="relative overflow-hidden bg-white h-[100vh]">
       {/* Subtle brand atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-[#5f3b86]/10 blur-[160px]" />
         <div className="absolute top-1/3 -right-40 h-[480px] w-[480px] rounded-full bg-[#61abbb]/12 blur-[160px]" />
       </div>
 
-      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-28 md:py-36">
+      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-20 md:py-15">
         <div className="max-w-4xl">
           {/* Eyebrow */}
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease }}
-            className="block text-[11px] tracking-[0.55em] uppercase text-black/55 mb-10"
+            className="section-eyebrow"
           >
             Digital Inclusion Initiative • Community & Impact
           </motion.span>

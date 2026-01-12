@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import {
   Users,
   Network,
@@ -42,7 +44,7 @@ export default function VolunteerPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
-              className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-10"
+              className="section-eyebrow"
             >
               Now Recruiting Volunteers
             </motion.span>
@@ -64,39 +66,67 @@ export default function VolunteerPage() {
       </section>
 
       {/* ================= WHY VOLUNTEER ================= */}
-      <section className="py-32">
-        <div className="container mx-auto px-6 lg:max-w-screen-xl">
-          <div className="max-w-3xl mb-20">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
-              Why Volunteer with DII?
-            </span>
-            <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
-              Purposeful contribution with measurable impact
-            </h2>
-          </div>
+      <section
+  className="
+    relative
+    py-24
+    overflow-hidden
+    text-white
+  "
+  style={{
+    background: `
+      radial-gradient(
+        circle at top left,
+        rgba(155,120,210,0.25),
+        transparent 45%
+      ),
+      linear-gradient(
+        135deg,
+        #2a123f 0%,
+        #5f3b86 55%,
+        #7b5bb3 100%
+      )
+    `,
+  }}
+>
+  {/* Subtle grain */}
+  <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:3px_3px]" />
 
-          <div className="grid gap-16 md:grid-cols-3">
-            <WhyCard
-              icon={HeartHandshake}
-              title="Real Impact"
-              text="Enable women and underserved communities to access devices, data, and work-ready digital skills."
-            />
-            <WhyCard
-              icon={Network}
-              title="Grow Your Network"
-              text="Collaborate with tech partners, hubs, trainers, and mentors across Nigeria’s digital ecosystem."
-            />
-            <WhyCard
-              icon={GraduationCap}
-              title="Build Your Skills"
-              text="Gain hands-on experience in facilitation, community management, curriculum delivery, and events."
-            />
-          </div>
-        </div>
-      </section>
+  <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl">
+    {/* Header */}
+    <div className="max-w-3xl mb-20">
+      <span className="sectionw-eyebrow">
+        Why Volunteer with DII?
+      </span>
+
+      <h2 className="text-3xl md:text-4xl font-semibold leading-tight text-white mt-6">
+        Purposeful contribution with measurable impact
+      </h2>
+    </div>
+
+    {/* Cards */}
+    <div className="grid gap-16 md:grid-cols-3 text-white">
+      <WhyCard
+        icon={HeartHandshake}
+        title="Real Impact"
+        text="Enable women and underserved communities to access devices, data, and work-ready digital skills."
+      />
+      <WhyCard
+        icon={Network}
+        title="Grow Your Network"
+        text="Collaborate with tech partners, hubs, trainers, and mentors across Nigeria’s digital ecosystem."
+      />
+      <WhyCard
+        icon={GraduationCap}
+        title="Build Your Skills"
+        text="Gain hands-on experience in facilitation, community management, curriculum delivery, and events."
+      />
+    </div>
+  </div>
+</section>
 
       {/* ================= ROLES ================= */}
-      <section className="relative bg-[#f9fafb] py-32">
+      <section className="relative bg-[#f9fafb] py-15">
         {/* Subtle orbit lines */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(95,59,134,0.06),transparent_70%)]" />
@@ -104,7 +134,7 @@ export default function VolunteerPage() {
 
         <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl">
           <div className="max-w-3xl mb-20">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
+            <span className="section-eyebrow">
               Volunteer Roles
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
@@ -172,10 +202,10 @@ export default function VolunteerPage() {
       </section>
 
       {/* ================= COMMITMENT ================= */}
-      <section className="py-32">
+      <section className="py-15">
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
           <div className="max-w-3xl">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
+            <span className="section-eyebrow">
               Commitment & Onboarding
             </span>
 
@@ -189,35 +219,73 @@ export default function VolunteerPage() {
       </section>
 
       {/* ================= FORM ================= */}
-      <section className="bg-[#f9fafb] py-32">
-        <div className="container mx-auto px-6 lg:max-w-screen-xl">
-          <div className="max-w-3xl mb-16">
-            <span className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-6">
-              Apply to Volunteer
-            </span>
-            <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
-              Tell us how you’d like to contribute
-            </h2>
-          </div>
+     <section className="py-24 md:py-15" style={{
+    background: `
+      radial-gradient(
+        circle at top left,
+        rgba(155,120,210,0.25),
+        transparent 45%
+      ),
+      linear-gradient(
+        135deg,
+        #2a123f 0%,
+        #5f3b86 55%,
+        #7b5bb3 100%
+      )
+    `,
+  }}>
+      <div className="container mx-auto px-6 lg:max-w-screen-xl">
 
-          {/* GOOGLE FORM */}
-          <iframe
-            src="https://docs.google.com/forms/d/e/1FAIpQLSe0LoAQpllbIiGsMmiEX9FQj064iRz2XTLSHppTAKSIsBbVxg/viewform"
-            width="100%"
-            height="1200"
-            style={{
-              width: "100%",
-              height: "1200px",
-              border: "1px solid #e6e9f2",
-              borderRadius: "16px",
-              background: "#fff",
-            }}
-            frameBorder="0"
+        <div className="max-w-3xl">
+          {/* Eyebrow */}
+          <span className="sectionw-eyebrow">
+            Apply to Volunteer
+          </span>
+
+          {/* Heading */}
+          <h2 className="text-3xl text-white md:text-4xl font-semibold leading-tight mb-8">
+            Tell us how you’d like to contribute
+          </h2>
+
+          {/* Body */}
+          <p className="text-white/70 leading-relaxed mb-14 max-w-2xl">
+            Complete our short application form to let us know your skills,
+            availability, and the role you’re most interested in.  
+            Our team will review your submission and respond within a few
+            working days.
+          </p>
+
+          {/* CTA */}
+          <Link
+            href="https://docs.google.com/forms/d/e/1FAIpQLSe0LoAQpllbIiGsMmiEX9FQj064iRz2XTLSHppTAKSIsBbVxg/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="
+              inline-flex items-center gap-4
+              px-12 py-5
+              rounded-2xl
+              bg-[#5f3b86]
+              text-white
+              text-xs
+              tracking-[0.35em]
+              uppercase
+              font-medium
+              transition-all
+              hover:bg-[#4e2f72]
+            "
           >
-            Loading…
-          </iframe>
+            Open Volunteer Application
+            <ArrowRight size={16} />
+          </Link>
+
+          {/* Helper note */}
+          <p className="mt-6 text-xs text-white/50">
+            Takes about 5 minutes to complete
+          </p>
         </div>
-      </section>
+
+      </div>
+    </section>
     </main>
   );
 }
@@ -235,9 +303,9 @@ function WhyCard({
 }) {
   return (
     <div className="border-t border-black/10 pt-8">
-      <Icon className="h-6 w-6 text-[#5f3b86] mb-6" />
-      <h3 className="text-xl text-black/70  font-semibold mb-4">{title}</h3>
-      <p className="text-black/70 leading-relaxed">{text}</p>
+      <Icon className="h-6 w-6 text-white mb-6" />
+      <h3 className="text-xl text-white/70  font-semibold mb-4">{title}</h3>
+      <p className="text-white/70 leading-relaxed">{text}</p>
     </div>
   );
 }

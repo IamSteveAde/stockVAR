@@ -52,7 +52,7 @@ function PartnerHero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease }}
-            className="block text-[11px] tracking-[0.55em] uppercase text-black/50 mb-10"
+            className="block text-[14px] tracking-[0.55em] uppercase text-[#5f3b86] mb-10"
           >
             Partner With Us
           </motion.span>
@@ -99,14 +99,28 @@ function PartnerHero() {
 ====================================================== */
 function WhyPartner() {
   return (
-    <section className="relative bg-white py-6 md:py-6">
+    <section className="relative py-15 md:py-15" style={{
+    background: `
+      radial-gradient(
+        circle at top left,
+        rgba(155,120,210,0.25),
+        transparent 45%
+      ),
+      linear-gradient(
+        135deg,
+        #2a123f 0%,
+        #5f3b86 55%,
+        #7b5bb3 100%
+      )
+    `,
+  }}>
       <div className="container mx-auto px-6 lg:max-w-screen-xl">
         <div className="max-w-3xl mb-20">
-          <span className="block text-[11px] tracking-[0.5em] uppercase text-black/60 mb-6">
+          <span className="sectionw-eyebrow">
             Why Partner With DII
           </span>
 
-          <h2 className="text-3xl md:text-4xl font-semibold text-black">
+          <h2 className="text-3xl md:text-4xl font-semibold text-white">
             We can’t close the digital divide alone
           </h2>
         </div>

@@ -16,7 +16,7 @@ export default function PartnerSection() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 py-32">
+      <div className="relative z-10 py-6">
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -28,7 +28,7 @@ export default function PartnerSection() {
             {/* Eyebrow */}
             <div className="flex items-center gap-3 text-black/60 mb-6">
               <Handshake size={18} />
-              <span className="text-[11px] tracking-[0.45em] uppercase">
+              <span className="section-eyebrow">
                 Collaboration
               </span>
             </div>
