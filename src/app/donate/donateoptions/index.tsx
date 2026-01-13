@@ -73,7 +73,7 @@ export default function DonateOptions() {
               </span>
 
               <h3 className="text-2xl font-semibold text-black mb-8">
-                Choose an amount to donate
+                Suggested Amount
               </h3>
 
               {/* Suggested amounts */}
@@ -87,7 +87,7 @@ export default function DonateOptions() {
                   "£100",
                   "£250",
                 ].map((amount) => (
-                  <button
+                  <div
                     key={amount}
                     className="
                       rounded-xl
@@ -100,18 +100,16 @@ export default function DonateOptions() {
                       transition-all
                       hover:border-[#5f3b86]
                       hover:bg-[#5f3b86]/5
+                      px-10
                     "
                   >
                     {amount}
-                  </button>
+                  </div>
                 ))}
               </div>
 
               {/* Donation frequency */}
-              <div className="mt-10 flex flex-wrap gap-4">
-                <Toggle label="One-Time" />
-                <Toggle label="Monthly" />
-              </div>
+              
 
               {/* CTA */}
               <div className="mt-12">
