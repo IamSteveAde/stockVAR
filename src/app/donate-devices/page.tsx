@@ -178,7 +178,8 @@ export default function DeviceBankPage() {
 
           <div className="flex gap-6">
             <Link
-              href="/apply-device"
+              href="https://forms.gle/PuuqcxguseNYTxr39
+here is link to apply for device"
               target="_blank"
               className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-[#5f3b86] text-xs tracking-[0.35em] uppercase font-medium hover:bg-white/90 transition"
             >

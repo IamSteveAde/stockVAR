@@ -19,10 +19,13 @@ export default function CourseraOnboardingPage() {
   return (
     <main className="bg-white overflow-hidden">
 
-     {/* =====================================================
-   HERO
+ {/* =====================================================
+   PROGRAM OVERVIEW — HERO STYLE
 ===================================================== */}
-<section className="relative min-h-[100vh] flex items-center overflow-hidden">
+<section
+  id="program-overview"
+  className="relative min-h-[100vh] flex items-center overflow-hidden"
+>
   {/* ================= BACKGROUND ================= */}
   <div
     className="absolute inset-0"
@@ -34,114 +37,89 @@ export default function CourseraOnboardingPage() {
     }}
   />
 
-  {/* Orbital lines */}
+  {/* Soft orbital depth */}
   <div className="absolute inset-0 pointer-events-none">
     <motion.div
       animate={{ rotate: 360 }}
-      transition={{ duration: 160, repeat: Infinity, ease: "linear" }}
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[720px] w-[720px] rounded-full border border-white/20"
+      transition={{ duration: 180, repeat: Infinity, ease: "linear" }}
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                 h-[760px] w-[760px] rounded-full border border-white/15"
     />
     <motion.div
       animate={{ rotate: -360 }}
-      transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[520px] w-[520px] rounded-full border border-white/10"
+      transition={{ duration: 140, repeat: Infinity, ease: "linear" }}
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                 h-[560px] w-[560px] rounded-full border border-white/10"
     />
   </div>
 
   {/* ================= CONTENT ================= */}
-  <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl">
-    <div className="max-w-4xl text-white">
-      <motion.span
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease }}
-        className="block text-[14px] tracking-[0.55em] uppercase text-[#d9c8ff] mb-10"
-      >
-        Digital Inclusion Initiative × Coursera
-      </motion.span>
+  <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl space-y-24">
 
-      <h1 className="text-[clamp(1.8rem,3vw,2rem)] font-semibold leading-[1.05] mb-10">
+    {/* ======= TOP HERO HEADER (NEW) ======= */}
+    <div className="max-w-5xl">
+      {/* Caption */}
+      <span className="block text-[13px] tracking-[0.55em] uppercase text-[#d9c8ff] mb-8 py-10">
+        Digital Inclusion Initiative × Coursera
+      </span>
+
+      {/* Main headline */}
+      <h1 className="text-[clamp(1rem,3vw,2rem)] font-semibold leading-[1.05] text-white">
         Coursera Onboarding
         <span className="block bg-clip-text text-transparent bg-gradient-to-r from-white via-[#61abbb] to-white">
           Unlocking Global Skills for Local Impact
         </span>
       </h1>
+    </div>
 
-      <p className="max-w-2xl text-[clamp(1.05rem,1.4vw,1.25rem)] leading-relaxed text-white/90 mb-16">
-        The DII × Coursera programme connects underserved learners to world-class
-        courses, with structured onboarding, local support, and pathways to
-        employment, entrepreneurship, and growth.
-      </p>
+    {/* ======= EXISTING PROGRAM OVERVIEW CONTENT ======= */}
+    <div className="grid gap-20 lg:grid-cols-2 items-center">
 
-      {/* ================= CTA BUTTONS ================= */}
-      <div className="flex flex-col sm:flex-row gap-6">
-        {/* Partner CTA */}
-        <Link
-          href="/partner"
-          className="inline-flex items-center justify-center gap-3 px-12 py-5 rounded-2xl bg-white text-[#5f3b86] text-xs tracking-[0.35em] uppercase font-medium hover:bg-white/90 transition"
-        >
-          Partner with DII
-          <ArrowRight size={16} />
-        </Link>
+      {/* LEFT — TEXT */}
+      <div>
+        <h2 className="text-3xl md:text-4xl font-semibold mb-8 text-white">
+          Program Overview
+        </h2>
 
-        {/* Learner CTA */}
-        <Link
-          href="/programmes"
-          className="inline-flex items-center justify-center gap-3 px-12 py-5 rounded-2xl border border-white/40 text-white text-xs tracking-[0.35em] uppercase font-medium hover:bg-white/10 transition"
-        >
-          Apply as a Learner
-          <ArrowRight size={16} />
-        </Link>
+        <p className="text-white/90 leading-relaxed mb-6 max-w-xl">
+          The DII × Coursera programme expands access to high-quality digital
+          learning by combining Coursera’s global platform with DII’s local
+          coordination, learner support, and programme oversight.
+        </p>
+
+        <p className="text-white/80 leading-relaxed max-w-xl">
+          The programme goes beyond course access. Learners receive guided
+          onboarding, orientation, progress monitoring, and structured support to
+          ensure meaningful participation and completion.
+        </p>
       </div>
+
+      {/* RIGHT — FEATURES */}
+      <div className="grid gap-10">
+        <Feature
+          icon={GraduationCap}
+          title="Guided Learning Pathways"
+          text="Curated Coursera course sequences aligned to employability and productivity outcomes."
+          hero
+        />
+        <Feature
+          icon={Layers}
+          title="Structured Programme Design"
+          text="Clear learning outcomes, onboarding, orientation, and learner monitoring."
+          hero
+        />
+        <Feature
+          icon={ShieldCheck}
+          title="Quality & Accountability"
+          text="Programme oversight ensures learning translates into real skills and confidence."
+          hero
+        />
+      </div>
+
     </div>
   </div>
 </section>
-
-      {/* =====================================================
-         PROGRAM OVERVIEW
-      ===================================================== */}
-      <section className="py-15 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#f7f8fc] to-white" />
-
-        <div className="relative container mx-auto px-6 lg:max-w-screen-xl grid gap-20 lg:grid-cols-2">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-semibold mb-8">
-              Program Overview
-            </h2>
-
-            <p className="text-black/70 leading-relaxed mb-6 max-w-xl">
-              The DII × Coursera programme expands access to high-quality digital
-              learning by combining Coursera’s global platform with DII’s local
-              coordination, learner support, and programme oversight.
-            </p>
-
-            <p className="text-black/70 leading-relaxed max-w-xl">
-              The programme goes beyond course access. Learners receive guided
-              onboarding, orientation, progress monitoring, and structured
-              support to ensure meaningful participation and completion.
-            </p>
-          </div>
-
-          <div className="grid gap-8">
-            <Feature
-              icon={GraduationCap}
-              title="Guided Learning Pathways"
-              text="Curated Coursera course sequences aligned to employability and productivity outcomes."
-            />
-            <Feature
-              icon={Layers}
-              title="Structured Programme Design"
-              text="Clear learning outcomes, onboarding, orientation, and learner monitoring."
-            />
-            <Feature
-              icon={ShieldCheck}
-              title="Quality & Accountability"
-              text="Programme oversight ensures learning translates into real skills and confidence."
-            />
-          </div>
-        </div>
-      </section>
-
+     
      {/* =====================================================
    TARGET BENEFICIARIES
 ===================================================== */}
@@ -338,13 +316,30 @@ export default function CourseraOnboardingPage() {
    COMPONENTS
 ===================================================== */
 
-function Feature({ icon: Icon, title, text }: any) {
+function Feature({
+  icon: Icon,
+  title,
+  text,
+  hero = false,
+}: {
+  icon: any;
+  title: string;
+  text: string;
+  hero?: boolean;
+}) {
   return (
     <div className="flex gap-5">
-      <Icon size={32} className="text-[#5f3b86]" />
+      <Icon
+        size={32}
+        className={hero ? "text-[#d9c8ff]" : "text-[#5f3b86]"}
+      />
       <div>
-        <h4 className="font-semibold text-black mb-2">{title}</h4>
-        <p className="text-sm text-black/70">{text}</p>
+        <h4 className={`font-semibold mb-2 ${hero ? "text-white" : "text-black"}`}>
+          {title}
+        </h4>
+        <p className={`text-sm leading-relaxed ${hero ? "text-white/80" : "text-black/70"}`}>
+          {text}
+        </p>
       </div>
     </div>
   );
