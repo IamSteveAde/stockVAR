@@ -64,7 +64,7 @@ export default function CourseraOnboardingPage() {
       </span>
 
       {/* Main headline */}
-      <h1 className="text-[clamp(1rem,3vw,2rem)] font-semibold leading-[1.05] text-white">
+      <h1 className="text-[clamp(1rem,6vw,3rem)] font-semibold leading-[1.05] text-white">
         Coursera Onboarding
         <span className="block bg-clip-text text-transparent bg-gradient-to-r from-white via-[#61abbb] to-white">
           Unlocking Global Skills for Local Impact
@@ -152,96 +152,353 @@ export default function CourseraOnboardingPage() {
   </div>
 </section>
 
-      {/* =====================================================
-         PARTNER ONBOARDING PROCESS
-      ===================================================== */}
-      <section className="py-15">
-        <div className="container mx-auto px-6 lg:max-w-screen-xl">
-          <h3 className="text-2xl text-black md:text-3xl font-semibold mb-14">
-            Partner Onboarding Process
-          </h3>
+{/* =====================================================
+   ABOUT THE DII × COURSERA PROGRAMME
+===================================================== */}
+<section className="relative py-28 overflow-hidden">
+  {/* Background */}
+  <div
+    className="absolute inset-0"
+    style={{
+      background: `
+        radial-gradient(circle at top left, rgba(97,171,187,0.25), transparent 45%),
+        linear-gradient(135deg, #2a123f 0%, #5f3b86 55%, #3a1d5d 100%)
+      `,
+    }}
+  />
 
-          <div className="grid gap-10 lg:grid-cols-2">
-            <ProcessStep
-              step="01"
-              title="Partnership Confirmation"
-              text="Once confirmed, DII aligns internally on scope, roles, and communication to ensure consistency."
-              icon={Building2}
-            />
-            <ProcessStep
-              step="02"
-              title="Partner Information & Coordination"
-              text="Partners complete a brief onboarding form covering contact details, liaison, and engagement preferences."
-              icon={ClipboardList}
-            />
-            <ProcessStep
-              step="03"
-              title="Programme Orientation"
-              text="A short orientation provides clarity on programme structure, objectives, and delivery approach."
-              icon={GraduationCap}
-            />
-            <ProcessStep
-              step="04"
-              title="Activation & Engagement"
-              text="Partners are formally activated and engaged at key milestones where their input adds value."
-              icon={MessageCircle}
-            />
-          </div>
+  {/* Soft accent glow */}
+  <div className="absolute -top-40 right-1/2 translate-x-1/2 h-[420px] w-[420px] rounded-full bg-[#61abbb]/10 blur-[120px]" />
+
+  <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+    <div className="grid gap-20 lg:grid-cols-2 items-start">
+
+      {/* LEFT — TEXT */}
+      <div className="max-w-xl">
+        <span className="block text-[13px] tracking-[0.55em] uppercase font-semibold text-[#fff] mb-8">
+          About the Programme
+        </span>
+
+        <h2 className="text-3xl md:text-4xl text-white font-semibold leading-tight mb-10">
+          About the DII × Coursera Programme
+        </h2>
+
+        <p className="text-white/70 leading-relaxed mb-6">
+          Through Coursera’s <strong>Social Impact initiative</strong>, the
+          Digital Inclusion Initiative (DII) has been awarded{" "}
+          <strong>1,000 learning licences</strong> to support individuals who are
+          underserved, unemployed, underemployed, or seeking to build
+          future-ready digital skills.
+        </p>
+
+        <p className="text-white/70 leading-relaxed">
+          The programme is <strong>online-first, flexible</strong>, and designed
+          to scale through trusted community partners — ensuring access,
+          completion, and meaningful outcomes.
+        </p>
+      </div>
+
+      {/* RIGHT — HIGHLIGHTS */}
+      <div className="grid gap-8">
+        <div className="rounded-3xl bg-white p-8 shadow-[0_25px_70px_rgba(0,0,0,0.08)] border border-black/5">
+          <h4 className="font-semibold text-black mb-3">
+            Industry-Recognised Learning
+          </h4>
+          <p className="text-sm text-black/70 leading-relaxed">
+            Access courses from leading global institutions and technology
+            companies, trusted by employers worldwide.
+          </p>
         </div>
-      </section>
+
+        <div className="rounded-3xl bg-white p-8 shadow-[0_25px_70px_rgba(0,0,0,0.08)] border border-black/5">
+          <h4 className="font-semibold text-black mb-3">
+            Curated Learning Pathways
+          </h4>
+          <p className="text-sm text-black/70 leading-relaxed">
+            Structured pathways across AI, data, digital literacy, business, and
+            professional skills — aligned to employability and productivity.
+          </p>
+        </div>
+
+        <div className="rounded-3xl bg-white p-8 shadow-[0_25px_70px_rgba(0,0,0,0.08)] border border-black/5">
+          <h4 className="font-semibold text-black mb-3">
+            Career-Strengthening Certificates
+          </h4>
+          <p className="text-sm text-black/70 leading-relaxed">
+            Earn certificates that strengthen employability, entrepreneurship,
+            and long-term career mobility.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{/* =====================================================
+   HOW THE PARTNERSHIP MODEL WORKS
+===================================================== */}
+<section className="relative py-28 overflow-hidden">
+  {/* Background — SAME AS PREVIOUS SECTION */}
+  <div
+    className="absolute inset-0"
+    style={{
+      background: `
+        radial-gradient(circle at bottom right, rgba(95,59,134,0.18), transparent 45%),
+        linear-gradient(180deg, #ffffff 0%, #f7f8fc 100%)
+      `,
+    }}
+  />
+
+  {/* Soft accent glow */}
+  <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[420px] rounded-full bg-[#5f3b86]/10 blur-[120px]" />
+
+  <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+    <div className="max-w-3xl mb-20">
+      <span className="block text-[13px] tracking-[0.55em] uppercase font-semibold text-[#5f3b86] mb-8">
+        Partnership Model
+      </span>
+
+      <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
+        How the Partnership Model Works
+      </h2>
+
+      <p className="mt-6 text-black/70 leading-relaxed">
+        The DII × Coursera programme is delivered through trusted community
+        partners who provide local context, accountability, and learner support,
+        while DII manages platform access, coordination, and impact reporting.
+      </p>
+    </div>
+
+    <div className="grid gap-16 lg:grid-cols-2">
+
+      {/* COMMUNITY DELIVERY PARTNER */}
+      <div className="rounded-3xl bg-white p-10 shadow-[0_30px_80px_rgba(0,0,0,0.08)] border border-black/5">
+        <h3 className="text-2xl font-semibold mb-8 text-[#5f3b86]">
+          As a DII Community Delivery Partner, your organisation will:
+        </h3>
+
+        <ul className="space-y-5 text-black/70 leading-relaxed">
+          <li>• Identify and nominate eligible beneficiaries from your community</li>
+          <li>• Support learner mobilisation and initial onboarding</li>
+          <li>
+            • Act as a local point of trust, encouragement, and accountability
+            for learners
+          </li>
+          <li>
+            • Collaborate with DII on light-touch learner tracking and impact
+            reporting
+          </li>
+        </ul>
+      </div>
+
+      {/* DII RESPONSIBILITIES */}
+      <div className="rounded-3xl bg-white p-10 shadow-[0_30px_80px_rgba(0,0,0,0.08)] border border-black/5">
+        <h3 className="text-2xl font-semibold mb-8 text-[#61abbb]">
+          The Digital Inclusion Initiative (DII) will:
+        </h3>
+
+        <ul className="space-y-5 text-black/70 leading-relaxed">
+          <li>
+            • Provide access to Coursera licences and curated learning pathways
+          </li>
+          <li>
+            • Manage the Coursera partnership, platform administration, and
+            reporting
+          </li>
+          <li>
+            • Onboard your organisation and nominated focal contact(s)
+          </li>
+          <li>
+            • Provide onboarding materials, learner guidance, and programme
+            support
+          </li>
+          <li>
+            • Aggregate impact data for partners, donors, and reporting purposes
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+
+     {/* =====================================================
+   COMMUNITY DELIVERY PARTNER ONBOARDING PROCESS
+===================================================== */}
+<section className="relative py-28 overflow-hidden">
+  {/* Background – neutral continuity */}
+  <div className="absolute inset-0 bg-gradient-to-b from-[#f7f8fc] to-white" />
+
+  <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+    {/* Header */}
+    <div className="max-w-3xl mb-20">
+      <span className="block text-[13px] tracking-[0.55em] uppercase font-semibold text-[#5f3b86] mb-8">
+        Partner Onboarding
+      </span>
+
+      <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
+        Community Delivery Partner Onboarding Process
+      </h2>
+
+      <p className="mt-6 text-black/70 leading-relaxed">
+        The DII × Coursera onboarding process is designed to be simple,
+        structured, and respectful of partner capacity — while ensuring
+        clarity, accountability, and smooth learner activation.
+      </p>
+    </div>
+
+    {/* STEPS GRID */}
+    <div className="grid gap-12 lg:grid-cols-2">
+
+      {/* STEP 1 */}
+      <div className="rounded-3xl p-10 bg-gradient-to-br from-[#5f3b86]/10 via-[#6f4aa0]/10 to-[#3a1d5d]/10 border border-black/5">
+        <h3 className="text-xl font-semibold mb-6 text-[#5f3b86]">
+          1. Partner Confirmation
+        </h3>
+
+        <ul className="space-y-4 text-black/70 leading-relaxed">
+          <li>
+            • Complete the Partner Onboarding Form using the official DII link
+          </li>
+          <li>
+            • Submit organisation details and nominate a focal contact person
+          </li>
+          <li>
+            • Receive confirmation from the DII team once approved
+          </li>
+        </ul>
+
+        <div className="mt-8">
+          <span className="text-sm text-[#5f3b86] font-medium">
+            👉 Click here to onboard as a Community Partner
+          </span>
+        </div>
+      </div>
+
+      {/* STEP 2 */}
+      <div className="rounded-3xl p-10 bg-gradient-to-br from-[#61abbb]/12 via-[#7cc5d1]/10 to-[#2f6f78]/12 border border-black/5">
+        <h3 className="text-xl font-semibold mb-6 text-[#2f6f78]">
+          2. Beneficiary Learner Information Submission
+        </h3>
+
+        <ul className="space-y-4 text-black/70 leading-relaxed">
+          <li>
+            • DII provides an Excel template and a secure upload link
+          </li>
+          <li>
+            • Submitted beneficiaries must match allocated Coursera licences
+          </li>
+          <li>
+            • Each beneficiary completes an individual onboarding form
+          </li>
+          <li>
+            • Partners receive weekly updates on onboarding progress
+          </li>
+        </ul>
+      </div>
+
+      {/* STEP 3 */}
+      <div className="rounded-3xl p-10 bg-gradient-to-br from-[#d9c8ff]/20 via-[#c3b2f5]/15 to-[#8a7cc7]/20 border border-black/5">
+        <h3 className="text-xl font-semibold mb-6 text-[#5f3b86]">
+          3. Licence Activation & Learner Onboarding
+        </h3>
+
+        <ul className="space-y-4 text-black/70 leading-relaxed">
+          <li>
+            • Approved beneficiaries attend a mandatory Coursera orientation
+          </li>
+          <li>
+            • DII activates Coursera licences after orientation
+          </li>
+          <li>
+            • Learners receive login credentials and begin learning
+          </li>
+        </ul>
+      </div>
+
+      {/* STEP 4 */}
+      <div className="rounded-3xl p-10 bg-gradient-to-br from-[#5f3b86]/8 via-[#61abbb]/8 to-[#5f3b86]/8 border border-black/5">
+        <h3 className="text-xl font-semibold mb-6 text-[#5f3b86]">
+          4. Ongoing Engagement & Reporting
+        </h3>
+
+        <ul className="space-y-4 text-black/70 leading-relaxed">
+          <li>
+            • Periodic learner progress snapshots
+          </li>
+          <li>
+            • Engagement insights and completion trends
+          </li>
+          <li>
+            • Aggregated programme impact reporting for partners and donors
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
 
       {/* =====================================================
-         HOW TO ONBOARD AS A PARTNER
-      ===================================================== */}
-      <section className="py-15 bg-gradient-to-br from-[#2a123f] to-[#5f3b86] text-white">
-        <div className="container mx-auto px-6 lg:max-w-screen-xl grid gap-16 lg:grid-cols-2">
+   HOW TO ONBOARD AS A PARTNER — TIMELINE (FIXED WIDTH)
+===================================================== */}
+<section className="relative py-28 overflow-hidden text-white">
+  {/* Background */}
+  <div className="absolute inset-0 bg-gradient-to-br from-[#2a123f] via-[#4a2a73] to-[#5f3b86]" />
+  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent_45%)]" />
 
-          <div>
-            <h3 className="text-3xl font-semibold mb-8">
-              How to Onboard as a Partner
-            </h3>
+  <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+    {/* Header */}
+    <div className="max-w-3xl mb-20">
+      <span className="block text-[13px] tracking-[0.55em] uppercase text-[#d9c8ff] mb-8">
+        Partner Engagement
+      </span>
 
-            <ul className="space-y-6 text-white/90 leading-relaxed max-w-xl">
-              <li>
-                <strong>Step 1:</strong> Express interest or confirm engagement
-                following an introduction with the DII team.
-              </li>
-              <li>
-                <strong>Step 2:</strong> Review programme objectives, structure,
-                beneficiaries, and expected partner role.
-              </li>
-              <li>
-                <strong>Step 3:</strong> Complete the partner onboarding form to
-                support coordination and communication.
-              </li>
-              <li>
-                <strong>Step 4:</strong> Partner activation and ongoing updates
-                throughout programme delivery.
-              </li>
-            </ul>
-          </div>
+      <h3 className="text-3xl md:text-4xl font-semibold leading-tight">
+        How to Onboard as a Partner
+      </h3>
 
-          <div className="flex items-center">
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-10 w-full">
-              <h4 className="text-xl font-semibold mb-6">
-                Ready to Partner with DII?
-              </h4>
-              <p className="text-white/80 mb-8">
-                Join us in delivering structured, impactful digital learning
-                programmes with measurable outcomes.
-              </p>
-              <Link
-                href="/partner"
-                className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-[#5f3b86] text-xs tracking-[0.35em] uppercase font-medium hover:bg-white/90 transition"
-              >
-                Partner with DII
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
+      <p className="mt-6 text-white/85 leading-relaxed">
+        The onboarding journey is designed to be clear, lightweight, and
+        respectful of partner capacity — while ensuring alignment, structure,
+        and effective programme delivery.
+      </p>
+    </div>
 
-        </div>
-      </section>
+    {/* Timeline wrapper */}
+    <div className="relative space-y-20">
+      {/* Vertical line */}
+      <div className="hidden lg:block absolute left-[60px] top-0 h-full w-px bg-white/20" />
+
+      <TimelineStep
+        step="01"
+        title="Express Interest & Initial Alignment"
+        text="Partners confirm interest following an introduction or invitation from the DII team. Scope, intent, and alignment are clarified before activation."
+      />
+
+      <TimelineStep
+        step="02"
+        title="Programme Review"
+        text="Partners receive and review programme objectives, structure, target beneficiaries, and expected levels of engagement."
+      />
+
+      <TimelineStep
+        step="03"
+        title="Partner Onboarding Form"
+        text="A brief onboarding form is completed to confirm official contact details, nominate a focal person, and establish communication preferences."
+      />
+
+      <TimelineStep
+        step="04"
+        title="Partner Activation & Ongoing Updates"
+        text="Once onboarded, partners are activated within the programme and receive periodic updates throughout implementation and impact reporting."
+      />
+    </div>
+  </div>
+</section>
 
       {/* =====================================================
    FINAL CALL TO ACTION
@@ -288,7 +545,9 @@ export default function CourseraOnboardingPage() {
     <div className="flex flex-col sm:flex-row gap-6 justify-center">
       {/* Partner CTA */}
       <Link
-        href="/partner"
+        href="https://share-eu1.hsforms.com/2gbtj-kz0TliOF_H089j6GQ2ftj2b
+and this is the partner link"
+target="_blank"
         className="inline-flex items-center justify-center gap-3 px-12 py-5 rounded-2xl bg-white text-[#5f3b86] text-xs tracking-[0.35em] uppercase font-medium hover:bg-white/90 transition"
       >
         Partner with DII
@@ -297,15 +556,68 @@ export default function CourseraOnboardingPage() {
 
       {/* Learner CTA */}
       <Link
-        href="/programmes"
+        href="https://2ftj2b.share-eu1.hsforms.com/2VJ-T_zCzR626sgy5lxhoDQ
+this is the beneficary link that links to hubspot"
+target="_blank"
         className="inline-flex items-center justify-center gap-3 px-12 py-5 rounded-2xl border border-white/40 text-white text-xs tracking-[0.35em] uppercase font-medium hover:bg-white/10 transition"
       >
-        Apply as a Learner
+        Apply as a Beneficiary
         <ArrowRight size={16} />
       </Link>
     </div>
   </div>
 </section>
+{/* =====================================================
+   PROGRAMME DOCUMENTS & DOWNLOADS
+===================================================== */}
+<section className="relative py-24 overflow-hidden">
+  {/* Background */}
+  <div className="absolute inset-0 bg-gradient-to-br from-[#f7f8fc] via-white to-[#f3f0ff]" />
+  <div className="absolute -top-40 right-1/3 h-[420px] w-[420px] rounded-full bg-[#5f3b86]/10 blur-[140px]" />
+
+  <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+    {/* Header */}
+    <div className="max-w-3xl mb-20">
+      <span className="sectionw-eyebrow mb-6">
+        Resources
+      </span>
+
+      <h3 className="text-3xl text-black/70 md:text-4xl font-semibold leading-tight mb-6">
+        Programme Documents & Downloads
+      </h3>
+
+      <p className="text-black/70 leading-relaxed">
+        Access official onboarding materials for the DII × Coursera Social Impact
+        Programme. These documents provide clarity on programme structure,
+        partner roles, and onboarding processes.
+      </p>
+    </div>
+
+    {/* Download cards */}
+    <div className="grid gap-10 md:grid-cols-2">
+
+      {/* Document 1 */}
+      <DownloadCard
+        title="Community Partner Onboarding Flow"
+        subtitle="DII × Coursera Social Impact Programme"
+        description="A high-level overview of how Community Delivery Partners engage with the programme — from confirmation through learner onboarding and reporting."
+        href="/data/DII_x_Coursera_Partner_Onboarding_Flow.pdf"
+        variant="purple"
+      />
+
+      {/* Document 2 */}
+      <DownloadCard
+        title="Community Partner Onboarding Guide"
+        subtitle="DII × Coursera Social Impact Programme"
+        description="A detailed guide outlining partner responsibilities, coordination steps, beneficiary submission, and ongoing engagement throughout programme delivery."
+        href="/data/DII_x_Coursera_Partner_Onboarding_Guide.pdf"
+        variant="teal"
+      />
+
+    </div>
+  </div>
+</section>
+
 
 
     </main>
@@ -315,6 +627,102 @@ export default function CourseraOnboardingPage() {
 /* =====================================================
    COMPONENTS
 ===================================================== */
+
+function DownloadCard({
+  title,
+  subtitle,
+  description,
+  href,
+  variant,
+}: {
+  title: string;
+  subtitle: string;
+  description: string;
+  href: string;
+  variant: "purple" | "teal";
+}) {
+  const gradients = {
+    purple:
+      "bg-gradient-to-br from-[#5f3b86]/90 via-[#6f4aa0]/85 to-[#3a1d5d]/90",
+    teal:
+      "bg-gradient-to-br from-[#61abbb]/85 via-[#7cc5d1]/80 to-[#2f6f78]/90",
+  };
+
+  return (
+    <div
+      className={`
+        relative
+        rounded-3xl
+        p-10
+        text-white
+        shadow-[0_30px_80px_rgba(0,0,0,0.12)]
+        transition-all
+        duration-500
+        hover:-translate-y-2
+        hover:shadow-[0_40px_100px_rgba(0,0,0,0.18)]
+        ${gradients[variant]}
+      `}
+    >
+      {/* Soft overlay */}
+      <div className="absolute inset-0 rounded-3xl bg-white/5 backdrop-blur-sm pointer-events-none" />
+
+      <div className="relative z-10">
+        <span className="block text-[11px] tracking-[0.45em] uppercase text-white/70 mb-4">
+          {subtitle}
+        </span>
+
+        <h4 className="text-2xl font-semibold mb-4">
+          {title}
+        </h4>
+
+        <p className="text-white/85 leading-relaxed mb-10">
+          {description}
+        </p>
+
+        <a
+          href={href}
+          download
+          className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-white text-[#5f3b86] text-xs tracking-[0.35em] uppercase font-medium hover:bg-white/90 transition"
+        >
+          Download PDF
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function TimelineStep({
+  step,
+  title,
+  text,
+}: {
+  step: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-10 items-start">
+      
+      {/* Step indicator */}
+      <div className="relative flex justify-center">
+        <div className="h-12 w-12 rounded-full bg-white text-[#5f3b86] flex items-center justify-center font-semibold shadow-lg">
+          {step}
+        </div>
+      </div>
+
+      {/* Content — FORCE FULL WIDTH */}
+      <div className="w-full max-w-none">
+        <h4 className="text-xl text-white font-semibold mb-3">
+          {title}
+        </h4>
+
+        <p className="text-white/85 leading-relaxed max-w-none">
+          {text}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function Feature({
   icon: Icon,

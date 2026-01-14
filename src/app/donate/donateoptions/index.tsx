@@ -8,148 +8,134 @@ const ease = [0.22, 1, 0.36, 1] as const;
 export default function DonateOptions() {
   return (
     <section id="donate-options" className="relative bg-white overflow-hidden">
-      {/* Subtle brand wash */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(95,59,134,0.06), rgba(97,171,187,0.06), rgba(188,200,215,0.14))",
-        }}
-      />
+  {/* Subtle brand wash */}
+  <div
+    className="absolute inset-0"
+    style={{
+      background:
+        "linear-gradient(135deg, rgba(95,59,134,0.05), rgba(97,171,187,0.05), rgba(188,200,215,0.12))",
+    }}
+  />
 
-      <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-0 md:py-0">
-        <div className="grid gap-20 lg:grid-cols-12 items-start">
-          {/* ================= LEFT — IMPACT ================= */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9, ease }}
-            className="lg:col-span-5"
-          >
-            <span className="section-eyebrow">
-              What Your Donation Supports
-            </span>
+  <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl py-24">
+    <div className="grid gap-20 lg:grid-cols-12 items-start">
 
-            <h2 className="text-3xl md:text-4xl font-semibold text-black leading-tight mb-10">
-              Turning generosity into real digital access
-            </h2>
+      {/* ================= LEFT — IMPACT ================= */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.9 }}
+        className="lg:col-span-5"
+      >
+        <span className="section-eyebrow">
+          What Your Donation Supports
+        </span>
 
-            <div className="space-y-10">
-              <ImpactItem
-                icon={Wifi}
-                amount="₦10,000"
-                description="Provides one week of internet data for a learner."
-                accent="#61abbb"
-              />
+        <h2 className="text-3xl md:text-4xl font-semibold text-black leading-tight mb-10">
+          Turning generosity into real digital access
+        </h2>
 
-              <ImpactItem
-                icon={BookOpen}
-                amount="₦50,000"
-                description="Covers training kits, learning resources, and support materials."
-                accent="#5f3b86"
-              />
+        <div className="space-y-10">
+          <ImpactItem
+            icon={Wifi}
+            amount="₦10,000"
+            description="Can provide one week of internet data for a learner."
+            accent="#61abbb"
+          />
 
-              <ImpactItem
-                icon={GraduationCap}
-                amount="₦215,000"
-                description="Supports one learner through a full job-ready bootcamp."
-                accent="#61abbb"
-              />
-            </div>
-          </motion.div>
+          <ImpactItem
+            icon={BookOpen}
+            amount="₦50,000"
+            description="Can support training kits, learning resources, and facilitation."
+            accent="#5f3b86"
+          />
 
-          {/* ================= RIGHT — DONATE ================= */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1, duration: 0.9, ease }}
-            className="lg:col-span-7"
-          >
-            <div className="rounded-3xl bg-white shadow-[0_40px_120px_rgba(0,0,0,0.08)] p-10 md:p-14">
-              <span className="block text-[11px] tracking-[0.45em] uppercase text-black/60 mb-6">
-                Give Online
-              </span>
-
-              <h3 className="text-2xl font-semibold text-black mb-8">
-                Suggested Amount
-              </h3>
-
-              {/* Suggested amounts */}
-              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
-                {[
-                  "₦10,000",
-                  "₦50,000",
-                  "₦150,000",
-                  "₦500,000",
-                  "£50",
-                  "£100",
-                  "£250",
-                ].map((amount) => (
-                  <div
-                    key={amount}
-                    className="
-                      rounded-xl
-                      border
-                      border-black/10
-                      py-4
-                      text-sm
-                      font-medium
-                      text-black
-                      transition-all
-                      hover:border-[#5f3b86]
-                      hover:bg-[#5f3b86]/5
-                      px-10
-                    "
-                  >
-                    {amount}
-                  </div>
-                ))}
-              </div>
-
-              {/* Donation frequency */}
-              
-
-              {/* CTA */}
-              <div className="mt-12">
-                <a
-                  href="https://paystack.shop/pay/zwmc7bp0ww"
-                  className="
-                    w-full
-                    inline-flex
-                    items-center
-                    justify-center
-                    gap-4
-                    px-10
-                    py-5
-                    rounded-2xl
-                    text-xs
-                    tracking-[0.35em]
-                    uppercase
-                    font-medium
-                    transition-all
-                  "
-                  style={{
-                    backgroundColor: "#5f3b86",
-                    color: "#ffffff",
-                  }}
-                >
-                  Donate via Paystack
-                  <ArrowRight size={16} />
-                </a>
-              </div>
-
-              {/* Trust note */}
-              <p className="mt-6 text-xs text-black/60 leading-relaxed">
-                Payments are securely processed. We are committed to transparent
-                reporting and responsible use of funds.
-              </p>
-            </div>
-          </motion.div>
+          <ImpactItem
+            icon={GraduationCap}
+            amount="₦215,000"
+            description="Can support one learner through a full job-ready bootcamp."
+            accent="#61abbb"
+          />
         </div>
-      </div>
-    </section>
+      </motion.div>
+
+      {/* ================= RIGHT — CONTEXTUAL GIVING ================= */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.1, duration: 0.9 }}
+        className="lg:col-span-7"
+      >
+        <div className="rounded-3xl bg-white shadow-[0_40px_120px_rgba(0,0,0,0.08)] p-10 md:p-14">
+
+          <span className="block text-[11px] tracking-[0.45em] uppercase text-black/60 mb-6">
+            Giving Guide
+          </span>
+
+          <h3 className="text-2xl font-semibold text-black mb-6">
+            Examples of Impact Levels
+          </h3>
+
+          <p className="text-black/70 leading-relaxed max-w-xl mb-12">
+            The amounts below are illustrative only. You are welcome to give
+            any amount that feels meaningful to you. Every contribution supports
+            access, skills, and opportunity.
+          </p>
+
+          {/* Editorial list — NOT clickable */}
+          <div className="space-y-6 border-l border-black/10 pl-6 mb-14">
+            {[
+              "₦10,000 – ₦50,000 supports connectivity, learning materials, and facilitation.",
+              "₦150,000 – ₦250,000 supports structured training and learner support.",
+              "₦500,000+ enables deeper programme delivery and cohort impact.",
+              "£50 – £250 supports international contributions to digital inclusion.",
+            ].map((text, i) => (
+              <p key={i} className="text-black/70 leading-relaxed">
+                {text}
+              </p>
+            ))}
+          </div>
+
+          {/* CTA — ONLY ACTION */}
+          <a
+            href="https://paystack.shop/pay/zwmc7bp0ww"
+            className="
+              w-full
+              inline-flex
+              items-center
+              justify-center
+              gap-4
+              px-10
+              py-5
+              rounded-2xl
+              text-xs
+              tracking-[0.35em]
+              uppercase
+              font-medium
+              transition
+            "
+            style={{
+              backgroundColor: "#5f3b86",
+              color: "#ffffff",
+            }}
+          >
+            Donate via Paystack
+            <ArrowRight size={16} />
+          </a>
+
+          {/* Trust note */}
+          <p className="mt-6 text-xs text-black/60 leading-relaxed">
+            Payments are securely processed. DII is committed to transparent
+            reporting and responsible use of funds.
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  </div>
+</section>
+
   );
 }
 
