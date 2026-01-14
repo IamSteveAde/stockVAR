@@ -7,6 +7,7 @@ import About from "./components/home/about";
 import DiscoverProperties from "./components/home/property-option"; // mentor section
 import Listing from "./components/home/property-list";
 import Testimonials from "./components/home/testimonial";
+import Info from "./components/home/info";
 
 
 // Global components
@@ -87,6 +88,7 @@ export default function Home() {
 
       {/* Impact, listings, or programs */}
       <Listing />
+      <Info />
 
       {/* Social proof */}
       <Testimonials />
