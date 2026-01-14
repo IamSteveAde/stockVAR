@@ -54,70 +54,68 @@ export default function CourseraOnboardingPage() {
   </div>
 
   {/* ================= CONTENT ================= */}
-  <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl space-y-24">
+  <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl">
 
-    {/* ======= TOP HERO HEADER (NEW) ======= */}
-    <div className="max-w-5xl">
-      {/* Caption */}
-      <span className="block text-[13px] tracking-[0.55em] uppercase text-[#d9c8ff] mb-8 py-10">
-        Digital Inclusion Initiative × Coursera
+  {/* =====================================================
+      HERO HEADER
+  ===================================================== */}
+  <div className="max-w-5xl pt-28 pb-20">
+    {/* Caption */}
+    <span className="block text-[13px] tracking-[0.55em] uppercase text-[#d9c8ff] mb-8">
+      Digital Inclusion Initiative × Coursera
+    </span>
+
+    {/* Main headline */}
+    <h1 className="text-[clamp(2.2rem,5vw,3.6rem)] font-semibold leading-[1.05] text-white">
+      DII × Coursera 
+      <span className="block bg-clip-text text-transparent bg-gradient-to-r from-white via-[#61abbb] to-white mt-2">
+        Programme Overview
       </span>
-
-      {/* Main headline */}
-      <h1 className="text-[clamp(1rem,6vw,3rem)] font-semibold leading-[1.05] text-white">
-        Coursera Onboarding
-        <span className="block bg-clip-text text-transparent bg-gradient-to-r from-white via-[#61abbb] to-white">
-          Unlocking Global Skills for Local Impact
-        </span>
-      </h1>
-    </div>
-
-    {/* ======= EXISTING PROGRAM OVERVIEW CONTENT ======= */}
-    <div className="grid gap-20 lg:grid-cols-2 items-center">
-
-      {/* LEFT — TEXT */}
-      <div>
-        <h2 className="text-2xl md:text-2xl font-semibold mb-8 text-white">
-          Program Overview
-        </h2>
-
-        <p className="text-white/90 leading-relaxed mb-6 max-w-xl">
-          The DII × Coursera programme expands access to high-quality digital
-          learning by combining Coursera’s global platform with DII’s local
-          coordination, learner support, and programme oversight.
-        </p>
-
-        <p className="text-white/80 leading-relaxed max-w-xl">
-          The programme goes beyond course access. Learners receive guided
-          onboarding, orientation, progress monitoring, and structured support to
-          ensure meaningful participation and completion.
-        </p>
-      </div>
-
-      {/* RIGHT — FEATURES */}
-      <div className="grid gap-10">
-        <Feature
-          icon={GraduationCap}
-          title="Guided Learning Pathways"
-          text="Curated Coursera course sequences aligned to employability and productivity outcomes."
-          hero
-        />
-        <Feature
-          icon={Layers}
-          title="Structured Programme Design"
-          text="Clear learning outcomes, onboarding, orientation, and learner monitoring."
-          hero
-        />
-        <Feature
-          icon={ShieldCheck}
-          title="Quality & Accountability"
-          text="Programme oversight ensures learning translates into real skills and confidence."
-          hero
-        />
-      </div>
-
-    </div>
+    </h1>
   </div>
+
+  {/* =====================================================
+      PROGRAM OVERVIEW CONTENT
+  ===================================================== */}
+  <div className="grid gap-24 lg:grid-cols-2 items-start pb-32">
+
+    {/* LEFT — TEXT */}
+    <div className="max-w-xl space-y-6">
+      <p className="text-white/90 leading-relaxed">
+        Through Coursera's Social Impact initiative, the Digital Inclusion Initiative (DII) has been awarded 1,000 learning licences to support individuals who are underserved, unemployed, underemployed, or seeking to build future-ready digital skills.
+      </p>
+
+      <p className="text-white/80 leading-relaxed">
+        The programme combines Coursera's global learning platform with DII's local coordination and structured learner support. Participants receive guided onboarding, progress monitoring, and ongoing assistance to ensure meaningful participation and completion.
+Delivered online with flexible scheduling, the programme scales through trusted community partners to maximize access, completion, and career outcomes.
+      </p>
+    </div>
+
+    {/* RIGHT — FEATURES */}
+    <div className="grid gap-12">
+      <Feature
+        icon={GraduationCap}
+        title="Guided Learning Pathways"
+        text="Curated Coursera course sequences aligned to employability and productivity outcomes."
+        hero
+      />
+      <Feature
+        icon={Layers}
+        title="Structured Programme Design"
+        text="Clear learning outcomes, onboarding, orientation, and learner monitoring."
+        hero
+      />
+      <Feature
+        icon={ShieldCheck}
+        title="Quality & Accountability"
+        text="Programme oversight ensures learning translates into real skills and confidence."
+        hero
+      />
+    </div>
+
+  </div>
+</div>
+
 </section>
      
      {/* =====================================================
@@ -154,9 +152,9 @@ export default function CourseraOnboardingPage() {
 
 {/* =====================================================
    ABOUT THE DII × COURSERA PROGRAMME
-===================================================== */}
+===================================================== 
 <section className="relative py-28 overflow-hidden">
-  {/* Background */}
+  {/* Background 
   <div
     className="absolute inset-0"
     style={{
@@ -167,13 +165,13 @@ export default function CourseraOnboardingPage() {
     }}
   />
 
-  {/* Soft accent glow */}
+  {/* Soft accent glow 
   <div className="absolute -top-40 right-1/2 translate-x-1/2 h-[420px] w-[420px] rounded-full bg-[#61abbb]/10 blur-[120px]" />
 
   <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
     <div className="grid gap-20 lg:grid-cols-2 items-start">
 
-      {/* LEFT — TEXT */}
+      {/* LEFT — TEXT 
       <div className="max-w-xl">
         <span className="block text-[13px] tracking-[0.55em] uppercase font-semibold text-[#fff] mb-8">
           About the Programme
@@ -198,7 +196,7 @@ export default function CourseraOnboardingPage() {
         </p>
       </div>
 
-      {/* RIGHT — HIGHLIGHTS */}
+      {/* RIGHT — HIGHLIGHTS 
       <div className="grid gap-8">
         <div className="rounded-3xl bg-white p-8 shadow-[0_25px_70px_rgba(0,0,0,0.08)] border border-black/5">
           <h4 className="font-semibold text-black mb-3">
@@ -233,7 +231,7 @@ export default function CourseraOnboardingPage() {
 
     </div>
   </div>
-</section>
+</section>*/}
 
 {/* =====================================================
    HOW THE PARTNERSHIP MODEL WORKS
@@ -244,8 +242,8 @@ export default function CourseraOnboardingPage() {
     className="absolute inset-0"
     style={{
       background: `
-        radial-gradient(circle at bottom right, rgba(95,59,134,0.18), transparent 45%),
-        linear-gradient(180deg, #ffffff 0%, #f7f8fc 100%)
+        radial-gradient(circle at top left, rgba(97,171,187,0.25), transparent 45%),
+        linear-gradient(135deg, #2a123f 0%, #5f3b86 55%, #3a1d5d 100%)
       `,
     }}
   />
@@ -255,15 +253,15 @@ export default function CourseraOnboardingPage() {
 
   <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
     <div className="max-w-3xl mb-20">
-      <span className="block text-[13px] tracking-[0.55em] uppercase font-semibold text-[#5f3b86] mb-8">
+      <span className="block text-[13px] tracking-[0.55em] uppercase font-semibold text-[#fff] mb-8">
         Partnership Model
       </span>
 
-      <h2 className="text-3xl md:text-4xl font-semibold leading-tight">
+      <h2 className="text-3xl md:text-4xl font-semibold text-white/70 leading-tight">
         How the Partnership Model Works
       </h2>
 
-      <p className="mt-6 text-black/70 leading-relaxed">
+      <p className="mt-6 text-white/70 leading-relaxed">
         The DII × Coursera programme is delivered through trusted community
         partners who provide local context, accountability, and learner support,
         while DII manages platform access, coordination, and impact reporting.
