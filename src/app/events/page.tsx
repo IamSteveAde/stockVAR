@@ -44,7 +44,7 @@ export default function EventsPage() {
       </section>
 
       {/* ================= EVENTS LIST ================= */}
-      <section className="py-32">
+      <section className="py-15">
         <div className="container mx-auto px-6 lg:max-w-screen-xl space-y-28">
 
           

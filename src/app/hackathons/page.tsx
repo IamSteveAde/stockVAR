@@ -63,7 +63,7 @@ export default function HackathonsPage() {
     <main className="bg-white overflow-hidden">
 
       {/* ================= HERO ================= */}
-      <section className="relative min-h-[70vh] flex items-center">
+      <section className="relative min-h-[100vh] p-15 flex items-center">
         <div className="relative z-10 container mx-auto px-6 lg:max-w-screen-xl">
           <div className="max-w-4xl">
             <span className="section-eyebrow">
@@ -86,7 +86,7 @@ export default function HackathonsPage() {
       </section>
 
       {/* ================= LIST ================= */}
-      <section className="py-32">
+      <section className="py-1">
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
 
           {/* Tabs */}
@@ -183,12 +183,12 @@ function HackathonCard({
         )}
       </div>
 
-      <div className="relative h-[520px] rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.25)]">
+      <div className="relative h-[520px] w-full rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.25)]">
         <Image
           src={image}
           alt={title}
           fill
-          className="object-cover"
+          className=""
         />
       </div>
     </article>
