@@ -67,7 +67,7 @@ export default function EventsPage() {
             tags={["#DigitalConfidence", "#MindsetMatters", "#WomenInTech", "#DIIEvents"]}
           />
 
-          <EventCard
+          {/* <EventCard
             day="Fri"
             month="Mar"
             date="20"
@@ -84,7 +84,7 @@ export default function EventsPage() {
             duration="March 20, 2026"
             link="#"
             tags={["#TechForGood", "#DigitalInclusion", "#CorporateImpact", "#DIIEvents"]}
-          />
+          />*/}
 
           <EventCard
             day="Fri"

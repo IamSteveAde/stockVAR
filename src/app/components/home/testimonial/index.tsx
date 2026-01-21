@@ -1,9 +1,50 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Send } from "lucide-react";
 
 export default function ContactSection() {
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setSuccess(false);
+    setError("");
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    const payload = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      purpose: formData.get("purpose"),
+      message: formData.get("message"),
+    };
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      setSuccess(true);
+      form.reset();
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <section className="relative bg-white py-6">
       <div className="container mx-auto px-6 lg:max-w-screen-xl">
@@ -18,9 +59,7 @@ export default function ContactSection() {
           >
             <div className="flex items-center gap-3 text-black/60 mb-6">
               <Mail size={18} />
-              <span className="section-eyebrow">
-                Contact
-              </span>
+              <span className="section-eyebrow">Contact</span>
             </div>
 
             <h2 className="text-4xl md:text-5xl font-light leading-tight text-black">
@@ -41,7 +80,10 @@ export default function ContactSection() {
             transition={{ delay: 0.15, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-7"
           >
-            <form className="rounded-3xl border border-black/5 p-10 shadow-[0_30px_80px_rgba(0,0,0,0.06)]">
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-3xl border border-black/5 p-10 shadow-[0_30px_80px_rgba(0,0,0,0.06)]"
+            >
               <div className="grid gap-6">
                 {/* Name */}
                 <div>
@@ -50,6 +92,7 @@ export default function ContactSection() {
                   </label>
                   <input
                     type="text"
+                    name="name"
                     placeholder="Your full name"
                     className="w-full rounded-xl border border-black/10 px-4 py-4 text-sm outline-none focus:border-[#5f3b86]"
                   />
@@ -62,6 +105,7 @@ export default function ContactSection() {
                   </label>
                   <input
                     type="email"
+                    name="email"
                     required
                     placeholder="you@example.com"
                     className="w-full rounded-xl border border-black/10 px-4 py-4 text-sm outline-none focus:border-[#5f3b86]"
@@ -74,6 +118,7 @@ export default function ContactSection() {
                     Purpose of Contact
                   </label>
                   <select
+                    name="purpose"
                     className="w-full rounded-xl border border-black/10 px-4 py-4 text-sm bg-white outline-none focus:border-[#5f3b86]"
                   >
                     <option value="">Select an option</option>
@@ -91,6 +136,7 @@ export default function ContactSection() {
                     Message*
                   </label>
                   <textarea
+                    name="message"
                     required
                     rows={5}
                     placeholder="Tell us how we can help…"
@@ -109,13 +155,24 @@ export default function ContactSection() {
                   </span>
                 </label>
 
+                {/* Feedback */}
+                {success && (
+                  <p className="text-green-600 text-sm">
+                    Message sent successfully.
+                  </p>
+                )}
+                {error && (
+                  <p className="text-red-600 text-sm">{error}</p>
+                )}
+
                 {/* Submit */}
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-xs tracking-[0.3em] uppercase font-medium transition-all group bg-[#5f3b86] text-white hover:opacity-90"
+                    disabled={loading}
+                    className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-xs tracking-[0.3em] uppercase font-medium transition-all group bg-[#5f3b86] text-white hover:opacity-90 disabled:opacity-50"
                   >
-                    Send
+                    {loading ? "Sending..." : "Send"}
                     <Send
                       size={16}
                       className="transition-transform group-hover:translate-x-1"

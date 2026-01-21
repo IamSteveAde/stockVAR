@@ -122,10 +122,10 @@ export default function DonateInKind() {
               <p className="text-sm text-black/70 leading-relaxed">
                 To donate devices or connectivity, please email{" "}
                 <a
-                  href="mailto:devices@digitalinclusioninitiative.org"
+                  href="mailto:info@digitalinclusioninitiative.org"
                   className="underline underline-offset-4 hover:text-black"
                 >
-                  devices@digitalinclusioninitiative.org
+                  info@digitalinclusioninitiative.org
                 </a>
                 . Our team will guide you through next steps.
               </p>
