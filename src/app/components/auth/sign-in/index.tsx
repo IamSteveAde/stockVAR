@@ -1,5 +1,5 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -7,6 +7,37 @@ import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+const [success, setSuccess] = useState<string | null>(null);
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  setError(null);
+  setSuccess(null);
+  setIsLoading(true);
+
+  // simulate API call
+  setTimeout(() => {
+    setIsLoading(false);
+
+    // CHANGE THIS to test error vs success
+    const isSuccess = true;
+
+    if (isSuccess) {
+      setSuccess("Login successful. Redirecting...");
+
+setTimeout(() => {
+  router.push("/dashboard");
+}, 1000);
+
+    } else {
+      setError("Invalid email or password.");
+    }
+  }, 1500);
+};
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
@@ -33,7 +64,8 @@ export default function Login() {
           </div>
 
           {/* Form */}
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-[#111827]">
@@ -77,14 +109,31 @@ export default function Login() {
                 Forgot password?
               </Link>
             </div>
+            {/* Error message */}
+{error && (
+  <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+    {error}
+  </div>
+)}
+
+{/* Success message */}
+{success && (
+  <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+    {success}
+  </div>
+)}
 
             {/* Submit */}
             <button
-              type="submit"
-              className="w-full rounded-lg bg-[#0F766E] py-3 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
-            >
-              Log in
-            </button>
+  type="submit"
+  disabled={isLoading}
+  className={`w-full rounded-lg py-3 text-sm font-medium text-white transition
+    ${isLoading ? "bg-[#0F766E]/60 cursor-not-allowed" : "bg-[#0F766E] hover:bg-[#0B5F58]"}
+  `}
+>
+  {isLoading ? "Processing..." : "Log in"}
+</button>
+
           </form>
 
           {/* Signup link */}

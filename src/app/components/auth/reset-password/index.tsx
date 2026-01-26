@@ -9,6 +9,40 @@ export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setError(null);
+    setSuccess(null);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+
+      const isSuccess = true; // toggle to false to test error
+
+      if (isSuccess) {
+        setSuccess("Password updated successfully. You can now log in.");
+      } else {
+        setError("Reset link has expired. Please request a new one.");
+      }
+    }, 1500);
+  };
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* LEFT — FORM */}
@@ -34,7 +68,21 @@ export default function ResetPassword() {
           </div>
 
           {/* Form */}
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error */}
+            {error && (
+              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {/* Success */}
+            {success && (
+              <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+                {success}
+              </div>
+            )}
+
             {/* New Password */}
             <div>
               <label className="block text-sm font-medium text-[#111827]">
@@ -44,6 +92,8 @@ export default function ResetPassword() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border border-[#E5E7EB] px-4 py-3 pr-12 text-sm outline-none focus:border-[#0F766E]"
                 />
                 <button
@@ -65,6 +115,8 @@ export default function ResetPassword() {
                 <input
                   type={showConfirm ? "text" : "password"}
                   required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full rounded-lg border border-[#E5E7EB] px-4 py-3 pr-12 text-sm outline-none focus:border-[#0F766E]"
                 />
                 <button
@@ -80,9 +132,16 @@ export default function ResetPassword() {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full rounded-lg bg-[#0F766E] py-3 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
+              disabled={isLoading}
+              className={`w-full rounded-lg py-3 text-sm font-medium text-white transition
+                ${
+                  isLoading
+                    ? "bg-[#0F766E]/60 cursor-not-allowed"
+                    : "bg-[#0F766E] hover:bg-[#0B5F58]"
+                }
+              `}
             >
-              Update password
+              {isLoading ? "Updating password..." : "Update password"}
             </button>
           </form>
 
@@ -100,7 +159,7 @@ export default function ResetPassword() {
       </div>
 
       {/* RIGHT — IMAGE */}
-      <div className="relative hidden lg:block ">
+      <div className="relative hidden lg:block">
         <div className="absolute inset-0 flex items-center justify-center p-16">
           <Image
             src="/images/hero/auth.webp"

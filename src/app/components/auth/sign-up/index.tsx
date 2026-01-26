@@ -1,13 +1,46 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function Signup() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const router = useRouter();
+
+const [showPassword, setShowPassword] = useState(false);
+const [showConfirm, setShowConfirm] = useState(false);
+
+
+const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+const [success, setSuccess] = useState<string | null>(null);
+
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  setError(null);
+  setSuccess(null);
+  setIsLoading(true);
+
+  // Simulate API call
+  setTimeout(() => {
+    setIsLoading(false);
+
+    const isSuccess = true; // toggle to test error state
+
+    if (isSuccess) {
+      setSuccess("Account created successfully. Check your email.");
+      setTimeout(() => {
+        router.push("/auth/verify-email");
+      }, 1200);
+    } else {
+      setError("An account with this email already exists.");
+    }
+  }, 1500);
+};
+
+  
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
@@ -34,7 +67,8 @@ export default function Signup() {
           </div>
 
           {/* Form */}
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-[#111827]">
@@ -91,6 +125,19 @@ export default function Signup() {
             </div>
 
             
+            {/* Error message */}
+{error && (
+  <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+    {error}
+  </div>
+)}
+
+{/* Success message */}
+{success && (
+  <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+    {success}
+  </div>
+)}
 
             {/* Submit */}
             <button
