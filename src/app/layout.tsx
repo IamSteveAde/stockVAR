@@ -25,11 +25,11 @@ const dmsans = DM_Sans({ subsets: ["latin"] });
 ------------------------------------- */
 export const metadata: Metadata = {
   title: {
-    default: "Digital Inclusion Initiative",
-    template: "%s | Digital Inclusion Initiative",
+    default: "StockVAR",
+    template: "%s | StockVAR",
   },
   description:
-    "Digital Inclusion Initiative works to expand digital access, build skills, and create opportunities for women and underserved communities through technology.",
+    "StockVAR is a stock variance and inventory control software for restaurants, cafés, lounges, hotel kitchens, and food businesses. Track stock usage, detect variance, and reduce losses with clarity.",
 };
 
 /* -------------------------------------

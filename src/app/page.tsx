@@ -1,69 +1,63 @@
 import { Metadata } from "next";
 
-
 // Home sections
 import Hero from "./components/home/hero";
 import About from "./components/home/about";
-import DiscoverProperties from "./components/home/property-option"; // mentor section
+import DiscoverProperties from "./components/home/property-option";
 import Listing from "./components/home/property-list";
 import Testimonials from "./components/home/testimonial";
 import Info from "./components/home/info";
 import Calculator from "./components/home/calculator";
 import History from "./components/home/history";
 
-
-
-// Global components
-
-
 export const metadata: Metadata = {
-  metadataBase: new URL("https://digitalinclusioninitiative.org"),
+  metadataBase: new URL("https://stockvar.com"),
 
   title: {
-    default: "Digital Inclusion Initiative",
-    template: "%s | Digital Inclusion Initiative",
+    default: "StockVAR — Restaurant Stock Variance & Inventory Control Software",
+    template: "%s | StockVAR",
   },
 
   description:
-    "Digital Inclusion Initiative works to expand digital access, build skills, and create economic opportunities for women and underserved communities through technology.",
+    "StockVAR is a stock variance and inventory control software for restaurants, cafés, lounges, hotel kitchens, and food businesses. Track stock usage, detect variance, and reduce losses with clarity.",
 
   keywords: [
-    "digital inclusion",
-    "digital access",
-    "technology for social impact",
-    "women in technology",
-    "digital skills training",
-    "underserved communities",
-    "tech education Africa",
-    "digital divide",
-    "Digital Inclusion Initiative",
+    "restaurant inventory software",
+    "stock variance software",
+    "restaurant stock control",
+    "food business inventory management",
+    "restaurant loss prevention software",
+    "kitchen stock tracking",
+    "restaurant operations software Nigeria",
+    "inventory variance tracking",
+    "restaurant stock management system",
+    "food cost control software",
+    "StockVAR",
   ],
 
   openGraph: {
-    title: "Digital Inclusion Initiative",
+    title: "StockVAR — Control Restaurant Stock & Detect Variance",
     description:
-      "Expanding digital access, building skills, and creating opportunities for women and underserved communities.",
-    url: "https://digitalinclusioninitiative.org",
-    siteName: "Digital Inclusion Initiative",
+      "StockVAR helps food businesses track stock usage, detect unexplained variance, and reduce losses across restaurants, cafés, lounges, and hotel kitchens.",
+    url: "https://stockvar.com",
+    siteName: "StockVAR",
     type: "website",
     images: [
       {
-        url: "https://digitalinclusioninitiative.org/og/og-cover.jpg",
+        url: "https://stockvar.netlify.app/_next/image?url=%2Fimages%2Fhero%2Fstock.png&w=3840&q=75",
         width: 1200,
         height: 630,
-        alt: "Digital Inclusion Initiative — Bridging the Digital Divide",
+        alt: "StockVAR — Restaurant Stock Variance & Inventory Control",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Digital Inclusion Initiative",
+    title: "StockVAR — Restaurant Stock Variance Software",
     description:
-      "Bridging the digital divide through access, skills, and opportunity.",
-    images: [
-      "https://digitalinclusioninitiative.org/og/og-cover.jpg",
-    ],
+      "Track stock usage, detect variance, and reduce losses across your food business.",
+    images: ["https://stockvar.netlify.app/_next/image?url=%2Fimages%2Fhero%2Fstock.png&w=3840&q=75"],
   },
 
   robots: {
@@ -72,28 +66,18 @@ export const metadata: Metadata = {
   },
 
   alternates: {
-    canonical: "https://digitalinclusioninitiative.org",
+    canonical: "https://stockvar.com",
   },
 };
 
 export default function Home() {
   return (
     <main>
-      {/* Audio welcome — plays once per visit */}
-    
-
-      {/* Core sections */}
       <Hero />
       <About />
-
-      {/* Mentor / Opportunity / Engagement section */}
       <DiscoverProperties />
-
-      {/* Impact, listings, or programs */}
       <Listing />
       <Info />
-
-      {/* Social proof */}
       <Testimonials />
       <Calculator />
       <History />
