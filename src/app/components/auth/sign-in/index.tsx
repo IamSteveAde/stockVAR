@@ -1,136 +1,117 @@
 "use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { useContext, useState } from "react";
-import SocialSignIn from "../social-button/SocialSignIn";
-import toast, { Toaster } from 'react-hot-toast';
-import { useRouter } from "next/navigation";
-import Logo from "../../layout/header/logo";
+import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
 
-
-const Signin = () => {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [loginData, setLoginData] = useState({
-    email: "",
-    password: "",
-  }); //login data state
-
-  const [validationErrors, setValidationErrors] = useState({
-    email: "",
-    password: "",
-  }); //validation state
-
-  // Input validation function
-  const validateForm = () => {
-    let errors = { email: "", password: "" };
-    let isValid = true;
-
-    if (!loginData.email) {
-      errors.email = "Email is required.";
-      isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginData.email)) {
-      errors.email = "Please enter a valid email address.";
-      isValid = false;
-    }
-
-    if (!loginData.password) {
-      errors.password = "Password is required.";
-      isValid = false;
-    } else if (loginData.password.length < 6) {
-      errors.password = "Password must be at least 6 characters long.";
-      isValid = false;
-    }
-    setValidationErrors(errors);
-    return isValid;
-  };
-
-  // form handle submit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      return;
-    }
-    setLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      localStorage.setItem("user", JSON.stringify({ user: loginData.email }));
-      router.push("/");
-    } catch (error) {
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function Login() {
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="pt-40 pb-32 bg-light dark:bg-darkmode">
-      <div className="pt-9 flex justify-center items-center text-center ">
-        <div className="max-w-lg w-full bg-white dark:bg-semidark px-8 py-14 sm:px-12 md:px-16 rounded-lg">
-          <div className="mb-10 text-center mx-auto inline-block max-w-[160px]">
-            <Logo />
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* LEFT — FORM */}
+      <div className="flex items-center justify-center px-6 py-12 bg-[#F9FAFB]">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo */}
+          <Image
+            src="/images/hero/svicon.png"
+            alt="StockVAR"
+            width={40}
+            height={16}
+            priority
+          />
+
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-semibold text-[#111827]">
+              Welcome back
+            </h1>
+            <p className="mt-2 text-sm text-[#6B7280]">
+              Log in to continue managing your stock.
+            </p>
           </div>
 
-          <SocialSignIn />
-
-          <span className="z-1 relative my-8 block text-center">
-            <span className="-z-1 absolute left-0 top-1/2 block h-px w-full bg-border dark:bg-dark_border"></span>
-            <span className="text-primary/40 dark:text-border relative z-10 inline-block bg-white px-3 text-base dark:bg-semidark">
-              OR
-            </span>
-            <Toaster />
-          </span>
-
-          <form onSubmit={handleSubmit}>
-            <div className="mb-[22px]">
+          {/* Form */}
+          <form className="space-y-6">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-[#111827]">
+                Email address
+              </label>
               <input
-                required
                 type="email"
-                placeholder="Email"
-                onChange={(e) =>
-                  setLoginData({ ...loginData, email: e.target.value })
-                }
-                className="w-full rounded-md border placeholder:text-gray-400  border-border dark:border-dark_border border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary"
-              />
-            </div>
-            <div className="mb-[22px]">
-              <input
                 required
-                type="password"
-                placeholder="Password"
-                onChange={(e) =>
-                  setLoginData({ ...loginData, password: e.target.value })
-                }
-                className="w-full rounded-md border border-border dark:border-dark_border border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary"
+                placeholder="you@business.com"
+                className="mt-2 w-full rounded-lg border border-[#E5E7EB] px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
               />
             </div>
-            <div className="mb-9">
-              <button
-                type="submit"
-                className="flex w-full cursor-pointer items-center justify-center rounded-md border border-primary bg-primary hover:bg-primary/80 dark:hover:!bg-darkprimary px-5 py-3 text-base text-white transition duration-300 ease-in-out "
-              >
-                Sign In
-              </button>
 
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-[#111827]">
+                Password
+              </label>
+              <div className="relative mt-2">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  className="w-full rounded-lg border border-[#E5E7EB] px-4 py-3 pr-12 text-sm outline-none focus:border-[#0F766E]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-3 flex items-center text-[#6B7280]"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
+
+            {/* Forgot password */}
+            <div className="flex justify-end">
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-[#0F766E] hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-[#0F766E] py-3 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
+            >
+              Log in
+            </button>
           </form>
 
-          <Link
-            href="/forgot-password"
-            className="mb-2 inline-block text-base text-dark hover:text-primary dark:text-white dark:hover:text-primary"
-          >
-            Forget Password?
-          </Link>
-          <p className="text-body-secondary text-base">
-            Not a member yet?{" "}
-            <Link href="/signup" className="text-body-secondary hover:text-primary">
-              Sign Up
+          {/* Signup link */}
+          <p className="text-center text-sm text-[#6B7280]">
+            Don’t have an account?{" "}
+            <Link
+              href="/auth/signup"
+              className="font-medium text-[#0F766E] hover:underline"
+            >
+              Create one
             </Link>
           </p>
         </div>
       </div>
+
+      {/* RIGHT — IMAGE */}
+      <div className="relative hidden lg:block">
+        <div className="absolute inset-0 flex items-center justify-center p-16">
+          <Image
+            src="/images/hero/auth.webp"
+            alt="Chef working in a kitchen"
+            width={320}
+            height={320}
+            priority
+          />
+        </div>
+      </div>
     </div>
   );
-};
-
-export default Signin;
+}

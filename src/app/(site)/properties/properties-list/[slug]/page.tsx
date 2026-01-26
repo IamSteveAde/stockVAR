@@ -2,11 +2,11 @@ import React from 'react';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import Image from 'next/image';
-import CompanyInfo from '@/app/components/home/info';
+import CompanyInfo from '@/app/components/home/who';
 import Availability from '@/app/components/property-details/availability';
 import Tabbar from '@/app/components/property-details/tabbar';
 import TextSection from '@/app/components/property-details/text-section';
-import DiscoverProperties from '@/app/components/home/property-option';
+import DiscoverProperties from '@/app/components/home/how-it-works';
 import { getImgPath } from '@/utils/pathUtils';
 
 type Props = {

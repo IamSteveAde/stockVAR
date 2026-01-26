@@ -2,13 +2,13 @@ import { Metadata } from "next";
 
 // Home sections
 import Hero from "./components/home/hero";
-import About from "./components/home/about";
-import DiscoverProperties from "./components/home/property-option";
-import Listing from "./components/home/property-list";
-import Testimonials from "./components/home/testimonial";
-import Info from "./components/home/info";
-import Calculator from "./components/home/calculator";
-import History from "./components/home/history";
+import About from "./components/home/problem";
+import DiscoverProperties from "./components/home/how-it-works";
+import Listing from "./components/home/what-you-get";
+import Testimonials from "./components/home/pricing";
+import Info from "./components/home/who";
+import Calculator from "./components/home/faq";
+import History from "./components/home/cta";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://stockvar.com"),

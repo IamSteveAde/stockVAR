@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 
-export default function Signup() {
+export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -13,12 +13,12 @@ export default function Signup() {
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* LEFT — FORM */}
       <div className="flex items-center justify-center px-6 py-12 bg-[#F9FAFB]">
-        <div className="w-full max-w-md space-y-2">
+        <div className="w-full max-w-md space-y-8">
           {/* Logo */}
           <Image
             src="/images/hero/svicon.png"
             alt="StockVAR"
-            width={30}
+            width={40}
             height={16}
             priority
           />
@@ -26,32 +26,19 @@ export default function Signup() {
           {/* Header */}
           <div>
             <h1 className="text-3xl font-semibold text-[#111827]">
-              Create your account
+              Set a new password
             </h1>
             <p className="mt-2 text-sm text-[#6B7280]">
-              Start tracking stock and detecting variance with clarity.
+              Choose a strong password to secure your account.
             </p>
           </div>
 
           {/* Form */}
           <form className="space-y-6">
-            {/* Email */}
+            {/* New Password */}
             <div>
               <label className="block text-sm font-medium text-[#111827]">
-                Email address
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="you@business.com"
-                className="mt-2 w-full rounded-lg border border-[#E5E7EB] px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-[#111827]">
-                Password
+                New password
               </label>
               <div className="relative mt-2">
                 <input
@@ -72,7 +59,7 @@ export default function Signup() {
             {/* Confirm Password */}
             <div>
               <label className="block text-sm font-medium text-[#111827]">
-                Confirm password
+                Confirm new password
               </label>
               <div className="relative mt-2">
                 <input
@@ -90,25 +77,23 @@ export default function Signup() {
               </div>
             </div>
 
-            
-
             {/* Submit */}
             <button
               type="submit"
               className="w-full rounded-lg bg-[#0F766E] py-3 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
             >
-              Create account
+              Update password
             </button>
           </form>
 
-          {/* Login link */}
+          {/* Back to login */}
           <p className="text-center text-sm text-[#6B7280]">
-            Already have an account?{" "}
+            Back to{" "}
             <Link
               href="/auth/login"
               className="font-medium text-[#0F766E] hover:underline"
             >
-              Log in
+              login
             </Link>
           </p>
         </div>
@@ -119,7 +104,7 @@ export default function Signup() {
         <div className="absolute inset-0 flex items-center justify-center p-16">
           <Image
             src="/images/hero/auth.webp"
-            alt="Restaurant chef illustration"
+            alt="Chef illustration"
             width={320}
             height={320}
             priority

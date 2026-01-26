@@ -86,7 +86,7 @@ export default function Header() {
               </Link>
 
               <Link
-                href="/start"
+                href="/auth/signup"
                 className="rounded-lg bg-[#0F766E] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
               >
                 Get started

@@ -30,7 +30,7 @@ export default function Hero() {
 
             <div className="flex flex-wrap items-center gap-4 pt-4">
               <Link
-                href="/start"
+                href="/auth/signup"
                 className="inline-flex items-center justify-center rounded-lg bg-[#0F766E] px-8 py-4 text-sm font-medium text-white transition hover:bg-[#115E59]"
               >
                 Get Started
@@ -49,7 +49,7 @@ export default function Hero() {
           <div className="relative">
             <div className="rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
               <Image
-                src="/images/hero/stock.png"
+                src="/images/hero/stock.webp"
                 alt="StockVAR dashboard preview"
                 width={1200}
                 height={800}

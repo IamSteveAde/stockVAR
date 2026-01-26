@@ -91,7 +91,7 @@ export default function Footer() {
 
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
-                href="/start"
+                href="/auth/signup"
                 className="inline-flex items-center justify-center rounded-lg bg-[#0F766E] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
               >
                 Get started

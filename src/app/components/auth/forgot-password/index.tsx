@@ -1,95 +1,83 @@
 "use client";
-import { useState } from "react";
-import Loader from "../../shared/Loader";
-import Logo from "../../layout/header/logo";
 
-const ForgotPassword = () => {
-    const [email, setEmail] = useState("");
-    const [emailError, setEmailError] = useState("");
-    const [loader, setLoader] = useState(false);
-    const [isEmailSent, setIsEmailSent] = useState(false);
+import Link from "next/link";
+import Image from "next/image";
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export default function ForgotPassword() {
+  return (
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* LEFT — FORM */}
+      <div className="flex items-center justify-center px-6 py-12 bg-[#F9FAFB]">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo */}
+          <Image
+            src="/images/hero/svicon.png"
+            alt="StockVAR"
+            width={40}
+            height={16}
+            priority
+          />
 
-    // Function to validate email
-    const validateEmail = (value: string) => {
-        if (!value) {
-            setEmailError("Email is required.");
-            return false;
-        }
-        if (!emailRegex.test(value)) {
-            setEmailError("Invalid email format.");
-            return false;
-        }
-        const domain = value.split("@")[1];
-        setEmailError("");
-        return true;
-    };
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-semibold text-[#111827]">
+              Reset your password
+            </h1>
+            <p className="mt-2 text-sm text-[#6B7280]">
+              Enter your email address and we’ll send you a link to reset your
+              password.
+            </p>
+          </div>
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!validateEmail(email)) return;
-
-        setLoader(true);
-        setTimeout(() => {
-            setLoader(false);
-            setIsEmailSent(true);
-        }, 2000);
-    };
-
-    return (
-        <div className="flex flex-wrap">
-            <div className="w-full">
-                <div className="">
-                    <div className='mb-10 text-center mx-auto inline-block'>
-                        <Logo />
-                    </div>
-
-                    {isEmailSent ? (
-                        <div className="flex flex-col items-center gap-5">
-                            <div className="flex flex-col gap-2">
-                                <h2 className="text-dark dark:text-white text-center text-3xl font-semibold mb-1">
-                                    Forgot Your Password?
-                                </h2>
-                                <p className="text-base text-muted dark:text-white/60 text-center">
-                                    Please check your inbox for the new password.
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSubmit}>
-                            <div className="mb-5 text-left">
-                                <input
-                                    type="email"
-                                    placeholder="Email"
-                                    name="email"
-                                    value={email}
-                                    onChange={(e) => {
-                                        setEmail(e.target.value);
-                                        validateEmail(e.target.value);
-                                    }}
-                                    required
-                                    className="w-full rounded-md border border-border dark:border-dark_border border-solid bg-transparent px-5 py-3 text-base text-dark outline-hidden transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary"
-                                />
-                                {emailError && (
-                                    <p className="text-red-500 text-sm mt-1">{emailError}</p>
-                                )}
-                            </div>
-                            <div>
-                                <button
-                                    type="submit"
-                                    className="flex w-full cursor-pointer items-center justify-center rounded-md border border-primary bg-primary hover:bg-primary/75 dark:hover:bg-darkprimary! px-5 py-3 text-base text-white font-medium transition duration-300 ease-in-out"
-                                    disabled={loader}
-                                >
-                                    {loader ? <Loader /> : "Send Email"}
-                                </button>
-                            </div>
-                        </form>
-                    )}
-                </div>
+          {/* Form */}
+          <form className="space-y-6">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-[#111827]">
+                Email address
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="you@business.com"
+                className="mt-2 w-full rounded-lg border border-[#E5E7EB] px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
+              />
             </div>
-        </div>
-    );
-};
 
-export default ForgotPassword;
+            {/* Submit */}
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-[#0F766E] py-3 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
+            >
+              Send reset link
+            </button>
+          </form>
+
+          {/* Back to login */}
+          <p className="text-center text-sm text-[#6B7280]">
+            Remember your password?{" "}
+            <Link
+              href="/auth/login"
+              className="font-medium text-[#0F766E] hover:underline"
+            >
+              Back to login
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      {/* RIGHT — IMAGE */}
+      <div className="relative hidden lg:block ">
+        <div className="absolute inset-0 flex items-center justify-center p-16">
+          <Image
+            src="/images/hero/auth.webp"
+            alt="Chef working in a kitchen"
+            width={320}
+            height={320}
+            priority
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
