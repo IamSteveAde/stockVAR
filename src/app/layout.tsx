@@ -12,8 +12,8 @@ import Header from "./components/layout/header";
 import Footer from "./components/layout/footer";
 import ScrollToTop from "./components/scroll-to-top";
 import Aoscompo from "@/utils/aos";
-import ChatWidget from "./components/ChatbotEmbed";
-import PartnersMarquee from "./components/PartnersMarquee";
+
+
 
 /* -------------------------------------
    FONT
@@ -53,14 +53,14 @@ export default function RootLayout({
               <Header />
               <NextTopLoader />
               {children}
-              <PartnersMarquee />
+              
               <Footer />
             </Aoscompo>
 
             
 
             {/* Global Chat Widget */}
-            <ChatWidget />
+            
           </ThemeProvider>
         </AppContextProvider>
       </body>

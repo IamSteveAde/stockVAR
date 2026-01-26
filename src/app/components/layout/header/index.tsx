@@ -9,9 +9,7 @@ export default function Header() {
   const [onDark, setOnDark] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  /* --------------------------------------------------
-     Detect dark sections
-  -------------------------------------------------- */
+  /* Detect dark sections */
   useEffect(() => {
     const sections =
       document.querySelectorAll<HTMLElement>("section[data-dark]");
@@ -31,9 +29,7 @@ export default function Header() {
     return () => observer.disconnect();
   }, []);
 
-  /* --------------------------------------------------
-     Lock scroll on mobile menu
-  -------------------------------------------------- */
+  /* Lock scroll on mobile menu */
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
   }, [menuOpen]);
@@ -45,9 +41,8 @@ export default function Header() {
         className={`
           fixed top-0 left-0 w-full z-50
           backdrop-blur-xl
-          bg-white/80
           transition-colors duration-300
-          ${onDark ? "text-white" : "text-black"}
+          ${onDark ? "bg-transparent text-white" : "bg-white/80 text-[#111827]"}
         `}
       >
         <div className="container mx-auto px-6 lg:max-w-screen-xl">
@@ -55,11 +50,11 @@ export default function Header() {
             {/* LOGO */}
             <Link href="/" className="z-50 flex items-center">
               <Image
-                src="/images/logo/dlogo.svg"
-                alt="Digital Inclusion Initiative"
+                src="/images/logo/stockvars.svg"
+                alt="StockVAR"
                 width={120}
                 height={32}
-                className={`transition-opacity ${
+                className={`transition ${
                   onDark ? "invert brightness-200" : ""
                 }`}
                 priority
@@ -68,31 +63,41 @@ export default function Header() {
 
             {/* DESKTOP NAV */}
             <nav className="hidden md:flex items-center gap-10">
-              <NavItem onDark={onDark} href="/">Home</NavItem>
-              <NavItem onDark={onDark} href="/about">About</NavItem>
-              <NavItem onDark={onDark} href="/services">Our Services</NavItem>
-              <NavItem onDark={onDark} href="/donate">Donate</NavItem>
-              <NavItem onDark={onDark} href="/partner">Partner</NavItem>
-              <NavItem onDark={onDark} href="/blog">Blog and Case Studies</NavItem>
-              <NavItem onDark={onDark} href="/coursera">Coursera Onboarding</NavItem>
-              
+              <NavItem onDark={onDark} href="#how-it-works">How it works</NavItem>
+              <NavItem onDark={onDark} href="#benefits">What you get</NavItem>
+              <NavItem onDark={onDark} href="#pricing">Pricing</NavItem>
+              <NavItem onDark={onDark} href="#faq">FAQ</NavItem>
             </nav>
 
-            {/* MOBILE TOGGLE BUTTON */}
+            {/* DESKTOP CTA */}
+            <div className="hidden md:flex items-center gap-3">
+              <Link
+                href="/demo"
+                className={`
+                  rounded-lg px-5 py-2.5 text-sm font-medium
+                  transition
+                  ${onDark
+                    ? "border border-white/30 text-white hover:bg-white/10"
+                    : "border border-[#E5E7EB] text-[#111827] hover:bg-[#F3F4F6]"
+                  }
+                `}
+              >
+                Request demo
+              </Link>
+
+              <Link
+                href="/start"
+                className="rounded-lg bg-[#0F766E] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
+              >
+                Get started
+              </Link>
+            </div>
+
+            {/* MOBILE TOGGLE */}
             <button
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               onClick={() => setMenuOpen((prev) => !prev)}
-              className="
-                md:hidden z-50
-                h-11 w-11
-                rounded-full
-                flex items-center justify-center
-                backdrop-blur-xl
-                bg-white/20
-                border border-white/30
-                shadow-[0_8px_30px_rgba(0,0,0,0.18)]
-                transition hover:bg-white/30
-              "
+              className="md:hidden z-50 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-xl bg-white/20 border border-white/30"
             >
               {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -102,49 +107,41 @@ export default function Header() {
 
       {/* ================= MOBILE MENU ================= */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 bg-black/90 backdrop-blur-2xl">
-          <nav className="h-full flex flex-col items-center justify-center">
-            <MobileNavItem delay={0} href="/" onClick={() => setMenuOpen(false)}>
-              Home
+        <div className="fixed inset-0 z-40 bg-[#111827]/95 backdrop-blur-2xl">
+          <nav className="h-full flex flex-col items-center justify-center gap-6">
+            <MobileNavItem href="#how-it-works" onClick={() => setMenuOpen(false)}>
+              How it works
             </MobileNavItem>
 
-             <Divider />
-
-            <MobileNavItem delay={0} href="/about" onClick={() => setMenuOpen(false)}>
-              About Us
+            <MobileNavItem href="#benefits" onClick={() => setMenuOpen(false)}>
+              What you get
             </MobileNavItem>
 
-             <Divider />
-
-            <MobileNavItem delay={4} href="/services" onClick={() => setMenuOpen(false)}>
-              OUR SERVICES
+            <MobileNavItem href="#pricing" onClick={() => setMenuOpen(false)}>
+              Pricing
             </MobileNavItem>
 
-            <Divider />
-
-            <MobileNavItem delay={1} href="/donate" onClick={() => setMenuOpen(false)}>
-              Donate
+            <MobileNavItem href="#faq" onClick={() => setMenuOpen(false)}>
+              FAQ
             </MobileNavItem>
 
-            <Divider />
+            <div className="mt-8 flex flex-col gap-4 w-64">
+              <Link
+                href="/start"
+                onClick={() => setMenuOpen(false)}
+                className="w-full rounded-lg bg-[#0F766E] py-3 text-center text-sm font-medium text-white"
+              >
+                Get started
+              </Link>
 
-            <MobileNavItem delay={2} href="/partner" onClick={() => setMenuOpen(false)}>
-              PARTNER
-            </MobileNavItem>
-
-            <Divider />
-
-            <MobileNavItem delay={3} href="/blog" onClick={() => setMenuOpen(false)}>
-              BLOGS & CASE STUDIES
-            </MobileNavItem>
-
-            <MobileNavItem delay={3} href="/coursera" onClick={() => setMenuOpen(false)}>
-              Coursera Onboarding
-            </MobileNavItem>
-
-           
-
-            
+              <Link
+                href="/demo"
+                onClick={() => setMenuOpen(false)}
+                className="w-full rounded-lg border border-white/30 py-3 text-center text-sm font-medium text-white"
+              >
+                Request demo
+              </Link>
+            </div>
           </nav>
         </div>
       )}
@@ -152,9 +149,7 @@ export default function Header() {
   );
 }
 
-/* ======================================================
-   DESKTOP NAV ITEM
-====================================================== */
+/* ================= NAV ITEM ================= */
 function NavItem({
   href,
   children,
@@ -164,53 +159,37 @@ function NavItem({
   children: React.ReactNode;
   onDark: boolean;
 }) {
-  const className = `
-    text-[11px] tracking-[0.3em] uppercase
-    transition-colors duration-300
-    ${onDark ? "text-white/90 hover:text-white" : "text-black/85 hover:text-black"}
-  `;
-
-  return <Link href={href} className={className}>{children}</Link>;
-}
-
-/* ======================================================
-   MOBILE NAV ITEM
-====================================================== */
-function MobileNavItem({
-  href,
-  children,
-  onClick,
-  delay = 0,
-}: {
-  href: string;
-  children: React.ReactNode;
-  onClick: () => void;
-  delay?: number;
-}) {
   return (
     <Link
       href={href}
-      onClick={onClick}
-      style={{ animationDelay: `${delay * 90}ms` }}
-      className="
-        text-white/90
-        text-sm
-        tracking-[0.35em]
-        uppercase
-        py-4
-        transition hover:opacity-70
-      "
+      className={`
+        text-[11px] tracking-[0.3em] uppercase
+        transition-colors
+        ${onDark ? "text-white/90 hover:text-white" : "text-[#111827]/80 hover:text-[#111827]"}
+      `}
     >
       {children}
     </Link>
   );
 }
 
-/* ======================================================
-   DIVIDER
-====================================================== */
-function Divider() {
+/* ================= MOBILE ITEM ================= */
+function MobileNavItem({
+  href,
+  children,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
   return (
-    <div className="w-32 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+    <Link
+      href={href}
+      onClick={onClick}
+      className="text-white/90 text-sm tracking-[0.35em] uppercase transition hover:opacity-70"
+    >
+      {children}
+    </Link>
   );
 }

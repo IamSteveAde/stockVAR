@@ -1,98 +1,101 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowRight, Handshake } from "lucide-react";
+import {
+  ShieldCheck,
+  BarChart2,
+  Clock,
+  TrendingUp,
+} from "lucide-react";
 
-export default function PartnerSection() {
+const benefits = [
+  {
+    icon: BarChart2,
+    title: "Clear stock accountability",
+    description:
+      "Understand exactly how stock items move each day, backed by proper records and structure.",
+  },
+  {
+    icon: Clock,
+    title: "See problems early",
+    description:
+      "Identify unusual stock loss before it becomes a habit or a major financial issue.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Fewer arguments, more facts",
+    description:
+      "Replace assumptions and tension with clear data everyone can agree on.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Better control of food cost",
+    description:
+      "Reduce waste, improve planning, and protect your profit margins over time.",
+  },
+];
+
+export default function BenefitsSection() {
   return (
-    <section className="relative bg-white overflow-hidden">
-      {/* Subtle Particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-32 h-2 w-2 rounded-full bg-[#5f3b86]/20 animate-float-slow" />
-        <div className="absolute top-1/3 right-40 h-3 w-3 rounded-full bg-[#61abbb]/20 animate-float-medium" />
-        <div className="absolute bottom-32 left-1/4 h-2 w-2 rounded-full bg-[#5f3b86]/15 animate-float-fast" />
-        <div className="absolute bottom-20 right-1/3 h-4 w-4 rounded-full bg-[#bcc8d7]/30 animate-float-slow" />
-        <div className="absolute top-1/2 left-1/2 h-2 w-2 rounded-full bg-black/10 animate-float-medium" />
-      </div>
+    <section className="relative overflow-hidden py-32" id="benefits">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0F766E] via-[#064E3B] to-[#111827]" />
 
-      {/* Content */}
-      <div className="relative z-10 py-6">
-        <div className="container mx-auto px-6 lg:max-w-screen-xl">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-3xl"
-          >
-            {/* Eyebrow */}
-            <div className="flex items-center gap-3 text-black/60 mb-6">
-              <Handshake size={18} />
-              <span className="section-eyebrow">
-                Collaboration
-              </span>
-            </div>
+      {/* Ambient glow */}
+      <div className="absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[#0F766E]/30 blur-3xl" />
+      <div className="absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-[#022C22]/40 blur-3xl" />
 
-            {/* Headline */}
-            <h2 className="text-4xl md:text-5xl font-light leading-tight text-black">
-              Partner with Digital Inclusion Initiative
-            </h2>
+      <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+        {/* Section header */}
+        <div className="mb-20 max-w-2xl">
+          <span className="inline-block rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-widest text-white/70">
+            What you get
+          </span>
 
-            {/* Body */}
-            <p className="mt-6 text-black/60 max-w-2xl leading-relaxed text-lg">
-              We’re always looking for new partners to collaborate on projects
-              and events. If your organisation shares our values and mission,
-              let’s work together to create meaningful and lasting impact
-              through digital inclusion.
-            </p>
+          <h2 className="mt-6 text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight text-white">
+            Control your stock.
+            <br />
+            <span className="text-white/70">
+              Protect your margins.
+            </span>
+          </h2>
 
-            {/* CTA */}
-            <div className="mt-10">
-              <a
-                href="/partner"
-                className="inline-flex items-center gap-4 px-10 py-5 rounded-2xl text-xs tracking-[0.3em] uppercase font-medium transition-all group"
-                style={{
-                  backgroundColor: "#5f3b86",
-                  color: "#ffffff",
-                }}
+          <p className="mt-6 text-lg leading-relaxed text-white/80">
+            StockVAR gives you clarity, discipline, and confidence in how your
+            stock is managed — without disrupting daily operations.
+          </p>
+        </div>
+
+        {/* Benefits grid */}
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+          {benefits.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={index}
+                className="group relative rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition hover:bg-white/10"
               >
-                Partner With Us
-                <ArrowRight
-                  size={16}
-                  className="transition-transform group-hover:translate-x-1"
-                />
-              </a>
-            </div>
-          </motion.div>
+                {/* Icon */}
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0F766E]/40 to-[#022C22]/40 text-white shadow-lg">
+                  <Icon size={24} />
+                </div>
+
+                <h3 className="mb-3 text-lg font-semibold text-white">
+                  {item.title}
+                </h3>
+
+                <p className="text-sm leading-relaxed text-white/80">
+                  {item.description}
+                </p>
+
+                {/* Subtle hover overlay */}
+                <div className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition group-hover:opacity-100">
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/5 to-transparent" />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-
-      {/* GLOBAL PARTICLE ANIMATIONS */}
-      <style jsx global>{`
-        @keyframes float {
-          0% {
-            transform: translateY(0) translateX(0);
-          }
-          50% {
-            transform: translateY(-20px) translateX(10px);
-          }
-          100% {
-            transform: translateY(0) translateX(0);
-          }
-        }
-
-        .animate-float-slow {
-          animation: float 14s ease-in-out infinite;
-        }
-
-        .animate-float-medium {
-          animation: float 10s ease-in-out infinite;
-        }
-
-        .animate-float-fast {
-          animation: float 7s ease-in-out infinite;
-        }
-      `}</style>
     </section>
   );
 }

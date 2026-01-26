@@ -1,116 +1,81 @@
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  HeartHandshake,
-  Users,
-  CalendarDays,
-  ArrowRight,
-} from "lucide-react";
+import { ClipboardList, TrendingDown, AlertTriangle } from "lucide-react";
 
-const actions = [
+const problems = [
   {
-    title: "Donate Today",
-    headline: "Support Digital Inclusion Initiative",
+    icon: ClipboardList,
+    title: "No structured stock records",
     description:
-      "Your donation today could help transform someone’s life through digital access, skills, and opportunity. Together, we can fix the digital divide, for good.",
-    cta: "Donate Now",
-    href: "/donate",
-    icon: HeartHandshake,
-    accent: "#61abbb",
+      "Stock items leave storage daily without consistent records explaining how or why they were used.",
   },
   {
-    title: "Volunteer",
-    headline: "Volunteer with Digital Inclusion Initiative",
+    icon: TrendingDown,
+    title: "Stock finishes faster than expected",
     description:
-      "Join our team of volunteers and make a difference in your community. Whether it’s a few hours a week or a few hours a month, your time and skills matter.",
-    cta: "Become a Volunteer",
-    href: "/volunteer",
-    icon: Users,
-    accent: "#5f3b86",
+      "Rice, oil, and other stock items run out early, increasing food cost and disrupting planning.",
   },
   {
-    title: "Events",
-    headline: "Attend Our Events",
+    icon: AlertTriangle,
+    title: "Decisions based on assumptions",
     description:
-      "We host fundraisers, community outreach programs, and educational seminars throughout the year. Stay engaged and be part of the movement.",
-    cta: "View Events",
-    href: "/events",
-    icon: CalendarDays,
-    accent: "#bcc8d7",
+      "Without clear data, owners rely on guesswork, leading to tension, suspicion, and repeat losses.",
   },
 ];
 
-export default function SupportSection() {
+export default function ProblemSection() {
   return (
-    <section className="relative bg-white py-12">
-      <div className="container mx-auto px-6 lg:max-w-screen-xl">
-        {/* Section Header */}
-        <div className="max-w-3xl mb-20">
-          <span className="section-eyebrow">
-            Get Involved
+    <section className="relative overflow-hidden py-28">
+      {/* Base gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0F766E] via-[#0B3F3A] to-[#111827]" />
+
+      {/* Soft glow accents */}
+      <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-[#0F766E]/30 blur-3xl" />
+      <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-[#022C22]/40 blur-3xl" />
+
+      <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
+        {/* Section header */}
+        <div className="mb-20 max-w-2xl">
+          <span className="inline-block rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-widest text-white/70">
+            The Problem
           </span>
-          <h2 className="text-4xl md:text-5xl font-light leading-tight text-black">
-            Support Digital Inclusion Initiative Today
+
+          <h2 className="mt-6 text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight text-white">
+            Stock loss rarely starts with theft.
+            <br />
+            <span className="text-white/70">
+              It starts with unclear records.
+            </span>
           </h2>
-          <p className="mt-6 text-black/60 max-w-xl leading-relaxed">
-            Do a good thing today. Your support helps expand access, build skills,
-            and unlock opportunities through digital inclusion.
-          </p>
         </div>
 
-        {/* Action Cards */}
-        <div className="grid gap-10 md:grid-cols-3">
-          {actions.map((item, index) => {
+        {/* Cards */}
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          {problems.map((item, index) => {
             const Icon = item.icon;
-
             return (
-              <motion.div
+              <div
                 key={index}
-                whileHover={{ y: -6 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="relative rounded-3xl p-10 border border-black/5 bg-white shadow-[0_30px_80px_rgba(0,0,0,0.06)] overflow-hidden"
+                className="group relative rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition hover:bg-white/10"
               >
-                {/* Accent Glow */}
-                <div
-                  className="absolute -top-24 -right-24 h-64 w-64 rounded-full blur-3xl opacity-30"
-                  style={{ backgroundColor: item.accent }}
-                />
-
-                {/* Icon */}
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl mb-8"
-                  style={{ backgroundColor: `${item.accent}22` }}
-                >
-                  <Icon size={22} style={{ color: item.accent }} />
+                {/* Icon container */}
+                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0F766E]/40 to-[#022C22]/40 text-white shadow-lg">
+                  <Icon size={26} />
                 </div>
 
-                {/* Text */}
-                <span className="block text-[11px] tracking-[0.35em] uppercase text-black/40 mb-3">
+                <h3 className="mb-3 text-xl font-semibold text-white">
                   {item.title}
-                </span>
-
-                <h3 className="text-xl font-medium text-black mb-4 leading-snug">
-                  {item.headline}
                 </h3>
 
-                <p className="text-black/60 leading-relaxed mb-8">
+                <p className="text-sm leading-relaxed text-white/80">
                   {item.description}
                 </p>
 
-                {/* CTA */}
-                <a
-                  href={item.href}
-                  className="inline-flex items-center gap-3 text-xs tracking-[0.25em] uppercase font-medium transition-all group"
-                  style={{ color: item.accent }}
-                >
-                  {item.cta}
-                  <ArrowRight
-                    size={16}
-                    className="transition-transform group-hover:translate-x-1"
-                  />
-                </a>
-              </motion.div>
+                {/* Hover glow */}
+                <div className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition group-hover:opacity-100">
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/5 to-transparent" />
+                </div>
+              </div>
             );
           })}
         </div>
