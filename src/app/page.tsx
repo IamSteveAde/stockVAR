@@ -9,6 +9,8 @@ import Testimonials from "./components/home/pricing";
 import Info from "./components/home/who";
 import Calculator from "./components/home/faq";
 import History from "./components/home/cta";
+import Header from "./components/layout/header";
+import Footer from "./components/layout/footer";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://stockvar.com"),
@@ -73,6 +75,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main>
+      <Header />
       <Hero />
       <About />
       <DiscoverProperties />
@@ -81,6 +84,7 @@ export default function Home() {
       <Testimonials />
       <Calculator />
       <History />
+      <Footer />
     </main>
   );
 }
