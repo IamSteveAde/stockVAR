@@ -49,7 +49,9 @@ export default function CreateBusinessWizard() {
       {step === 1 && (
         <BusinessNameStep
           value={form.businessName}
-          onChange={(v) => updateForm("businessName", v)}
+          onChange={(v: string) => updateForm("businessName", v)}
+
+
           onNext={next}
           onPrev={prev}
         />
@@ -57,7 +59,7 @@ export default function CreateBusinessWizard() {
       {step === 2 && (
         <BusinessTypeStep
           value={form.businessType}
-          onChange={(v) => updateForm("businessType", v)}
+          onChange={(v: string) => updateForm("businessType", v)}
           onNext={next}
           onPrev={prev}
         />
@@ -65,7 +67,7 @@ export default function CreateBusinessWizard() {
       {step === 3 && (
         <LocationStep
           value={form.city}
-          onChange={(v) => updateForm("city", v)}
+          onChange={(v: string) => updateForm("city", v)}
           onNext={next}
           onPrev={prev}
         />
@@ -73,7 +75,7 @@ export default function CreateBusinessWizard() {
       {step === 4 && (
         <RoleStep
           value={form.role}
-          onChange={(v) => updateForm("role", v)}
+          onChange={(v: string) => updateForm("role", v)}
           onNext={next}
           onPrev={prev}
         />
@@ -81,7 +83,7 @@ export default function CreateBusinessWizard() {
       {step === 5 && (
         <StaffSizeStep
           value={form.staffSize}
-          onChange={(v) => updateForm("staffSize", v)}
+          onChange={(v: string) => updateForm("staffSize", v)}
           onNext={next}
           onPrev={prev}
         />
