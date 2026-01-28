@@ -18,7 +18,7 @@ type Staff = {
 
 const PAGE_SIZE = 8;
 
-// ✅ Explicitly typed mock generator
+// Mock staff
 const generateStaff = (): Staff[] =>
   Array.from({ length: 42 }).map((_, i): Staff => ({
     id: `${i + 1}`,
@@ -45,32 +45,58 @@ export default function StaffTable() {
   const startIndex = (page - 1) * PAGE_SIZE;
   const endIndex = startIndex + PAGE_SIZE;
   const currentStaff = staff.slice(startIndex, endIndex);
-  
 
   return (
     <div className="bg-white rounded-xl shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b flex items-center justify-between">
-  <div>
-    <h3 className="text-lg font-semibold">Staff</h3>
-    <p className="text-sm text-gray-500">
-      Showing {startIndex + 1}–{Math.min(endIndex, totalStaff)} of{" "}
-      {totalStaff} staff
-    </p>
-  </div>
+      <div className="px-4 md:px-6 py-4 border-b flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Staff</h3>
+          <p className="text-sm text-gray-500">
+            Showing {startIndex + 1}–{Math.min(endIndex, totalStaff)} of{" "}
+            {totalStaff}
+          </p>
+        </div>
 
-  {/* Add Staff CTA */}
-  <button
+        <button
           onClick={() => setOpen(true)}
-          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0B5F58] transition"
+          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0B5F58]"
         >
           Add staff
         </button>
+      </div>
 
-</div>
+      {/* ================= MOBILE VIEW ================= */}
+      <div className="block md:hidden divide-y">
+        {currentStaff.map((s) => (
+          <div key={s.id} className="p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="font-medium">{s.fullName}</p>
+              <span className="text-xs capitalize bg-gray-100 px-2 py-1 rounded">
+                {s.role}
+              </span>
+            </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+            <p className="text-sm text-gray-600">{s.email}</p>
+            <p className="text-sm text-gray-600">{s.phone}</p>
+
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                s.status === "active"
+                  ? "bg-green-100 text-green-700"
+                  : s.status === "invited"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-gray-200 text-gray-600"
+              }`}
+            >
+              {s.status}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* ================= DESKTOP TABLE ================= */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
@@ -106,12 +132,10 @@ export default function StaffTable() {
             ))}
           </tbody>
         </table>
-        {/* Modal */}
-      {open && <AddStaffModal onClose={() => setOpen(false)} />}
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-6 py-4 border-t">
+      <div className="flex items-center justify-between px-4 md:px-6 py-4 border-t">
         <p className="text-sm text-gray-500">
           Page {page} of {totalPages}
         </p>
@@ -120,7 +144,7 @@ export default function StaffTable() {
           <button
             onClick={() => setPage((p) => Math.max(p - 1, 1))}
             disabled={page === 1}
-            className="h-9 w-9 flex items-center justify-center rounded-lg border disabled:opacity-40 hover:bg-gray-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border disabled:opacity-40"
           >
             <ChevronLeft size={16} />
           </button>
@@ -128,12 +152,15 @@ export default function StaffTable() {
           <button
             onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
             disabled={page === totalPages}
-            className="h-9 w-9 flex items-center justify-center rounded-lg border disabled:opacity-40 hover:bg-gray-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border disabled:opacity-40"
           >
             <ChevronRight size={16} />
           </button>
         </div>
       </div>
+
+      {/* Modal */}
+      {open && <AddStaffModal onClose={() => setOpen(false)} />}
     </div>
   );
 }
