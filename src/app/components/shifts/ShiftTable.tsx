@@ -20,7 +20,7 @@ export default function ShiftTable() {
   const [open, setOpen] = useState(false);
   const [viewStaff, setViewStaff] = useState<Staff[] | null>(null);
 
-  const totalPages = Math.ceil(shifts.length / PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(shifts.length / PAGE_SIZE));
   const current = shifts.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
@@ -29,75 +29,121 @@ export default function ShiftTable() {
   return (
     <div className="bg-white rounded-xl shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b flex justify-between items-center">
+      <div className="px-4 md:px-6 py-4 border-b flex items-center justify-between">
         <h3 className="text-lg font-semibold">Shifts</h3>
         <button
           onClick={() => setOpen(true)}
-          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
+          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0B5F58]"
         >
           Create shift
         </button>
       </div>
 
-      {/* Table */}
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left">
-          <tr>
-            <th className="px-6 py-3">Shift</th>
-            <th className="px-6 py-3">Time</th>
-            <th className="px-6 py-3">Dates</th>
-            <th className="px-6 py-3">Staff</th>
-          </tr>
-        </thead>
+      {/* ================= MOBILE VIEW ================= */}
+      <div className="block md:hidden divide-y">
+        {current.length === 0 && (
+          <p className="p-6 text-sm text-gray-500 text-center">
+            No shifts created yet
+          </p>
+        )}
 
-        <tbody>
-          {current.map((s) => (
-            <tr key={s.id} className="border-t">
-              <td className="px-6 py-4 font-medium">{s.label}</td>
-              <td className="px-6 py-4">
-                {s.startTime} – {s.endTime}
-              </td>
-              <td className="px-6 py-4">
-                {s.startDate}
-                {s.endDate && ` → ${s.endDate}`}
-              </td>
-              <td className="px-6 py-4">
-                <button
-                  onClick={() => setViewStaff(s.staff)}
-                  className="text-[#0F766E] hover:underline"
-                >
-                  {s.staff.length} staff
-                </button>
-              </td>
+        {current.map((s) => (
+          <div key={s.id} className="p-4 space-y-2">
+            <p className="font-medium">{s.label}</p>
+
+            <p className="text-sm text-gray-600">
+              {s.startTime} – {s.endTime}
+            </p>
+
+            <p className="text-xs text-gray-500">
+              {s.startDate}
+              {s.endDate && ` → ${s.endDate}`}
+            </p>
+
+            <button
+              onClick={() => setViewStaff(s.staff)}
+              className="text-sm text-[#0F766E] font-medium"
+            >
+              {s.staff.length} staff assigned
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* ================= DESKTOP TABLE ================= */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left text-gray-500">
+            <tr>
+              <th className="px-6 py-3">Shift</th>
+              <th className="px-6 py-3">Time</th>
+              <th className="px-6 py-3">Dates</th>
+              <th className="px-6 py-3">Staff</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {current.length === 0 && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-6 py-8 text-center text-gray-400"
+                >
+                  No shifts created yet
+                </td>
+              </tr>
+            )}
+
+            {current.map((s) => (
+              <tr key={s.id} className="border-t">
+                <td className="px-6 py-4 font-medium">{s.label}</td>
+                <td className="px-6 py-4">
+                  {s.startTime} – {s.endTime}
+                </td>
+                <td className="px-6 py-4">
+                  {s.startDate}
+                  {s.endDate && ` → ${s.endDate}`}
+                </td>
+                <td className="px-6 py-4">
+                  <button
+                    onClick={() => setViewStaff(s.staff)}
+                    className="text-[#0F766E] hover:underline"
+                  >
+                    {s.staff.length} staff
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination */}
-      <div className="px-6 py-4 border-t flex justify-between items-center">
+      <div className="px-4 md:px-6 py-4 border-t flex items-center justify-between">
         <span className="text-sm text-gray-500">
-          Page {page} of {totalPages || 1}
+          Page {page} of {totalPages}
         </span>
+
         <div className="flex gap-2">
           <button
             disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="border rounded-lg h-9 w-9 flex items-center justify-center"
+            onClick={() => setPage((p) => Math.max(p - 1, 1))}
+            className="h-9 w-9 rounded-lg border flex items-center justify-center disabled:opacity-40"
           >
             <ChevronLeft size={16} />
           </button>
+
           <button
             disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="border rounded-lg h-9 w-9 flex items-center justify-center"
+            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+            className="h-9 w-9 rounded-lg border flex items-center justify-center disabled:opacity-40"
           >
             <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Create Shift Modal */}
       <CreateShiftModal
         open={open}
         onClose={() => setOpen(false)}
@@ -105,18 +151,23 @@ export default function ShiftTable() {
         onCreate={(shift) => setShifts((s) => [shift, ...s])}
       />
 
+      {/* Staff Viewer */}
       {viewStaff && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 w-80 space-y-3">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm space-y-3">
             <h4 className="font-semibold">Assigned staff</h4>
-            {viewStaff.map((s) => (
-              <p key={s.id} className="text-sm">
-                {s.fullName}
-              </p>
-            ))}
+
+            <div className="max-h-60 overflow-y-auto space-y-1">
+              {viewStaff.map((s) => (
+                <p key={s.id} className="text-sm">
+                  {s.fullName}
+                </p>
+              ))}
+            </div>
+
             <button
               onClick={() => setViewStaff(null)}
-              className="w-full mt-4 border rounded-lg py-2"
+              className="w-full mt-4 border rounded-lg py-2 text-sm"
             >
               Close
             </button>
