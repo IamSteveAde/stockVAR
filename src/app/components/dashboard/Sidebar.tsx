@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   PlusCircle,
@@ -24,6 +25,7 @@ type SidebarProps = {
 
 export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
   const [openSettings, setOpenSettings] = useState(false);
+  const pathname = usePathname();
 
   return (
     <>
@@ -55,7 +57,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             priority
           />
 
-          {/* Close button (mobile only) */}
           <button
             onClick={toggleSidebar}
             className="lg:hidden"
@@ -67,11 +68,52 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
 
         {/* Nav */}
         <nav className="flex-1 px-4 space-y-1 text-sm">
-          <NavItem icon={LayoutDashboard} label="Dashboard" />
-          <NavItem icon={PlusCircle} label="New Entry" />
-          <NavItem icon={Package} label="Stock Items" />
-          <NavItem icon={Users} label="Staff" />
-          <NavItem icon={FileText} label="Reports" />
+          <NavItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            href="/dashboard"
+            active={pathname === "/dashboard"}
+            onClick={toggleSidebar}
+          />
+
+          <NavItem
+            icon={Package}
+            label="Stock Items"
+            href="/dashboard/stock"
+            active={pathname.startsWith("/dashboard/stock")}
+            onClick={toggleSidebar}
+          />
+
+          <NavItem
+            icon={PlusCircle}
+            label="New Entry"
+            href="/dashboard/entry"
+            active={pathname === "/dashboard/entry"}
+            onClick={toggleSidebar}
+          />
+
+          <NavItem
+            icon={Users}
+            label="Staff"
+            href="/dashboard/staff"
+            active={pathname === "/dashboard/staff"}
+            onClick={toggleSidebar}
+          />
+          <NavItem
+            icon={Users}
+            label="Shift"
+            href="/dashboard/shift"
+            active={pathname === "/dashboard/shift"}
+            onClick={toggleSidebar}
+          />
+
+          <NavItem
+            icon={FileText}
+            label="Reports"
+            href="/dashboard/reports"
+            active={pathname === "/dashboard/reports"}
+            onClick={toggleSidebar}
+          />
 
           {/* Settings */}
           <button
@@ -84,7 +126,9 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             </div>
             <ChevronDown
               size={16}
-              className={`transition ${openSettings ? "rotate-180" : ""}`}
+              className={`transition ${
+                openSettings ? "rotate-180" : ""
+              }`}
             />
           </button>
 
@@ -125,14 +169,27 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
 function NavItem({
   icon: Icon,
   label,
+  href,
+  active,
+  onClick,
 }: {
   icon: any;
   label: string;
+  href: string;
+  active: boolean;
+  onClick: () => void;
 }) {
   return (
     <Link
-      href="#"
-      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10"
+      href={href}
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition
+        ${
+          active
+            ? "bg-white/15 text-white"
+            : "text-white/80 hover:bg-white/10"
+        }
+      `}
     >
       <Icon size={18} />
       {label}
@@ -151,7 +208,7 @@ function SubItem({
 }) {
   return (
     <button
-      className={`flex items-center gap-2 px-3 py-2 rounded-md w-full text-left ${
+      className={`flex items-center gap-2 px-3 py-2 rounded-md w-full text-left transition ${
         danger
           ? "text-red-300 hover:bg-red-500/10"
           : "hover:bg-white/10"
