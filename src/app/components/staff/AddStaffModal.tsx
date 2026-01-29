@@ -3,34 +3,62 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
-type Props = {
-  onClose: () => void;
+/* ================= TYPES ================= */
+
+type StaffRole = "manager" | "staff";
+
+type NewStaff = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  role: StaffRole;
+  status: "invited";
+  pin: string;
 };
 
-export default function AddStaffModal({ onClose }: Props) {
+type Props = {
+  onClose: () => void;
+  onAddStaff: (staff: NewStaff) => void;
+};
+
+/* ================= HELPERS ================= */
+
+const generatePin = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+/* ================= COMPONENT ================= */
+
+export default function AddStaffModal({
+  onClose,
+  onAddStaff,
+}: Props) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState<"manager" | "staff">("staff");
+  const [role, setRole] = useState<StaffRole>("staff");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     setLoading(true);
 
-    // MOCK submit (backend will replace this)
+    // simulate backend
     setTimeout(() => {
-      console.log({
+      const newStaff: NewStaff = {
+        id: crypto.randomUUID(),
         fullName,
         email,
         phone,
         role,
-      });
+        status: "invited",
+        pin: generatePin(),
+      };
 
+      onAddStaff(newStaff);
       setLoading(false);
       onClose();
-    }, 1200);
+    }, 800);
   };
 
   return (
@@ -45,54 +73,33 @@ export default function AddStaffModal({ onClose }: Props) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
-          {/* Full name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Full name
-            </label>
-            <input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              placeholder="e.g. Mary Okeke"
-              className="mt-2 w-full rounded-lg border px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
-            />
-          </div>
+        <form
+          onSubmit={handleSubmit}
+          className="px-6 py-6 space-y-5"
+        >
+          <Input
+            label="Full name"
+            value={fullName}
+            onChange={setFullName}
+            placeholder="e.g. Mary Okeke"
+          />
 
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="staff@restaurant.com"
-              className="mt-2 w-full rounded-lg border px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Login details & PIN will be sent here
-            </p>
-          </div>
+          <Input
+            label="Email address"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="staff@restaurant.com"
+            helper="Login PIN will be sent here"
+          />
 
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Phone number
-            </label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-              placeholder="0803 123 4567"
-              className="mt-2 w-full rounded-lg border px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
-            />
-          </div>
+          <Input
+            label="Phone number"
+            value={phone}
+            onChange={setPhone}
+            placeholder="0803 123 4567"
+          />
 
-          {/* Role */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Role
@@ -100,7 +107,7 @@ export default function AddStaffModal({ onClose }: Props) {
             <select
               value={role}
               onChange={(e) =>
-                setRole(e.target.value as "manager" | "staff")
+                setRole(e.target.value as StaffRole)
               }
               className="mt-2 w-full rounded-lg border px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
             >
@@ -124,11 +131,41 @@ export default function AddStaffModal({ onClose }: Props) {
               disabled={loading}
               className="px-5 py-2 text-sm rounded-lg bg-[#0F766E] text-white hover:bg-[#0B5F58] disabled:opacity-60"
             >
-              {loading ? "Sending invite..." : "Send invite"}
+              {loading ? "Sending invite…" : "Send invite"}
             </button>
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+/* ================= INPUT ================= */
+
+function Input({
+  label,
+  value,
+  onChange,
+  placeholder,
+  helper,
+  type = "text",
+}: any) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700">
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+        placeholder={placeholder}
+        className="mt-2 w-full rounded-lg border px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
+      />
+      {helper && (
+        <p className="mt-1 text-xs text-gray-500">{helper}</p>
+      )}
     </div>
   );
 }

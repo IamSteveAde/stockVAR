@@ -5,14 +5,21 @@ import PersonalInfoCard from "../../components/profile/PersonalInfoCard";
 import RoleAccessCard from "../../components/profile/RoleAccessCard";
 import SecurityCard from "../../components/profile/SecurityCard";
 import ActivityCard from "../../components/profile/ActivityCard";
+import { useProfile } from "../../context/ProfileContext";
 
-export default function ProfilePage() {
+export default function Page() {
+  const { profile, updateProfile } = useProfile();
+
   return (
     <div className="space-y-6 max-w-5xl">
       <ProfileHeader />
 
+
       <div className="grid gap-6 md:grid-cols-2">
-        <PersonalInfoCard />
+        <PersonalInfoCard
+          profile={profile}
+          onSave={updateProfile}
+        />
         <RoleAccessCard />
       </div>
 

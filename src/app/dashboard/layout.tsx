@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Sidebar from "../components/dashboard/Sidebar";
 import Topbar from "../components/dashboard/Topbar";
+import { ProfileProvider } from "../context/ProfileContext";
 
 export default function DashboardLayout({
   children,
@@ -12,16 +13,18 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#F9FAFB]">
-      <Sidebar
-        open={sidebarOpen}
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-      />
+    <ProfileProvider>
+      <div className="flex min-h-screen bg-[#F9FAFB]">
+        <Sidebar
+          open={sidebarOpen}
+          toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
 
-      <div className="flex-1 flex flex-col">
-        <Topbar toggleSidebar={() => setSidebarOpen(true)} />
-        <main className="p-4 md:p-6">{children}</main>
+        <div className="flex-1 flex flex-col">
+          <Topbar toggleSidebar={() => setSidebarOpen(true)} />
+          <main className="p-4 md:p-6">{children}</main>
+        </div>
       </div>
-    </div>
+    </ProfileProvider>
   );
 }

@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useProfile } from "../../context/ProfileContext";
+
 import { logout } from "@/lib/logout";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -28,6 +30,8 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
   const [openSettings, setOpenSettings] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { profile } = useProfile();
+
 
   return (
     <>
@@ -173,19 +177,25 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
         </nav>
 
         {/* User */}
-        <div className="px-4 py-4 border-t border-white/10 flex items-center gap-3">
-          <Image
-            src="/images/avatar.png"
-            alt="User"
-            width={36}
-            height={36}
-            className="rounded-full"
-          />
-          <div>
-            <p className="text-sm font-medium">ADE</p>
-            <p className="text-xs text-white/70">Owner</p>
-          </div>
-        </div>
+        {/* User */}
+<div className="px-4 py-4 border-t border-white/10 flex items-center gap-3">
+  <Image
+    src={profile.avatar}
+    alt={profile.fullName}
+    width={36}
+    height={36}
+    className="rounded-full object-cover"
+  />
+  <div>
+    <p className="text-sm font-medium">
+      {profile.fullName}
+    </p>
+    <p className="text-xs text-white/70">
+      {profile.role}
+    </p>
+  </div>
+</div>
+
       </aside>
     </>
   );

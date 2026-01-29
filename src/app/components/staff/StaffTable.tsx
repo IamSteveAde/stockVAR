@@ -8,6 +8,7 @@ import {
   Archive,
   Trash2,
   KeyRound,
+  RotateCcw,
 } from "lucide-react";
 import AddStaffModal from "./AddStaffModal";
 
@@ -23,7 +24,7 @@ type Staff = {
   phone: string;
   role: StaffRole;
   status: StaffStatus;
-  pin: string; // 🔐 system-generated login PIN
+  pin: string;
 };
 
 const PAGE_SIZE = 8;
@@ -31,7 +32,7 @@ const PAGE_SIZE = 8;
 /* ================= MOCK DATA ================= */
 
 const generatePin = () =>
-  Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit PIN
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 const generateStaff = (): Staff[] =>
   Array.from({ length: 42 }).map((_, i): Staff => ({
@@ -55,12 +56,17 @@ export default function StaffTable() {
   const [staff, setStaff] = useState<Staff[]>(generateStaff());
   const [page, setPage] = useState(1);
   const [openAdd, setOpenAdd] = useState(false);
-  const [openMenu, setOpenMenu] = useState<string | null>(
-    null
-  );
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const totalPages = Math.ceil(staff.length / PAGE_SIZE);
   const startIndex = (page - 1) * PAGE_SIZE;
+  // inside StaffTable component
+
+const handleAddStaff = (newStaff: Staff) => {
+  setStaff((prev) => [newStaff, ...prev]);
+  setPage(1); // jump back to first page
+};
+
   const currentStaff = staff.slice(
     startIndex,
     startIndex + PAGE_SIZE
@@ -68,10 +74,18 @@ export default function StaffTable() {
 
   /* ================= ACTIONS ================= */
 
-  const archiveStaff = (id: string) => {
+  const toggleArchive = (id: string) => {
     setStaff((prev) =>
       prev.map((s) =>
-        s.id === id ? { ...s, status: "archived" } : s
+        s.id === id
+          ? {
+              ...s,
+              status:
+                s.status === "archived"
+                  ? "active"
+                  : "archived",
+            }
+          : s
       )
     );
     setOpenMenu(null);
@@ -155,13 +169,22 @@ export default function StaffTable() {
                   </button>
 
                   {openMenu === s.id && (
-                    <div className="absolute right-6 top-12 z-10 w-40 rounded-lg border bg-white shadow-lg text-sm">
+                    <div className="absolute right-6 top-12 z-10 w-44 rounded-lg border bg-white shadow-lg text-sm">
                       <button
-                        onClick={() => archiveStaff(s.id)}
+                        onClick={() => toggleArchive(s.id)}
                         className="flex w-full items-center gap-2 px-4 py-2 hover:bg-gray-50"
                       >
-                        <Archive size={14} />
-                        Archive
+                        {s.status === "archived" ? (
+                          <>
+                            <RotateCcw size={14} />
+                            Unarchive
+                          </>
+                        ) : (
+                          <>
+                            <Archive size={14} />
+                            Archive
+                          </>
+                        )}
                       </button>
 
                       <button
@@ -200,10 +223,12 @@ export default function StaffTable() {
 
             <div className="flex gap-2 pt-2">
               <button
-                onClick={() => archiveStaff(s.id)}
+                onClick={() => toggleArchive(s.id)}
                 className="flex-1 border rounded-lg py-2 text-sm"
               >
-                Archive
+                {s.status === "archived"
+                  ? "Unarchive"
+                  : "Archive"}
               </button>
               <button
                 onClick={() => deleteStaff(s.id)}
@@ -241,8 +266,12 @@ export default function StaffTable() {
       </div>
 
       {openAdd && (
-        <AddStaffModal onClose={() => setOpenAdd(false)} />
-      )}
+  <AddStaffModal
+    onClose={() => setOpenAdd(false)}
+    onAddStaff={handleAddStaff}
+  />
+)}
+
     </div>
   );
 }
