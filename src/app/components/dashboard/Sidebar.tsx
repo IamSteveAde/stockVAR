@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { logout } from "@/lib/logout";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   PlusCircle,
@@ -26,6 +27,7 @@ type SidebarProps = {
 export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
   const [openSettings, setOpenSettings] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <>
@@ -99,6 +101,7 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             active={pathname === "/dashboard/staff"}
             onClick={toggleSidebar}
           />
+
           <NavItem
             icon={Users}
             label="Shift"
@@ -117,7 +120,7 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
 
           {/* Settings */}
           <button
-            onClick={() => setOpenSettings(!openSettings)}
+            onClick={() => setOpenSettings((v) => !v)}
             className="w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-white/10"
           >
             <div className="flex items-center gap-3">
@@ -126,19 +129,45 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             </div>
             <ChevronDown
               size={16}
-              className={`transition ${
-                openSettings ? "rotate-180" : ""
-              }`}
+              className={`transition ${openSettings ? "rotate-180" : ""}`}
             />
           </button>
 
           {openSettings && (
             <div className="ml-8 space-y-1 text-xs text-white/80">
-              <SubItem icon={User} label="Profile" />
-              <SubItem icon={Settings} label="Account Settings" />
-              <SubItem icon={CreditCard} label="Billing" />
-              <SubItem icon={Users} label="Add Staff" />
-              <SubItem icon={LogOut} label="Logout" danger />
+              <SubItem
+                icon={User}
+                label="Profile"
+                href="/dashboard/profile"
+                onClick={toggleSidebar}
+              />
+              <SubItem
+                icon={Settings}
+                label="Account Settings"
+                href="/dashboard/account"
+                onClick={toggleSidebar}
+              />
+             
+              
+              <SubItem
+                icon={Users}
+                label="Help"
+                href="/dashboard/help"
+                onClick={toggleSidebar}
+              />
+              <SubItem
+  icon={LogOut}
+  label="Logout"
+  danger
+  onClick={() => {
+    // Clear mock auth/session data
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Redirect to login
+    router.push("/auth/login");
+  }}
+/>
             </div>
           )}
         </nav>
@@ -200,22 +229,42 @@ function NavItem({
 function SubItem({
   icon: Icon,
   label,
+  href,
+  onClick,
   danger,
 }: {
   icon: any;
   label: string;
+  href?: string;
+  onClick?: () => void;
   danger?: boolean;
 }) {
+  const base =
+    "flex items-center gap-2 px-3 py-2 rounded-md w-full text-left transition";
+
+  const style = danger
+    ? "text-red-300 hover:bg-red-500/10"
+    : "hover:bg-white/10";
+
+  // Action item (logout)
+  if (onClick && !href) {
+    return (
+      <button onClick={onClick} className={`${base} ${style}`}>
+        <Icon size={14} />
+        {label}
+      </button>
+    );
+  }
+
+  // Navigation item
   return (
-    <button
-      className={`flex items-center gap-2 px-3 py-2 rounded-md w-full text-left transition ${
-        danger
-          ? "text-red-300 hover:bg-red-500/10"
-          : "hover:bg-white/10"
-      }`}
+    <Link
+      href={href || "#"}
+      onClick={onClick}
+      className={`${base} ${style}`}
     >
       <Icon size={14} />
       {label}
-    </button>
+    </Link>
   );
 }

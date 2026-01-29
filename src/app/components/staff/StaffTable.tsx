@@ -1,11 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  Archive,
+  Trash2,
+  KeyRound,
+} from "lucide-react";
 import AddStaffModal from "./AddStaffModal";
 
+/* ================= TYPES ================= */
+
 type StaffRole = "owner" | "manager" | "staff";
-type StaffStatus = "active" | "invited" | "disabled";
+type StaffStatus = "active" | "invited" | "archived";
 
 type Staff = {
   id: string;
@@ -14,11 +23,16 @@ type Staff = {
   phone: string;
   role: StaffRole;
   status: StaffStatus;
+  pin: string; // 🔐 system-generated login PIN
 };
 
 const PAGE_SIZE = 8;
 
-// Mock staff
+/* ================= MOCK DATA ================= */
+
+const generatePin = () =>
+  Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit PIN
+
 const generateStaff = (): Staff[] =>
   Array.from({ length: 42 }).map((_, i): Staff => ({
     id: `${i + 1}`,
@@ -31,20 +45,42 @@ const generateStaff = (): Staff[] =>
         : i % 5 === 0
         ? "manager"
         : "staff",
-    status: i % 4 === 0 ? "invited" : "active",
+    status: i % 7 === 0 ? "invited" : "active",
+    pin: generatePin(),
   }));
 
+/* ================= MAIN ================= */
+
 export default function StaffTable() {
-  const [staff] = useState<Staff[]>(generateStaff());
+  const [staff, setStaff] = useState<Staff[]>(generateStaff());
   const [page, setPage] = useState(1);
-  const [open, setOpen] = useState(false);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(
+    null
+  );
 
-  const totalStaff = staff.length;
-  const totalPages = Math.ceil(totalStaff / PAGE_SIZE);
-
+  const totalPages = Math.ceil(staff.length / PAGE_SIZE);
   const startIndex = (page - 1) * PAGE_SIZE;
-  const endIndex = startIndex + PAGE_SIZE;
-  const currentStaff = staff.slice(startIndex, endIndex);
+  const currentStaff = staff.slice(
+    startIndex,
+    startIndex + PAGE_SIZE
+  );
+
+  /* ================= ACTIONS ================= */
+
+  const archiveStaff = (id: string) => {
+    setStaff((prev) =>
+      prev.map((s) =>
+        s.id === id ? { ...s, status: "archived" } : s
+      )
+    );
+    setOpenMenu(null);
+  };
+
+  const deleteStaff = (id: string) => {
+    setStaff((prev) => prev.filter((s) => s.id !== id));
+    setOpenMenu(null);
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm">
@@ -53,46 +89,18 @@ export default function StaffTable() {
         <div>
           <h3 className="text-lg font-semibold">Staff</h3>
           <p className="text-sm text-gray-500">
-            Showing {startIndex + 1}–{Math.min(endIndex, totalStaff)} of{" "}
-            {totalStaff}
+            Showing {startIndex + 1}–
+            {Math.min(startIndex + PAGE_SIZE, staff.length)} of{" "}
+            {staff.length}
           </p>
         </div>
 
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => setOpenAdd(true)}
           className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0B5F58]"
         >
           Add staff
         </button>
-      </div>
-
-      {/* ================= MOBILE VIEW ================= */}
-      <div className="block md:hidden divide-y">
-        {currentStaff.map((s) => (
-          <div key={s.id} className="p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="font-medium">{s.fullName}</p>
-              <span className="text-xs capitalize bg-gray-100 px-2 py-1 rounded">
-                {s.role}
-              </span>
-            </div>
-
-            <p className="text-sm text-gray-600">{s.email}</p>
-            <p className="text-sm text-gray-600">{s.phone}</p>
-
-            <span
-              className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                s.status === "active"
-                  ? "bg-green-100 text-green-700"
-                  : s.status === "invited"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              {s.status}
-            </span>
-          </div>
-        ))}
       </div>
 
       {/* ================= DESKTOP TABLE ================= */}
@@ -102,36 +110,110 @@ export default function StaffTable() {
             <tr>
               <th className="px-6 py-3 text-left">Name</th>
               <th className="px-6 py-3 text-left">Email</th>
-              <th className="px-6 py-3 text-left">Phone</th>
               <th className="px-6 py-3 text-left">Role</th>
+              <th className="px-6 py-3 text-left">Login PIN</th>
               <th className="px-6 py-3 text-left">Status</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {currentStaff.map((s) => (
               <tr key={s.id} className="border-t">
-                <td className="px-6 py-4 font-medium">{s.fullName}</td>
+                <td className="px-6 py-4 font-medium">
+                  {s.fullName}
+                </td>
                 <td className="px-6 py-4">{s.email}</td>
-                <td className="px-6 py-4">{s.phone}</td>
-                <td className="px-6 py-4 capitalize">{s.role}</td>
+                <td className="px-6 py-4 capitalize">
+                  {s.role}
+                </td>
+
+                {/* PIN */}
+                <td className="px-6 py-4 font-mono">
+                  <div className="inline-flex items-center gap-2">
+                    <KeyRound size={14} />
+                    {s.pin}
+                  </div>
+                </td>
+
+                {/* Status */}
                 <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                      s.status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : s.status === "invited"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
+                  <StatusBadge status={s.status} />
+                </td>
+
+                {/* Actions */}
+                <td className="px-6 py-4 text-right relative">
+                  <button
+                    onClick={() =>
+                      setOpenMenu(
+                        openMenu === s.id ? null : s.id
+                      )
+                    }
+                    className="p-2 rounded hover:bg-gray-100"
                   >
-                    {s.status}
-                  </span>
+                    <MoreVertical size={16} />
+                  </button>
+
+                  {openMenu === s.id && (
+                    <div className="absolute right-6 top-12 z-10 w-40 rounded-lg border bg-white shadow-lg text-sm">
+                      <button
+                        onClick={() => archiveStaff(s.id)}
+                        className="flex w-full items-center gap-2 px-4 py-2 hover:bg-gray-50"
+                      >
+                        <Archive size={14} />
+                        Archive
+                      </button>
+
+                      <button
+                        onClick={() => deleteStaff(s.id)}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* ================= MOBILE VIEW ================= */}
+      <div className="block md:hidden divide-y">
+        {currentStaff.map((s) => (
+          <div key={s.id} className="p-4 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">{s.fullName}</span>
+              <StatusBadge status={s.status} />
+            </div>
+
+            <div className="text-sm text-gray-600">
+              {s.email}
+            </div>
+
+            <div className="flex items-center gap-2 text-sm font-mono">
+              <KeyRound size={14} />
+              {s.pin}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => archiveStaff(s.id)}
+                className="flex-1 border rounded-lg py-2 text-sm"
+              >
+                Archive
+              </button>
+              <button
+                onClick={() => deleteStaff(s.id)}
+                className="flex-1 border rounded-lg py-2 text-sm text-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Pagination */}
@@ -140,27 +222,45 @@ export default function StaffTable() {
           Page {page} of {totalPages}
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <button
-            onClick={() => setPage((p) => Math.max(p - 1, 1))}
             disabled={page === 1}
-            className="h-9 w-9 flex items-center justify-center rounded-lg border disabled:opacity-40"
+            onClick={() => setPage((p) => p - 1)}
+            className="h-9 w-9 border rounded-lg disabled:opacity-40"
           >
             <ChevronLeft size={16} />
           </button>
-
           <button
-            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
             disabled={page === totalPages}
-            className="h-9 w-9 flex items-center justify-center rounded-lg border disabled:opacity-40"
+            onClick={() => setPage((p) => p + 1)}
+            className="h-9 w-9 border rounded-lg disabled:opacity-40"
           >
             <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
-      {/* Modal */}
-      {open && <AddStaffModal onClose={() => setOpen(false)} />}
+      {openAdd && (
+        <AddStaffModal onClose={() => setOpenAdd(false)} />
+      )}
     </div>
+  );
+}
+
+/* ================= STATUS BADGE ================= */
+
+function StatusBadge({ status }: { status: StaffStatus }) {
+  return (
+    <span
+      className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${
+        status === "active"
+          ? "bg-green-100 text-green-700"
+          : status === "invited"
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-gray-200 text-gray-600"
+      }`}
+    >
+      {status}
+    </span>
   );
 }
