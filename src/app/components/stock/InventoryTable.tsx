@@ -1,39 +1,135 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdjustInventoryModal from "./AdjustInventoryModal";
 
-type InventoryItem = {
+/* ================= TYPES ================= */
+
+type Product = {
   id: number;
+  sku: string;
   name: string;
+  unit: string;
+  status: "active" | "archived";
+};
+
+type InventoryItem = {
   sku: string;
   quantity: number;
-  unit: string;
   updatedAt: string;
 };
 
-// Mock data (later backend-driven)
-const INVENTORY: InventoryItem[] = [
-  {
-    id: 1,
-    name: "Rice",
-    sku: "STK-RICE-A92",
-    quantity: 120,
-    unit: "kg",
-    updatedAt: "Today",
-  },
-  {
-    id: 2,
-    name: "Oil",
-    sku: "STK-OIL-B11",
-    quantity: 45,
-    unit: "litres",
-    updatedAt: "Yesterday",
-  },
-];
+const PRODUCTS_KEY = "stockvar_products";
+const INVENTORY_KEY = "stockvar_inventory";
+
+/* ================= HELPERS ================= */
+
+const now = () => new Date().toLocaleString();
+
+const load = <T,>(key: string): T[] => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const save = (key: string, data: any) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
+/* ================= COMPONENT ================= */
 
 export default function InventoryTable() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [open, setOpen] = useState(false);
+
+  /* ================= LOAD ================= */
+
+  useEffect(() => {
+    setProducts(load<Product>(PRODUCTS_KEY));
+    setInventory(load<InventoryItem>(INVENTORY_KEY));
+  }, []);
+
+  /* ================= SYNC ================= */
+
+  useEffect(() => {
+    save(INVENTORY_KEY, inventory);
+
+    // 🔔 Notify the rest of the app (reports, dashboard, etc.)
+    window.dispatchEvent(
+      new CustomEvent("inventory:updated", {
+        detail: inventory,
+      })
+    );
+  }, [inventory]);
+
+  /* ================= ADJUST ================= */
+
+  const adjustInventory = (data: {
+    sku: string;
+    quantity: number;
+    action: "add" | "reduce";
+  }) => {
+    const product = products.find((p) => p.sku === data.sku);
+    if (!product) return;
+
+    setInventory((prev) => {
+      const existing = prev.find((i) => i.sku === data.sku);
+
+      if (!existing) {
+        return [
+          {
+            sku: product.sku,
+            quantity:
+              data.action === "add" ? data.quantity : 0,
+            updatedAt: now(),
+          },
+          ...prev,
+        ];
+      }
+
+      return prev.map((i) =>
+        i.sku === data.sku
+          ? {
+              ...i,
+              quantity:
+                data.action === "add"
+                  ? i.quantity + data.quantity
+                  : Math.max(0, i.quantity - data.quantity),
+              updatedAt: now(),
+            }
+          : i
+      );
+    });
+  };
+
+  /* ================= JOIN FOR DISPLAY ================= */
+
+  const rows = inventory
+    .map((i) => {
+      const product = products.find(
+        (p) => p.sku === i.sku
+      );
+      if (!product) return null;
+
+      return {
+        sku: i.sku,
+        name: product.name,
+        unit: product.unit,
+        quantity: i.quantity,
+        updatedAt: i.updatedAt,
+      };
+    })
+    .filter(Boolean) as {
+    sku: string;
+    name: string;
+    unit: string;
+    quantity: number;
+    updatedAt: string;
+  }[];
 
   return (
     <div className="space-y-4">
@@ -42,61 +138,49 @@ export default function InventoryTable() {
         <h3 className="font-medium text-black">Inventory</h3>
         <button
           onClick={() => setOpen(true)}
-          className="bg-[#0F766E] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#0B5F58]"
+          className="bg-[#0F766E] text-white text-sm px-4 py-2 rounded-lg"
         >
-          Add Inventory
+          Adjust Inventory
         </button>
       </div>
 
-      {/* ================= MOBILE VIEW ================= */}
-      <div className="block md:hidden space-y-3">
-        {INVENTORY.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white rounded-xl p-4 shadow-sm space-y-2"
-          >
-            <div className="flex items-center justify-between">
-              <p className="font-medium">{item.name}</p>
-              <span className="text-sm font-semibold">
-                {item.quantity} {item.unit}
-              </span>
-            </div>
-
-            <p className="text-xs text-gray-500">
-              SKU: <span className="font-mono">{item.sku}</span>
-            </p>
-
-            <p className="text-xs text-gray-400">
-              Last updated: {item.updatedAt}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* ================= DESKTOP TABLE ================= */}
-      <div className="hidden md:block overflow-x-auto bg-white rounded-xl shadow-sm">
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="text-left text-gray-500 bg-gray-50">
+          <thead className="bg-gray-50 text-gray-500">
             <tr>
-              <th className="px-6 py-3">Item</th>
-              <th className="px-6 py-3">SKU</th>
-              <th className="px-6 py-3">Quantity</th>
-              <th className="px-6 py-3">Unit</th>
-              <th className="px-6 py-3">Last Updated</th>
+              <th className="px-6 py-3 text-left">Item</th>
+              <th className="px-6 py-3 text-left">SKU</th>
+              <th className="px-6 py-3 text-left">Quantity</th>
+              <th className="px-6 py-3 text-left">Unit</th>
+              <th className="px-6 py-3 text-left">Updated</th>
             </tr>
           </thead>
 
           <tbody>
-            {INVENTORY.map((item) => (
-              <tr key={item.id} className="border-t">
-                <td className="px-6 py-4 font-medium">{item.name}</td>
-                <td className="px-6 py-4 font-mono text-xs">
-                  {item.sku}
+            {rows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="py-10 text-center text-gray-400"
+                >
+                  No inventory records yet
                 </td>
-                <td className="px-6 py-4">{item.quantity}</td>
-                <td className="px-6 py-4">{item.unit}</td>
+              </tr>
+            )}
+
+            {rows.map((i) => (
+              <tr key={i.sku} className="border-t">
+                <td className="px-6 py-4 font-medium">
+                  {i.name}
+                </td>
+                <td className="px-6 py-4 font-mono text-xs">
+                  {i.sku}
+                </td>
+                <td className="px-6 py-4">{i.quantity}</td>
+                <td className="px-6 py-4">{i.unit}</td>
                 <td className="px-6 py-4 text-gray-500">
-                  {item.updatedAt}
+                  {i.updatedAt}
                 </td>
               </tr>
             ))}
@@ -105,7 +189,15 @@ export default function InventoryTable() {
       </div>
 
       {/* Modal */}
-      {open && <AdjustInventoryModal onClose={() => setOpen(false)} />}
+      {open && (
+        <AdjustInventoryModal
+          products={products.filter(
+            (p) => p.status === "active"
+          )}
+          onClose={() => setOpen(false)}
+          onSave={adjustInventory}
+        />
+      )}
     </div>
   );
 }

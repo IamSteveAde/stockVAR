@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -14,10 +14,10 @@ import AddStaffModal from "./AddStaffModal";
 
 /* ================= TYPES ================= */
 
-type StaffRole = "owner" | "manager" | "staff";
-type StaffStatus = "active" | "invited" | "archived";
+export type StaffRole = "owner" | "manager" | "staff";
+export type StaffStatus = "active" | "invited" | "archived";
 
-type Staff = {
+export type Staff = {
   id: string;
   fullName: string;
   email: string;
@@ -27,45 +27,66 @@ type Staff = {
   pin: string;
 };
 
-const PAGE_SIZE = 8;
+/* ================= CONSTANTS ================= */
 
-/* ================= MOCK DATA ================= */
+const PAGE_SIZE = 8;
+const STAFF_KEY = "stockvar_staff";
+
+/* ================= HELPERS ================= */
 
 const generatePin = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-const generateStaff = (): Staff[] =>
-  Array.from({ length: 42 }).map((_, i): Staff => ({
-    id: `${i + 1}`,
-    fullName: `Staff Member ${i + 1}`,
-    email: `staff${i + 1}@restaurant.com`,
-    phone: `0803 000 00${i + 1}`,
-    role:
-      i === 0
-        ? "owner"
-        : i % 5 === 0
-        ? "manager"
-        : "staff",
-    status: i % 7 === 0 ? "invited" : "active",
-    pin: generatePin(),
-  }));
+const loadStaff = (): Staff[] => {
+  try {
+    const raw = localStorage.getItem(STAFF_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveStaff = (data: Staff[]) => {
+  localStorage.setItem(STAFF_KEY, JSON.stringify(data));
+};
 
 /* ================= MAIN ================= */
 
 export default function StaffTable() {
-  const [staff, setStaff] = useState<Staff[]>(generateStaff());
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [page, setPage] = useState(1);
   const [openAdd, setOpenAdd] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const totalPages = Math.ceil(staff.length / PAGE_SIZE);
-  const startIndex = (page - 1) * PAGE_SIZE;
-  // inside StaffTable component
+  /* Load once */
+  useEffect(() => {
+    const stored = loadStaff();
 
-const handleAddStaff = (newStaff: Staff) => {
-  setStaff((prev) => [newStaff, ...prev]);
-  setPage(1); // jump back to first page
-};
+    // Seed initial owner if empty
+    if (stored.length === 0) {
+      const owner: Staff = {
+        id: crypto.randomUUID(),
+        fullName: "Business Owner",
+        email: "owner@business.com",
+        phone: "0800 000 0000",
+        role: "owner",
+        status: "active",
+        pin: generatePin(),
+      };
+      saveStaff([owner]);
+      setStaff([owner]);
+    } else {
+      setStaff(stored);
+    }
+  }, []);
+
+  /* Persist */
+  useEffect(() => {
+    saveStaff(staff);
+  }, [staff]);
+
+  const totalPages = Math.max(1, Math.ceil(staff.length / PAGE_SIZE));
+  const startIndex = (page - 1) * PAGE_SIZE;
 
   const currentStaff = staff.slice(
     startIndex,
@@ -74,16 +95,25 @@ const handleAddStaff = (newStaff: Staff) => {
 
   /* ================= ACTIONS ================= */
 
+  const handleAddStaff = (newStaff: Omit<Staff, "id" | "pin" | "status">) => {
+    const staffMember: Staff = {
+      ...newStaff,
+      id: crypto.randomUUID(),
+      status: "active",
+      pin: generatePin(),
+    };
+
+    setStaff((prev) => [staffMember, ...prev]);
+    setPage(1);
+  };
+
   const toggleArchive = (id: string) => {
     setStaff((prev) =>
       prev.map((s) =>
         s.id === id
           ? {
               ...s,
-              status:
-                s.status === "archived"
-                  ? "active"
-                  : "archived",
+              status: s.status === "archived" ? "active" : "archived",
             }
           : s
       )
@@ -111,7 +141,7 @@ const handleAddStaff = (newStaff: Staff) => {
 
         <button
           onClick={() => setOpenAdd(true)}
-          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0B5F58]"
+          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm font-medium"
         >
           Add staff
         </button>
@@ -134,15 +164,10 @@ const handleAddStaff = (newStaff: Staff) => {
           <tbody>
             {currentStaff.map((s) => (
               <tr key={s.id} className="border-t">
-                <td className="px-6 py-4 font-medium">
-                  {s.fullName}
-                </td>
+                <td className="px-6 py-4 font-medium">{s.fullName}</td>
                 <td className="px-6 py-4">{s.email}</td>
-                <td className="px-6 py-4 capitalize">
-                  {s.role}
-                </td>
+                <td className="px-6 py-4 capitalize">{s.role}</td>
 
-                {/* PIN */}
                 <td className="px-6 py-4 font-mono">
                   <div className="inline-flex items-center gap-2">
                     <KeyRound size={14} />
@@ -150,18 +175,14 @@ const handleAddStaff = (newStaff: Staff) => {
                   </div>
                 </td>
 
-                {/* Status */}
                 <td className="px-6 py-4">
                   <StatusBadge status={s.status} />
                 </td>
 
-                {/* Actions */}
                 <td className="px-6 py-4 text-right relative">
                   <button
                     onClick={() =>
-                      setOpenMenu(
-                        openMenu === s.id ? null : s.id
-                      )
+                      setOpenMenu(openMenu === s.id ? null : s.id)
                     }
                     className="p-2 rounded hover:bg-gray-100"
                   >
@@ -203,44 +224,6 @@ const handleAddStaff = (newStaff: Staff) => {
         </table>
       </div>
 
-      {/* ================= MOBILE VIEW ================= */}
-      <div className="block md:hidden divide-y">
-        {currentStaff.map((s) => (
-          <div key={s.id} className="p-4 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">{s.fullName}</span>
-              <StatusBadge status={s.status} />
-            </div>
-
-            <div className="text-sm text-gray-600">
-              {s.email}
-            </div>
-
-            <div className="flex items-center gap-2 text-sm font-mono">
-              <KeyRound size={14} />
-              {s.pin}
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => toggleArchive(s.id)}
-                className="flex-1 border rounded-lg py-2 text-sm"
-              >
-                {s.status === "archived"
-                  ? "Unarchive"
-                  : "Archive"}
-              </button>
-              <button
-                onClick={() => deleteStaff(s.id)}
-                className="flex-1 border rounded-lg py-2 text-sm text-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Pagination */}
       <div className="flex items-center justify-between px-4 md:px-6 py-4 border-t">
         <p className="text-sm text-gray-500">
@@ -255,6 +238,7 @@ const handleAddStaff = (newStaff: Staff) => {
           >
             <ChevronLeft size={16} />
           </button>
+
           <button
             disabled={page === totalPages}
             onClick={() => setPage((p) => p + 1)}
@@ -265,13 +249,13 @@ const handleAddStaff = (newStaff: Staff) => {
         </div>
       </div>
 
+      {/* Add Staff Modal */}
       {openAdd && (
-  <AddStaffModal
-    onClose={() => setOpenAdd(false)}
-    onAddStaff={handleAddStaff}
-  />
-)}
-
+        <AddStaffModal
+          onClose={() => setOpenAdd(false)}
+          onAddStaff={handleAddStaff}
+        />
+      )}
     </div>
   );
 }

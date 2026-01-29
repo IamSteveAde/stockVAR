@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { X } from "lucide-react";
 import { Staff, Shift } from "./types";
 
 type Props = {
   open: boolean;
   onClose: () => void;
+
+  /**
+   * NOTE:
+   * ShiftTable will attach:
+   * - status
+   * - openingSnapshot
+   * - closingSnapshot
+   */
   onCreate: (shift: Shift) => void;
+
   staffList: Staff[];
 };
 
@@ -25,6 +34,8 @@ export default function CreateShiftModal({
   onCreate,
   staffList,
 }: Props) {
+  /* ================= STATE ================= */
+
   const [label, setLabel] = useState("Morning");
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("16:00");
@@ -33,7 +44,18 @@ export default function CreateShiftModal({
   const [endDate, setEndDate] = useState("");
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
 
+  /* ================= FILTER ACTIVE STAFF ================= */
+
+  const activeStaff = useMemo(
+    () => staffList.filter((s) => s.status === "active"),
+    [staffList]
+  );
+
+  /* ================= GUARD ================= */
+
   if (!open) return null;
+
+  /* ================= HELPERS ================= */
 
   const toggleStaff = (id: string) => {
     setSelectedStaff((prev) =>
@@ -44,19 +66,56 @@ export default function CreateShiftModal({
   };
 
   const handleCreate = () => {
-    const shift: Shift = {
+    if (!date) {
+      alert("Please select a start date");
+      return;
+    }
+
+    if (mode === "range" && !endDate) {
+      alert("Please select an end date");
+      return;
+    }
+
+    if (selectedStaff.length === 0) {
+      alert("Please assign at least one staff member");
+      return;
+    }
+
+    /**
+     * IMPORTANT:
+     * We intentionally do NOT set:
+     * - status
+     * - openingSnapshot
+     * - closingSnapshot
+     *
+     * ShiftTable (Step 2) will do that.
+     */
+    const shift = {
       id: crypto.randomUUID(),
       label,
       startTime,
       endTime,
       startDate: date,
       endDate: mode === "range" ? endDate : undefined,
-      staff: staffList.filter((s) => selectedStaff.includes(s.id)),
-    };
+      staff: activeStaff.filter((s) =>
+        selectedStaff.includes(s.id)
+      ),
+    } as Shift; // Safe: augmented immediately after creation
 
     onCreate(shift);
     onClose();
+
+    // reset local state (nice UX)
+    setLabel("Morning");
+    setStartTime("08:00");
+    setEndTime("16:00");
+    setMode("single");
+    setDate("");
+    setEndDate("");
+    setSelectedStaff([]);
   };
+
+  /* ================= UI ================= */
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
@@ -78,7 +137,9 @@ export default function CreateShiftModal({
             className="mt-1 w-full border rounded-lg px-3 py-2"
           >
             {SHIFT_LABELS.map((l) => (
-              <option key={l}>{l}</option>
+              <option key={l} value={l}>
+                {l}
+              </option>
             ))}
           </select>
         </div>
@@ -94,6 +155,7 @@ export default function CreateShiftModal({
               className="mt-1 w-full border rounded-lg px-3 py-2"
             />
           </div>
+
           <div>
             <label className="text-sm font-medium">End time</label>
             <input
@@ -115,6 +177,7 @@ export default function CreateShiftModal({
             />
             One day
           </label>
+
           <label className="flex items-center gap-2">
             <input
               type="radio"
@@ -136,6 +199,7 @@ export default function CreateShiftModal({
               className="mt-1 w-full border rounded-lg px-3 py-2"
             />
           </div>
+
           {mode === "range" && (
             <div>
               <label className="text-sm font-medium">End date</label>
@@ -153,7 +217,13 @@ export default function CreateShiftModal({
         <div>
           <label className="text-sm font-medium">Assign staff</label>
           <div className="mt-2 max-h-40 overflow-y-auto border rounded-lg p-3 space-y-2">
-            {staffList.map((s) => (
+            {activeStaff.length === 0 && (
+              <p className="text-sm text-gray-400">
+                No active staff available
+              </p>
+            )}
+
+            {activeStaff.map((s) => (
               <label
                 key={s.id}
                 className="flex items-center gap-2 text-sm"

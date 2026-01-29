@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Calendar,
@@ -10,129 +10,203 @@ import {
   X,
   Package,
 } from "lucide-react";
+import { Shift } from "../shifts/types";
 
-/* ================= MOCK DATA ================= */
-const shifts = [
-  {
-    date: "2026-08-12",
-    shift: "Night",
-    staff: ["John", "Aisha", "Samuel"],
-    items: [
-      { product: "Rice", unit: "kg", variance: 6 },
-      { product: "Oil", unit: "L", variance: 2 },
-    ],
-  },
-  {
-    date: "2026-08-11",
-    shift: "Morning",
-    staff: ["Blessing", "John"],
-    items: [
-      { product: "Tomatoes", unit: "kg", variance: 5 },
-    ],
-  },
-  {
-    date: "2026-08-10",
-    shift: "Afternoon",
-    staff: ["Samuel", "Aisha"],
-    items: [
-      { product: "Chicken", unit: "pcs", variance: 3 },
-      { product: "Eggs", unit: "pcs", variance: 6 },
-    ],
-  },
-  {
-    date: "2026-08-09",
-    shift: "Night",
-    staff: ["John"],
-    items: [
-      { product: "Rice", unit: "kg", variance: 4 },
-    ],
-  },
-  {
-    date: "2026-08-08",
-    shift: "Morning",
-    staff: ["Blessing", "Samuel"],
-    items: [
-      { product: "Milk", unit: "L", variance: 3 },
-    ],
-  },
-  {
-    date: "2026-08-07",
-    shift: "Night",
-    staff: ["Aisha", "John"],
-    items: [
-      { product: "Oil", unit: "L", variance: 4 },
-      { product: "Rice", unit: "kg", variance: 2 },
-    ],
-  },
-];
+/* ================= STORAGE KEYS ================= */
 
-/* ================= HELPERS ================= */
-function subtractDays(from: string, days: number) {
-  const d = new Date(from);
-  d.setDate(d.getDate() - days);
-  return d.toISOString().split("T")[0];
-}
+const PRODUCTS_KEY = "stockvar_products";
+const SHIFTS_KEY = "stockvar_shifts";
+const LOGS_KEY = "stockvar_inventory_logs";
+
+/* ================= TYPES ================= */
+
+type Product = {
+  sku: string;
+  name: string;
+  unit: string;
+};
+
+type InventoryLog = {
+  sku: string;
+  quantity: number;
+  action: "in" | "out";
+  shiftId: string;
+};
+
+type StockSnapshot = {
+  sku: string;
+  quantity: number;
+};
+
+type ShiftVarianceItem = {
+  product: string;
+  unit: string;
+  variance: number;
+};
+
+type ShiftVariance = {
+  shiftId: string;
+  shiftLabel: string;
+  date: string;
+  staff: string[];
+  items: ShiftVarianceItem[];
+};
+
+/* ================= CONSTANTS ================= */
+
+const PAGE_SIZE = 5;
 
 /* ================= MAIN ================= */
+
 export default function ShiftContext() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [logs, setLogs] = useState<InventoryLog[]>([]);
+
   const [dateRange, setDateRange] = useState("7d");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
-  const [activeShift, setActiveShift] = useState<any>(null);
+  const [activeShift, setActiveShift] =
+    useState<ShiftVariance | null>(null);
 
-  const PAGE_SIZE = 3;
+  /* ================= LOAD DATA ================= */
 
-  /* Anchor presets to latest data date */
-  const latestDate = useMemo(
-    () => shifts.map((s) => s.date).sort().at(-1) || "",
-    []
-  );
+  useEffect(() => {
+    setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
+    setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
+    setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
+  }, []);
 
-  /* ================= DATE RANGE ================= */
-  const computedRange = useMemo(() => {
-    if (!latestDate) return { from: "", to: "" };
+  /* ================= DATE BOUNDS ================= */
 
-    switch (dateRange) {
-      case "today":
-        return { from: latestDate, to: latestDate };
-      case "7d":
-        return { from: subtractDays(latestDate, 7), to: latestDate };
-      case "1m":
-        return { from: subtractDays(latestDate, 30), to: latestDate };
-      case "2m":
-        return { from: subtractDays(latestDate, 60), to: latestDate };
-      case "custom":
-        return { from: fromDate, to: toDate };
-      default:
-        return { from: "", to: "" };
+  const dateBounds = useMemo(() => {
+    const ended = shifts
+      .filter((s) => s.status === "ended" && s.endedAt)
+      .map((s) => new Date(s.endedAt!).getTime());
+
+    if (!ended.length) return null;
+
+    const latest = Math.max(...ended);
+    let fromTs = 0;
+    let toTs = latest;
+
+    if (dateRange === "today") {
+      const d = new Date(latest);
+      d.setHours(0, 0, 0, 0);
+      fromTs = d.getTime();
     }
-  }, [dateRange, fromDate, toDate, latestDate]);
 
-  /* ================= FILTER ================= */
-  const filteredShifts = useMemo(() => {
-    return shifts.filter((s) => {
-      if (computedRange.from && s.date < computedRange.from) return false;
-      if (computedRange.to && s.date > computedRange.to) return false;
-      return true;
+    if (dateRange === "7d") fromTs = latest - 7 * 86400000;
+    if (dateRange === "1m") fromTs = latest - 30 * 86400000;
+    if (dateRange === "2m") fromTs = latest - 60 * 86400000;
+
+    if (dateRange === "custom") {
+      if (!fromDate || !toDate) return null;
+      fromTs = new Date(fromDate + "T00:00:00").getTime();
+      toTs = new Date(toDate + "T23:59:59").getTime();
+    }
+
+    return { fromTs, toTs };
+  }, [dateRange, fromDate, toDate, shifts]);
+
+  /* ================= BUILD SHIFT VARIANCE ================= */
+
+  const shiftVariance = useMemo<ShiftVariance[]>(() => {
+    const results: ShiftVariance[] = [];
+
+    shifts.forEach((shift) => {
+      if (
+        shift.status !== "ended" ||
+        !shift.openingSnapshot ||
+        !shift.closingSnapshot ||
+        !shift.endedAt
+      )
+        return;
+
+      const endedTs = new Date(shift.endedAt).getTime();
+      if (dateBounds) {
+        if (endedTs < dateBounds.fromTs) return;
+        if (endedTs > dateBounds.toTs) return;
+      }
+
+      const items: ShiftVarianceItem[] = [];
+
+      products.forEach((p) => {
+        const opening =
+          shift.openingSnapshot!.find(
+            (i: StockSnapshot) => i.sku === p.sku
+          )?.quantity || 0;
+
+        const closing =
+          shift.closingSnapshot!.find(
+            (i: StockSnapshot) => i.sku === p.sku
+          )?.quantity || 0;
+
+        const shiftLogs = logs.filter(
+          (l) => l.shiftId === shift.id && l.sku === p.sku
+        );
+
+        const added = shiftLogs
+          .filter((l) => l.action === "in")
+          .reduce((s, l) => s + l.quantity, 0);
+
+        const used = shiftLogs
+          .filter((l) => l.action === "out")
+          .reduce((s, l) => s + l.quantity, 0);
+
+        const expected = opening + added - used;
+        const variance = closing - expected;
+
+        if (variance !== 0) {
+          items.push({
+            product: p.name,
+            unit: p.unit,
+            variance,
+          });
+        }
+      });
+
+      if (items.length > 0) {
+        results.push({
+          shiftId: shift.id,
+          shiftLabel: shift.label,
+          date: shift.endedAt.split(",")[0],
+          staff: shift.staff.map((s) => s.fullName),
+          items,
+        });
+      }
     });
-  }, [computedRange]);
+
+    return results.sort((a, b) =>
+      a.date < b.date ? 1 : -1
+    );
+  }, [shifts, products, logs, dateBounds]);
 
   /* ================= PAGINATION ================= */
-  const totalPages = Math.ceil(filteredShifts.length / PAGE_SIZE);
-  const pageData = filteredShifts.slice(
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(shiftVariance.length / PAGE_SIZE)
+  );
+
+  const pageData = shiftVariance.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
   );
+
+  /* ================= UI ================= */
 
   return (
     <>
       <div className="bg-white rounded-xl shadow-sm w-full overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b space-y-1">
-          <h3 className="text-sm font-semibold text-black">Shift Variance Context</h3>
+        <div className="p-4 border-b">
+          <h3 className="text-sm font-semibold">
+            Shift Variance Context
+          </h3>
           <p className="text-xs text-gray-500">
-            Click a shift to view missing items and quantities
+            Shifts with confirmed stock discrepancies
           </p>
         </div>
 
@@ -149,7 +223,7 @@ export default function ShiftContext() {
                 setDateRange(e.target.value);
                 setPage(1);
               }}
-              className="border rounded-lg px-3 py-2 text-sm bg-white"
+              className="border rounded-lg px-3 py-2 text-sm"
             >
               <option value="today">Today</option>
               <option value="7d">Last 7 days</option>
@@ -163,19 +237,13 @@ export default function ShiftContext() {
                 <input
                   type="date"
                   value={fromDate}
-                  onChange={(e) => {
-                    setFromDate(e.target.value);
-                    setPage(1);
-                  }}
+                  onChange={(e) => setFromDate(e.target.value)}
                   className="border rounded-lg px-3 py-2 text-sm"
                 />
                 <input
                   type="date"
                   value={toDate}
-                  onChange={(e) => {
-                    setToDate(e.target.value);
-                    setPage(1);
-                  }}
+                  onChange={(e) => setToDate(e.target.value)}
                   className="border rounded-lg px-3 py-2 text-sm"
                 />
               </>
@@ -185,54 +253,47 @@ export default function ShiftContext() {
 
         {/* List */}
         <div className="divide-y">
-          {pageData.map((s, i) => {
-            const incidentCount = s.items.length;
-            return (
-              <button
-                key={`${s.date}-${s.shift}`}
-                onClick={() => setActiveShift(s)}
-                className="w-full text-left p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50"
-              >
-                <div>
-                  <p className="font-medium">
-                    {s.shift} Shift
-                  </p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <Calendar size={12} />
-                    {s.date}
-                  </p>
-                </div>
+          {pageData.map((s) => (
+            <button
+              key={s.shiftId}
+              onClick={() => setActiveShift(s)}
+              className="w-full p-4 text-left hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            >
+              <div>
+                <p className="font-medium">
+                  {s.shiftLabel} Shift
+                </p>
+                <p className="text-xs text-gray-500 flex items-center gap-1">
+                  <Calendar size={12} /> {s.date}
+                </p>
+              </div>
 
-                <div className="text-xs text-gray-600">
-                  Staff:{" "}
-                  <span className="text-gray-800">
-                    {s.staff.join(", ")}
-                  </span>
-                </div>
+              <p className="text-xs text-gray-600">
+                Staff:{" "}
+                <span className="text-gray-800">
+                  {s.staff.join(", ")}
+                </span>
+              </p>
 
-                <div className="flex items-center gap-2 text-red-600 text-sm font-semibold">
-                  <AlertTriangle size={14} />
-                  {incidentCount} items affected
-                </div>
-              </button>
-            );
-          })}
+              <div className="flex items-center gap-2 text-red-600 font-semibold text-sm">
+                <AlertTriangle size={14} />
+                {s.items.length} items affected
+              </div>
+            </button>
+          ))}
 
           {pageData.length === 0 && (
             <div className="p-6 text-center text-sm text-gray-500">
-              No shift variance records for selected period
+              No shift variance for selected period
             </div>
           )}
         </div>
 
         {/* Pagination */}
-        <div className="p-4 flex items-center justify-between text-xs text-gray-500">
+        <div className="p-4 flex justify-between text-xs text-gray-500">
           <span>
-            Showing {(page - 1) * PAGE_SIZE + 1}–
-            {Math.min(page * PAGE_SIZE, filteredShifts.length)} of{" "}
-            {filteredShifts.length}
+            Page {page} of {totalPages}
           </span>
-
           <div className="flex gap-2">
             <button
               disabled={page === 1}
@@ -255,59 +316,49 @@ export default function ShiftContext() {
       {/* ================= MODAL ================= */}
       {activeShift && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl w-full max-w-lg shadow-lg">
-            {/* Header */}
-            <div className="p-4 border-b flex justify-between items-center">
-              <div>
-                <h4 className="font-semibold text-black">
-                  {activeShift.shift} Shift – {activeShift.date}
-                </h4>
-                <p className="text-xs text-gray-500">
-                  Missing items and quantities
-                </p>
-              </div>
-              <button
-                onClick={() => setActiveShift(null)}
-                className="p-1 rounded hover:bg-gray-100"
-              >
+          <div className="bg-white rounded-xl w-full max-w-lg">
+            <div className="p-4 border-b flex justify-between">
+              <h4 className="font-semibold">
+                {activeShift.shiftLabel} – {activeShift.date}
+              </h4>
+              <button onClick={() => setActiveShift(null)}>
                 <X size={16} />
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-4 space-y-3 max-h-[65vh] overflow-y-auto">
-              {activeShift.items.map((item: any, idx: number) => (
+              {activeShift.items.map((i, idx) => (
                 <div
                   key={idx}
-                  className="border rounded-lg p-3 flex items-center justify-between"
+                  className="border rounded-lg p-3 flex justify-between"
                 >
                   <div className="flex items-center gap-2">
                     <Package size={14} />
                     <span className="font-medium">
-                      {item.product}
+                      {i.product}
                     </span>
                   </div>
 
-                  <span className="font-semibold text-red-600">
-                    -{item.variance}
-                    {item.unit}
+                  <span
+                    className={`font-semibold ${
+                      i.variance < 0
+                        ? "text-red-600"
+                        : "text-green-600"
+                    }`}
+                  >
+                    {i.variance > 0 ? "+" : ""}
+                    {i.variance}
+                    {i.unit}
                   </span>
                 </div>
               ))}
 
-              <div className="text-xs text-gray-500 pt-2">
+              <p className="text-xs text-gray-500 pt-2">
                 Staff on duty:{" "}
                 <span className="text-gray-700">
                   {activeShift.staff.join(", ")}
                 </span>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t flex justify-between text-sm">
-              <span className="text-gray-500">
-                Total items affected: {activeShift.items.length}
-              </span>
+              </p>
             </div>
           </div>
         </div>

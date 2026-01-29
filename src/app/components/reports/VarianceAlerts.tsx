@@ -1,163 +1,200 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  Calendar,
-  Filter,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Shift } from "../shifts/types";
 
-/* ================= MOCK DATA ================= */
-const alerts = Array.from({ length: 37 }).map((_, i) => ({
-  date: `2026-08-${String((i % 28) + 1).padStart(2, "0")}`,
-  product: ["Rice", "Oil", "Chicken", "Tomatoes"][i % 4],
-  variance: `-${5 + (i % 12)}kg`,
-  severity: i % 3 === 0 ? "High" : i % 3 === 1 ? "Medium" : "Low",
-  shift: i % 2 === 0 ? "Morning" : "Night",
-  staff: ["John", "Aisha", "Samuel", "Blessing"].slice(0, (i % 3) + 1),
-}));
+/* ================= STORAGE KEYS ================= */
 
-/* ================= MAIN ================= */
+const PRODUCTS_KEY = "stockvar_products";
+const SHIFTS_KEY = "stockvar_shifts";
+const LOGS_KEY = "stockvar_inventory_logs";
+
+/* ================= TYPES ================= */
+
+type Product = {
+  sku: string;
+  name: string;
+  unit: string;
+};
+
+type InventoryLog = {
+  sku: string;
+  quantity: number;
+  action: "in" | "out";
+  shiftId: string;
+};
+
+type StockSnapshot = {
+  sku: string;
+  quantity: number;
+};
+
+type AlertRow = {
+  sku: string;
+  product: string;
+  unit: string;
+  shiftId: string;
+  shiftLabel: string;
+  date: string;
+  variance: number;
+  severity: "High" | "Medium" | "Low";
+};
+
+/* ================= CONSTANTS ================= */
+
+const PAGE_SIZE = 10;
+
+/* ================= HELPERS ================= */
+
+const severityFromVariance = (v: number): AlertRow["severity"] => {
+  const abs = Math.abs(v);
+  if (abs >= 10) return "High";
+  if (abs >= 5) return "Medium";
+  return "Low";
+};
+
+/* ================= COMPONENT ================= */
+
 export default function VarianceAlerts() {
-  const [product, setProduct] = useState("All");
-  const [severity, setSeverity] = useState("All");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [logs, setLogs] = useState<InventoryLog[]>([]);
+
   const [page, setPage] = useState(1);
 
-  const PAGE_SIZE = 10;
+  /* ================= LOAD DATA ================= */
 
-  const filtered = alerts.filter((a) => {
-    if (product !== "All" && a.product !== product) return false;
-    if (severity !== "All" && a.severity !== severity) return false;
+  useEffect(() => {
+    setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
+    setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
+    setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
+  }, []);
 
-    if (fromDate && a.date < fromDate) return false;
-    if (toDate && a.date > toDate) return false;
+  /* ================= BUILD ALERTS (CORRECT LOGIC) ================= */
 
-    return true;
-  });
+  const alerts: AlertRow[] = useMemo(() => {
+    const endedShifts = shifts.filter(
+      (s) =>
+        s.status === "ended" &&
+        s.openingSnapshot &&
+        s.closingSnapshot
+    );
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const rows: AlertRow[] = [];
 
-  const pageData = filtered.slice(
+    endedShifts.forEach((shift) => {
+      products.forEach((product) => {
+        const opening =
+          shift.openingSnapshot?.find(
+            (i: StockSnapshot) => i.sku === product.sku
+          )?.quantity || 0;
+
+        const closing =
+          shift.closingSnapshot?.find(
+            (i: StockSnapshot) => i.sku === product.sku
+          )?.quantity || 0;
+
+        const shiftLogs = logs.filter(
+          (l) => l.shiftId === shift.id && l.sku === product.sku
+        );
+
+        const added = shiftLogs
+          .filter((l) => l.action === "in")
+          .reduce((s, l) => s + l.quantity, 0);
+
+        const used = shiftLogs
+          .filter((l) => l.action === "out")
+          .reduce((s, l) => s + l.quantity, 0);
+
+        const expected = opening + added - used;
+        const variance = closing - expected;
+
+        if (variance !== 0) {
+          rows.push({
+            sku: product.sku,
+            product: product.name,
+            unit: product.unit,
+            shiftId: shift.id,
+            shiftLabel: shift.label,
+            date: shift.endedAt || "",
+            variance,
+            severity: severityFromVariance(variance),
+          });
+        }
+      });
+    });
+
+    return rows;
+  }, [shifts, products, logs]);
+
+  /* ================= PAGINATION ================= */
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(alerts.length / PAGE_SIZE)
+  );
+  const pageData = alerts.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
   );
 
+  /* ================= UI ================= */
+
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden space-y-6">
-      {/* ================= HEADER ================= */}
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">Variance Alerts</h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <AlertTriangle className="text-red-600" size={18} />
+          Variance Alerts
+        </h2>
         <p className="text-sm text-gray-500">
-          Logged inventory discrepancies detected across items, shifts, and staff.
+          Confirmed stock discrepancies detected after shift closure.
         </p>
       </div>
 
-      {/* ================= FILTERS ================= */}
-      <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Filter size={16} />
-          Filters
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Item */}
-          <select
-            value={product}
-            onChange={(e) => {
-              setPage(1);
-              setProduct(e.target.value);
-            }}
-            className="border rounded-lg px-3 py-2 text-sm bg-white"
-          >
-            <option>All</option>
-            <option>Rice</option>
-            <option>Oil</option>
-            <option>Chicken</option>
-            <option>Tomatoes</option>
-          </select>
-
-          {/* Severity */}
-          <select
-            value={severity}
-            onChange={(e) => {
-              setPage(1);
-              setSeverity(e.target.value);
-            }}
-            className="border rounded-lg px-3 py-2 text-sm bg-white"
-          >
-            <option>All</option>
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low</option>
-          </select>
-
-          {/* From Date */}
-          <div className="relative">
-            <Calendar
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => {
-                setPage(1);
-                setFromDate(e.target.value);
-              }}
-              className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm bg-white"
-            />
-          </div>
-
-          {/* To Date */}
-          <div className="relative">
-            <Calendar
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => {
-                setPage(1);
-                setToDate(e.target.value);
-              }}
-              className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm bg-white"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ================= DESKTOP TABLE ================= */}
-      <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-x-auto">
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
               <th className="px-4 py-3 text-left">Date</th>
               <th className="px-4 py-3 text-left">Item</th>
               <th className="px-4 py-3 text-right">Variance</th>
-              <th className="px-4 py-3 text-left">Severity</th>
+              <th className="px-4 py-3 text-left">Unit</th>
               <th className="px-4 py-3 text-left">Shift</th>
-              <th className="px-4 py-3 text-left">Staff Involved</th>
+              <th className="px-4 py-3 text-left">Severity</th>
             </tr>
           </thead>
+
           <tbody>
-            {pageData.map((a, i) => (
+            {pageData.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="py-8 text-center text-gray-400"
+                >
+                  No variance alerts found
+                </td>
+              </tr>
+            )}
+
+            {pageData.map((v, i) => (
               <tr key={i} className="border-t">
-                <td className="px-4 py-3">{a.date}</td>
-                <td className="px-4 py-3 font-medium">{a.product}</td>
-                <td className="px-4 py-3 text-right font-semibold text-red-600">
-                  {a.variance}
+                <td className="px-4 py-3">{v.date}</td>
+                <td className="px-4 py-3 font-medium">{v.product}</td>
+                <td className="px-4 py-3 text-right text-red-600 font-semibold">
+                  {v.variance}
                 </td>
+                <td className="px-4 py-3">{v.unit}</td>
+                <td className="px-4 py-3">{v.shiftLabel}</td>
                 <td className="px-4 py-3">
-                  <SeverityBadge severity={a.severity} />
-                </td>
-                <td className="px-4 py-3">{a.shift}</td>
-                <td className="px-4 py-3 text-gray-600">
-                  {a.staff.join(", ")}
+                  <SeverityBadge severity={v.severity} />
                 </td>
               </tr>
             ))}
@@ -165,60 +202,23 @@ export default function VarianceAlerts() {
         </table>
       </div>
 
-      {/* ================= MOBILE CARDS ================= */}
-      <div className="md:hidden space-y-3">
-        {pageData.map((a, i) => (
-          <div
-            key={i}
-            className="bg-white rounded-xl shadow-sm p-4 space-y-3"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="font-medium">{a.product}</p>
-                <p className="text-xs text-gray-500">
-                  {a.date} • {a.shift}
-                </p>
-              </div>
-              <SeverityBadge severity={a.severity} />
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-500">Variance</span>
-              <span className="text-sm font-semibold text-red-600">
-                {a.variance}
-              </span>
-            </div>
-
-            <div className="text-xs text-gray-500">
-              Staff involved:{" "}
-              <span className="text-gray-700">
-                {a.staff.join(", ")}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ================= PAGINATION ================= */}
-      <div className="flex items-center justify-between pt-2">
-        <span className="text-xs text-gray-500">
-          Showing {(page - 1) * PAGE_SIZE + 1}–
-          {Math.min(page * PAGE_SIZE, filtered.length)} of{" "}
-          {filtered.length}
+      {/* Pagination */}
+      <div className="flex items-center justify-between text-sm text-gray-500">
+        <span>
+          Page {page} of {totalPages}
         </span>
-
         <div className="flex gap-2">
           <button
             disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-            className="h-8 w-8 border rounded-md flex items-center justify-center disabled:opacity-40"
+            onClick={() => setPage((p) => p - 1)}
+            className="h-8 w-8 border rounded-md disabled:opacity-40"
           >
             <ChevronLeft size={14} />
           </button>
           <button
             disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
-            className="h-8 w-8 border rounded-md flex items-center justify-center disabled:opacity-40"
+            onClick={() => setPage((p) => p + 1)}
+            className="h-8 w-8 border rounded-md disabled:opacity-40"
           >
             <ChevronRight size={14} />
           </button>
@@ -228,10 +228,14 @@ export default function VarianceAlerts() {
   );
 }
 
-/* ================= HELPERS ================= */
+/* ================= UI HELPERS ================= */
 
-function SeverityBadge({ severity }: { severity: string }) {
-  const map: any = {
+function SeverityBadge({
+  severity,
+}: {
+  severity: "High" | "Medium" | "Low";
+}) {
+  const map = {
     High: "bg-red-100 text-red-700",
     Medium: "bg-yellow-100 text-yellow-700",
     Low: "bg-green-100 text-green-700",

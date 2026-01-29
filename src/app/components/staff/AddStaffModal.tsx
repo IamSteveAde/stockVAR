@@ -1,31 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 /* ================= TYPES ================= */
 
-type StaffRole = "manager" | "staff";
-
-type NewStaff = {
-  id: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  role: StaffRole;
-  status: "invited";
-  pin: string;
-};
+export type StaffRole = "manager" | "staff";
 
 type Props = {
   onClose: () => void;
-  onAddStaff: (staff: NewStaff) => void;
+  onAddStaff: (staff: {
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    role: StaffRole;
+    status: "invited";
+    pin: string;
+  }) => void;
 };
+
+/* ================= STORAGE ================= */
+
+const STAFF_KEY = "stockvar_staff";
 
 /* ================= HELPERS ================= */
 
 const generatePin = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
+
+const loadStaffEmails = (): string[] => {
+  try {
+    const raw = localStorage.getItem(STAFF_KEY);
+    if (!raw) return [];
+    const staff = JSON.parse(raw);
+    return staff.map((s: any) => s.email.toLowerCase());
+  } catch {
+    return [];
+  }
+};
 
 /* ================= COMPONENT ================= */
 
@@ -38,27 +51,42 @@ export default function AddStaffModal({
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<StaffRole>("staff");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [existingEmails, setExistingEmails] = useState<string[]>([]);
+
+  /* Load existing staff emails ONCE */
+  useEffect(() => {
+    setExistingEmails(loadStaffEmails());
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // ❌ DUPLICATE EMAIL BLOCK
+    if (existingEmails.includes(normalizedEmail)) {
+      setError("A staff member with this email already exists.");
+      return;
+    }
+
+    setError("");
     setLoading(true);
 
-    // simulate backend
     setTimeout(() => {
-      const newStaff: NewStaff = {
+      onAddStaff({
         id: crypto.randomUUID(),
         fullName,
-        email,
+        email: normalizedEmail,
         phone,
         role,
         status: "invited",
         pin: generatePin(),
-      };
+      });
 
-      onAddStaff(newStaff);
       setLoading(false);
       onClose();
-    }, 800);
+    }, 600);
   };
 
   return (
@@ -73,10 +101,7 @@ export default function AddStaffModal({
         </div>
 
         {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="px-6 py-6 space-y-5"
-        >
+        <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
           <Input
             label="Full name"
             value={fullName}
@@ -88,10 +113,17 @@ export default function AddStaffModal({
             label="Email address"
             type="email"
             value={email}
-            onChange={setEmail}
+            onChange={(v) => {
+              setEmail(v);
+              setError("");
+            }}
             placeholder="staff@restaurant.com"
             helper="Login PIN will be sent here"
           />
+
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
 
           <Input
             label="Phone number"
@@ -149,7 +181,14 @@ function Input({
   placeholder,
   helper,
   type = "text",
-}: any) {
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  helper?: string;
+  type?: string;
+}) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700">

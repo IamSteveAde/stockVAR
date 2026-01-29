@@ -1,202 +1,257 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Shift } from "../shifts/types";
 
-const PRODUCTS = [
-  "Rice",
-  "Cooking Oil",
-  "Chicken",
-  "Tomatoes",
-  "Milk",
-];
+/* ================= STORAGE KEYS ================= */
+
+const PRODUCTS_KEY = "stockvar_products";
+const INVENTORY_KEY = "stockvar_inventory";
+const LOGS_KEY = "stockvar_inventory_logs";
+const SHIFTS_KEY = "stockvar_shifts";
+
+/* ================= TYPES ================= */
+
+type Product = {
+  sku: string;
+  name: string;
+  unit: string;
+};
+
+type InventoryItem = {
+  sku: string;
+  quantity: number;
+  updatedAt: string;
+};
+
+/* ================= HELPERS ================= */
+
+const now = () => new Date().toLocaleString();
+
+/* ================= COMPONENT ================= */
 
 export default function NewEntryForm() {
   const [type, setType] = useState<"in" | "out">("out");
-  const [product, setProduct] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [activeShift, setActiveShift] = useState<Shift | null>(null);
+
+  const [sku, setSku] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [unit, setUnit] = useState("kg");
   const [reason, setReason] = useState("");
-  const [note, setNote] = useState("");
+
+  /* ================= LOAD DATA ================= */
+
+  const loadData = () => {
+    setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
+    setInventory(JSON.parse(localStorage.getItem(INVENTORY_KEY) || "[]"));
+
+    const shifts: Shift[] = JSON.parse(
+      localStorage.getItem(SHIFTS_KEY) || "[]"
+    );
+
+    /**
+     * INDUSTRY RULE:
+     * Exactly ONE running shift can exist.
+     */
+    const runningShift =
+      shifts.find((s) => s.status === "running") || null;
+
+    setActiveShift(runningShift);
+  };
+
+  useEffect(() => {
+    loadData();
+
+    window.addEventListener("inventory:updated", loadData);
+    window.addEventListener("shifts:updated", loadData);
+
+    return () => {
+      window.removeEventListener("inventory:updated", loadData);
+      window.removeEventListener("shifts:updated", loadData);
+    };
+  }, []);
+
+  /* ================= SAVE ENTRY ================= */
+
+  const handleSave = () => {
+    if (!activeShift) {
+      alert("No running shift. Start a shift first.");
+      return;
+    }
+
+    if (!sku || !quantity) return;
+
+    const qty = Number(quantity);
+    if (Number.isNaN(qty) || qty <= 0) return;
+
+    const product = products.find((p) => p.sku === sku);
+    if (!product) return;
+
+    const existing = inventory.find((i) => i.sku === sku);
+
+    if (type === "out" && (!existing || qty > existing.quantity)) {
+      alert("Invalid stock out quantity");
+      return;
+    }
+
+    /* ================= UPDATE INVENTORY ================= */
+
+    const updatedInventory: InventoryItem[] = existing
+      ? inventory.map((i) =>
+          i.sku === sku
+            ? {
+                ...i,
+                quantity:
+                  type === "in"
+                    ? i.quantity + qty
+                    : i.quantity - qty,
+                updatedAt: now(),
+              }
+            : i
+        )
+      : [
+          {
+            sku,
+            quantity: qty,
+            updatedAt: now(),
+          },
+          ...inventory,
+        ];
+
+    localStorage.setItem(
+      INVENTORY_KEY,
+      JSON.stringify(updatedInventory)
+    );
+    setInventory(updatedInventory);
+
+    window.dispatchEvent(
+      new CustomEvent("inventory:updated", {
+        detail: updatedInventory,
+      })
+    );
+
+    /* ================= WRITE LOG ================= */
+
+    const logs = JSON.parse(
+      localStorage.getItem(LOGS_KEY) || "[]"
+    );
+
+    logs.unshift({
+      id: crypto.randomUUID(),
+      sku,
+      product: product.name,
+      unit: product.unit,
+      quantity: qty,
+      action: type,
+      shiftId: activeShift.id,
+      shiftLabel: activeShift.label,
+      reason,
+      createdAt: now(),
+    });
+
+    localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
+
+    window.dispatchEvent(
+      new CustomEvent("logs:updated", {
+        detail: logs,
+      })
+    );
+
+    /* ================= RESET ================= */
+
+    setSku("");
+    setQuantity("");
+    setReason("");
+
+    alert("Stock entry saved");
+  };
+
+  /* ================= UI ================= */
+
+  if (!activeShift) {
+    return (
+      <div className="bg-white rounded-xl p-8 text-center text-red-600">
+        ⚠️ No running shift.
+        <br />
+        Start a shift before recording stock movements.
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-8 space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">
-          New Stock Entry
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Record stock coming in or going out.
+    <div className="bg-white rounded-xl shadow-sm p-8 space-y-6">
+      <h2 className="text-xl font-semibold">New Stock Entry</h2>
+
+      <div className="bg-gray-50 border rounded-xl p-4 text-sm">
+        <p className="text-gray-500">Active shift</p>
+        <p className="font-medium">
+          {activeShift.label} ({activeShift.startTime} –{" "}
+          {activeShift.endTime})
         </p>
       </div>
 
-      {/* Auto Info (READ ONLY) */}
-      <div className="grid sm:grid-cols-2 gap-4 bg-[#F9FAFB] border rounded-xl p-4 text-sm">
-        <div>
-          <p className="text-gray-500">Staff on duty</p>
-          <p className="font-medium text-gray-900">Auto-assigned</p>
-        </div>
-        <div>
-          <p className="text-gray-500">Date & time</p>
-          <p className="font-medium text-gray-900">Auto-recorded</p>
-        </div>
-      </div>
-
-      {/* Entry Type */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-gray-700">
-          What are you doing?
-        </p>
-
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            onClick={() => setType("in")}
-            className={`flex items-center gap-3 p-4 rounded-xl border transition ${
-              type === "in"
-                ? "border-[#0F766E] bg-[#0F766E]/5"
-                : "hover:bg-gray-50"
-            }`}
-          >
-            <ArrowUpCircle className="text-[#0F766E]" />
-            <div className="text-left">
-              <p className="font-medium">Stock In</p>
-              <p className="text-xs text-gray-500">
-                Adding new stock
-              </p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setType("out")}
-            className={`flex items-center gap-3 p-4 rounded-xl border transition ${
-              type === "out"
-                ? "border-red-500 bg-red-50"
-                : "hover:bg-gray-50"
-            }`}
-          >
-            <ArrowDownCircle className="text-red-500" />
-            <div className="text-left">
-              <p className="font-medium">Stock Out</p>
-              <p className="text-xs text-gray-500">
-                Removing stock
-              </p>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Product */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">
-          Product
-        </label>
-        <select
-          value={product}
-          onChange={(e) => setProduct(e.target.value)}
-          required
-          className="w-full rounded-lg border px-4 py-3 text-sm focus:border-[#0F766E] outline-none"
-        >
-          <option value="">Select product</option>
-          {PRODUCTS.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Quantity */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
-            Quantity
-          </label>
-          <input
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            required
-            className="w-full rounded-lg border px-4 py-3 text-sm focus:border-[#0F766E] outline-none"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
-            Unit
-          </label>
-          <select
-            value={unit}
-            onChange={(e) => setUnit(e.target.value)}
-            className="w-full rounded-lg border px-4 py-3 text-sm focus:border-[#0F766E] outline-none"
-          >
-            <option value="kg">Kilogram (kg)</option>
-            <option value="bag">Bag</option>
-            <option value="crate">Crate</option>
-            <option value="litre">Litre</option>
-            <option value="unit">Unit</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Reason */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">
-          Reason
-        </label>
-        <select
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          className="w-full rounded-lg border px-4 py-3 text-sm focus:border-[#0F766E] outline-none"
-        >
-          <option value="">Select reason</option>
-          {type === "in" ? (
-            <>
-              <option>New purchase</option>
-              <option>Supplier delivery</option>
-              <option>Stock correction</option>
-            </>
-          ) : (
-            <>
-              <option>Served customers</option>
-              <option>Kitchen use</option>
-              <option>Wastage / spoilage</option>
-              <option>Adjustment</option>
-            </>
-          )}
-        </select>
-      </div>
-
-      {/* Notes */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">
-          Notes (optional)
-        </label>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={3}
-          className="w-full rounded-lg border px-4 py-3 text-sm focus:border-[#0F766E] outline-none"
-          placeholder="Extra details if needed"
-        />
-      </div>
-
-      {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4">
+      <div className="grid grid-cols-2 gap-4">
         <button
-          type="button"
-          className="px-6 py-3 text-sm rounded-lg border hover:bg-gray-50"
+          onClick={() => setType("in")}
+          className={`p-4 border rounded-xl flex items-center gap-2 ${
+            type === "in"
+              ? "border-[#0F766E] bg-[#0F766E]/10"
+              : ""
+          }`}
         >
-          Cancel
+          <ArrowUpCircle /> Stock In
         </button>
 
         <button
-          type="submit"
-          className="px-6 py-3 text-sm rounded-lg bg-[#0F766E] text-white hover:bg-[#0B5F58]"
+          onClick={() => setType("out")}
+          className={`p-4 border rounded-xl flex items-center gap-2 ${
+            type === "out"
+              ? "border-red-500 bg-red-50"
+              : ""
+          }`}
         >
-          Save Entry
+          <ArrowDownCircle /> Stock Out
         </button>
       </div>
+
+      <select
+        value={sku}
+        onChange={(e) => setSku(e.target.value)}
+        className="w-full border rounded-lg px-4 py-3"
+      >
+        <option value="">Select product</option>
+        {products.map((p) => (
+          <option key={p.sku} value={p.sku}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+
+      <input
+        type="number"
+        min={1}
+        value={quantity}
+        onChange={(e) => setQuantity(e.target.value)}
+        placeholder="Quantity"
+        className="w-full border rounded-lg px-4 py-3"
+      />
+
+      <input
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        placeholder="Reason (optional)"
+        className="w-full border rounded-lg px-4 py-3"
+      />
+
+      <button
+        onClick={handleSave}
+        disabled={!sku || !quantity}
+        className="bg-[#0F766E] text-white px-6 py-3 rounded-lg"
+      >
+        Save Entry
+      </button>
     </div>
   );
 }
