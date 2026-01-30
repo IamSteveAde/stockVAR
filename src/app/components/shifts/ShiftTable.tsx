@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Play,
   Square,
+  Trash2,
 } from "lucide-react";
 import CreateShiftModal from "./CreateShiftModal";
 import CloseShiftModal from "./CloseShiftModal";
@@ -47,6 +48,11 @@ const loadInventory = (): InventoryItem[] => {
   }
 };
 
+const formatDateTime = (date?: string, time?: string) => {
+  if (!date || !time) return "—";
+  return new Date(`${date}T${time}`).toLocaleString();
+};
+
 /* ================= COMPONENT ================= */
 
 export default function ShiftTable() {
@@ -57,9 +63,8 @@ export default function ShiftTable() {
   const [page, setPage] = useState(1);
   const [openCreate, setOpenCreate] = useState(false);
   const [viewStaff, setViewStaff] = useState<Staff[] | null>(null);
-  const [closingShift, setClosingShift] = useState<Shift | null>(
-    null
-  );
+  const [closingShift, setClosingShift] = useState<Shift | null>(null);
+  const [deleteShift, setDeleteShift] = useState<Shift | null>(null);
 
   /* ================= LOAD DATA ================= */
 
@@ -75,63 +80,58 @@ export default function ShiftTable() {
     }
   }, []);
 
-  /* ================= SAVE SHIFTS ================= */
+  /* ================= SAVE ================= */
 
   useEffect(() => {
     localStorage.setItem(SHIFTS_KEY, JSON.stringify(shifts));
   }, [shifts]);
 
-  /* ================= START SHIFT ================= */
+  /* ================= ACTIONS ================= */
 
-  const startShift = (shiftId: string) => {
-    const running = shifts.find((s) => s.status === "running");
-    if (running) {
-      alert(`Shift "${running.label}" is already running.`);
+  const startShift = (id: string) => {
+    if (shifts.some((s) => s.status === "running")) {
+      alert("A shift is already running.");
       return;
     }
 
     setShifts((prev) =>
-      prev.map((s) => {
-        if (s.id !== shiftId) return s;
-
-        const starter = s.staff[0];
-
-        return {
-          ...s,
-          status: "running",
-          startedAt: now(),
-          startedBy: starter
-            ? { staffId: starter.id, name: starter.fullName }
-            : undefined,
-          openingSnapshot: inventory.map((i) => ({
-            sku: i.sku,
-            quantity: i.quantity,
-          })),
-        };
-      })
+      prev.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              status: "running",
+              startedAt: now(),
+              openingSnapshot: inventory.map((i) => ({
+                sku: i.sku,
+                quantity: i.quantity,
+              })),
+            }
+          : s
+      )
     );
   };
 
-  /* ================= END SHIFT ================= */
-
-  const endShift = (shiftId: string, closingSnapshot: any[]) => {
+  const endShift = (id: string, closingSnapshot: any[]) => {
     setShifts((prev) =>
-      prev.map((s) => {
-        if (s.id !== shiftId) return s;
-
-        const ender = s.staff[0];
-
-        return {
-          ...s,
-          status: "ended",
-          endedAt: now(),
-          endedBy: ender
-            ? { staffId: ender.id, name: ender.fullName }
-            : undefined,
-          closingSnapshot,
-        };
-      })
+      prev.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              status: "ended",
+              endedAt: now(),
+              closingSnapshot,
+            }
+          : s
+      )
     );
+  };
+
+  const confirmDelete = () => {
+    if (!deleteShift) return;
+    setShifts((prev) =>
+      prev.filter((s) => s.id !== deleteShift.id)
+    );
+    setDeleteShift(null);
   };
 
   /* ================= PAGINATION ================= */
@@ -151,94 +151,35 @@ export default function ShiftTable() {
   return (
     <div className="bg-white rounded-xl shadow-sm">
       {/* Header */}
-      <div className="px-4 md:px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h3 className="text-lg font-semibold text-[#0F766E]">Shifts</h3>
+      <div className="px-6 py-4 border-b flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-[#0F766E]">
+          Shifts
+        </h3>
         <button
           onClick={() => setOpenCreate(true)}
-          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm w-full sm:w-auto"
+          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
         >
           Create shift
         </button>
       </div>
 
-      {/* ================= MOBILE & TABLET (CARDS) ================= */}
-      <div className="md:hidden divide-y">
-        {current.length === 0 && (
-          <div className="py-8 text-center text-gray-400 text-sm">
-            No shifts created yet
-          </div>
-        )}
-
-        {current.map((s) => (
-          <div key={s.id} className="p-4 space-y-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="font-medium">{s.label}</p>
-                <p className="text-xs text-gray-500">
-                  {s.startTime} – {s.endTime}
-                </p>
-              </div>
-
-              <span
-                className={`px-2 py-1 rounded text-xs capitalize ${
-                  s.status === "planned"
-                    ? "bg-gray-100 text-gray-600"
-                    : s.status === "running"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-blue-100 text-blue-700"
-                }`}
-              >
-                {s.status}
-              </span>
-            </div>
-
-            <div className="text-xs text-gray-500 space-y-1">
-              <p>Started: {s.startedAt || "—"}</p>
-              <p>Ended: {s.endedAt || "—"}</p>
-            </div>
-
-            <button
-              onClick={() => setViewStaff(s.staff)}
-              className="text-sm text-[#0F766E]"
-            >
-              {s.staff.length} staff assigned
-            </button>
-
-            <div className="pt-2">
-              {s.status === "planned" && (
-                <button
-                  onClick={() => startShift(s.id)}
-                  className="inline-flex items-center gap-1 text-xs text-green-700 border px-3 py-2 rounded-lg w-full justify-center"
-                >
-                  <Play size={12} /> Start shift
-                </button>
-              )}
-
-              {s.status === "running" && (
-                <button
-                  onClick={() => setClosingShift(s)}
-                  className="inline-flex items-center gap-1 text-xs text-red-600 border px-3 py-2 rounded-lg w-full justify-center"
-                >
-                  <Square size={12} /> End shift
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ================= DESKTOP TABLE ================= */}
-      <div className="hidden md:block overflow-x-auto">
+      {/* Table */}
+      <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
               <th className="px-6 py-3 text-left">Shift</th>
-              <th className="px-6 py-3 text-left">Schedule</th>
+              <th className="px-6 py-3 text-left">
+                Scheduled window
+              </th>
               <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-left">Started</th>
-              <th className="px-6 py-3 text-left">Ended</th>
+              <th className="px-6 py-3 text-left">
+                Actual time
+              </th>
               <th className="px-6 py-3 text-left">Staff</th>
-              <th className="px-6 py-3 text-right">Action</th>
+              <th className="px-6 py-3 text-right">
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -246,8 +187,8 @@ export default function ShiftTable() {
             {current.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
-                  className="py-8 text-center text-gray-400"
+                  colSpan={6}
+                  className="py-10 text-center text-gray-400"
                 >
                   No shifts created yet
                 </td>
@@ -255,15 +196,37 @@ export default function ShiftTable() {
             )}
 
             {current.map((s) => (
-              <tr key={s.id} className="border-t">
-                <td className="px-6 py-4 font-medium">{s.label}</td>
-                <td className="px-6 py-4">
-                  {s.startTime} – {s.endTime}
+              <tr
+                key={s.id}
+                className="border-t hover:bg-gray-50 transition"
+              >
+                {/* Shift */}
+                <td className="px-6 py-4 font-medium">
+                  {s.label}
                 </td>
 
-                <td className="px-6 py-4 capitalize">
+                {/* Scheduled */}
+                <td className="px-6 py-4 text-xs text-gray-600">
+                  <div>
+                    <span className="font-medium">Start:</span>{" "}
+                    {formatDateTime(
+                      s.startDate,
+                      s.startTime
+                    )}
+                  </div>
+                  <div>
+                    <span className="font-medium">End:</span>{" "}
+                    {formatDateTime(
+                      s.startDate,
+                      s.endTime
+                    )}
+                  </div>
+                </td>
+
+                {/* Status */}
+                <td className="px-6 py-4">
                   <span
-                    className={`px-2 py-1 rounded text-xs ${
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
                       s.status === "planned"
                         ? "bg-gray-100 text-gray-600"
                         : s.status === "running"
@@ -275,30 +238,46 @@ export default function ShiftTable() {
                   </span>
                 </td>
 
-                <td className="px-6 py-4 text-xs text-gray-500">
-                  {s.startedAt || "—"}
-                </td>
-                <td className="px-6 py-4 text-xs text-gray-500">
-                  {s.endedAt || "—"}
+                {/* Actual */}
+                <td className="px-6 py-4 text-xs text-gray-600">
+                  <div>
+                    Started: {s.startedAt || "—"}
+                  </div>
+                  <div>
+                    Ended: {s.endedAt || "—"}
+                  </div>
                 </td>
 
+                {/* Staff */}
                 <td className="px-6 py-4">
                   <button
                     onClick={() => setViewStaff(s.staff)}
-                    className="text-[#0F766E]"
+                    className="text-[#0F766E] text-sm"
                   >
                     {s.staff.length} staff
                   </button>
                 </td>
 
-                <td className="px-6 py-4 text-right">
+                {/* Actions */}
+                <td className="px-6 py-4 text-right space-x-2">
                   {s.status === "planned" && (
-                    <button
-                      onClick={() => startShift(s.id)}
-                      className="inline-flex items-center gap-1 text-xs text-green-700 border px-3 py-1 rounded-lg"
-                    >
-                      <Play size={12} /> Start shift
-                    </button>
+                    <>
+                      <button
+                        onClick={() => startShift(s.id)}
+                        className="inline-flex items-center gap-1 text-xs text-green-700 border px-3 py-1 rounded-lg"
+                      >
+                        <Play size={12} />
+                        Start
+                      </button>
+
+                      <button
+                        onClick={() => setDeleteShift(s)}
+                        className="inline-flex items-center gap-1 text-xs text-red-600 border px-3 py-1 rounded-lg"
+                      >
+                        <Trash2 size={12} />
+                        Delete
+                      </button>
+                    </>
                   )}
 
                   {s.status === "running" && (
@@ -306,7 +285,8 @@ export default function ShiftTable() {
                       onClick={() => setClosingShift(s)}
                       className="inline-flex items-center gap-1 text-xs text-red-600 border px-3 py-1 rounded-lg"
                     >
-                      <Square size={12} /> End shift
+                      <Square size={12} />
+                      End
                     </button>
                   )}
                 </td>
@@ -317,64 +297,32 @@ export default function ShiftTable() {
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-4 border-t">
-  {/* Page info */}
-  <span className="text-sm text-gray-500">
-    Page <span className="font-medium text-gray-900">{page}</span> of{" "}
-    <span className="font-medium text-gray-900">{totalPages}</span>
-  </span>
+      <div className="flex justify-between items-center px-6 py-4 border-t text-sm">
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <div className="flex gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            <ChevronLeft />
+          </button>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            <ChevronRight />
+          </button>
+        </div>
+      </div>
 
-  {/* Controls */}
-  <div className="flex items-center gap-2 self-end sm:self-auto">
-    <button
-      disabled={page === 1}
-      onClick={() => setPage((p) => p - 1)}
-      className="
-        inline-flex items-center justify-center
-        h-10 w-10 rounded-full
-        bg-[#0F766E] text-white
-        border border-[#0F766E]
-        transition-all duration-200
-        hover:bg-white hover:text-[#0F766E]
-        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
-        disabled:bg-[#0F766E]/30
-        disabled:border-[#0F766E]/30
-        disabled:text-white/70
-        disabled:cursor-not-allowed
-      "
-      aria-label="Previous page"
-    >
-      <ChevronLeft size={16} />
-    </button>
-
-    <button
-      disabled={page === totalPages}
-      onClick={() => setPage((p) => p + 1)}
-      className="
-        inline-flex items-center justify-center
-        h-10 w-10 rounded-full
-        bg-[#0F766E] text-white
-        border border-[#0F766E]
-        transition-all duration-200
-        hover:bg-white hover:text-[#0F766E]
-        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
-        disabled:bg-[#0F766E]/30
-        disabled:border-[#0F766E]/30
-        disabled:text-white/70
-        disabled:cursor-not-allowed
-      "
-      aria-label="Next page"
-    >
-      <ChevronRight size={16} />
-    </button>
-  </div>
-</div>
-
-      {/* Create Shift Modal */}
+      {/* Modals */}
       <CreateShiftModal
         open={openCreate}
         onClose={() => setOpenCreate(false)}
         staffList={staff}
+        existingShifts={shifts}
         onCreate={(shift) =>
           setShifts((prev) => [
             { ...shift, status: "planned" },
@@ -383,7 +331,6 @@ export default function ShiftTable() {
         }
       />
 
-      {/* Close Shift Modal */}
       {closingShift && (
         <CloseShiftModal
           shift={closingShift}
@@ -396,11 +343,40 @@ export default function ShiftTable() {
         />
       )}
 
-      {/* Staff Modal */}
+      {deleteShift && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm space-y-4">
+            <h4 className="font-semibold text-red-600">
+              Delete shift?
+            </h4>
+            <p className="text-sm text-gray-600">
+              This will permanently delete this planned
+              shift.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteShift(null)}
+                className="border px-4 py-2 rounded-lg text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {viewStaff && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <h4 className="font-semibold mb-3">Assigned staff</h4>
+            <h4 className="font-semibold mb-3">
+              Assigned staff
+            </h4>
             {viewStaff.map((s) => (
               <p key={s.id} className="text-sm">
                 {s.fullName}

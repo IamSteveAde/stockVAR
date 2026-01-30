@@ -5,7 +5,7 @@ import { Shift, StockSnapshot } from "./types";
 
 type InventoryItem = {
   sku: string;
-  quantity: number;
+  quantity: number; // current system quantity (NOT shown)
 };
 
 type Props = {
@@ -21,54 +21,99 @@ export default function CloseShiftModal({
   onCancel,
   onConfirm,
 }: Props) {
-  const [counts, setCounts] = useState<StockSnapshot[]>(
-    inventory.map((i) => ({ sku: i.sku, quantity: i.quantity }))
-  );
+  /**
+   * IMPORTANT (Industry Standard):
+   * - Do NOT prefill quantities
+   * - Staff must physically count and enter values
+   */
+  const [counts, setCounts] = useState<
+    { sku: string; quantity: number | null }[]
+  >(inventory.map((i) => ({ sku: i.sku, quantity: null })));
 
   const updateQty = (sku: string, qty: number) => {
     setCounts((prev) =>
       prev.map((c) =>
-        c.sku === sku ? { ...c, quantity: Math.max(0, qty) } : c
+        c.sku === sku
+          ? { ...c, quantity: Math.max(0, qty) }
+          : c
       )
     );
   };
 
   const submit = () => {
-    const ok = window.confirm(
-      "End this shift now? This action cannot be undone."
+    // Ensure ALL items are counted
+    const uncounted = counts.find(
+      (c) => c.quantity === null
     );
+
+    if (uncounted) {
+      alert(
+        "All items must be physically counted before ending the shift."
+      );
+      return;
+    }
+
+    const ok = window.confirm(
+      "End this shift now?\n\nThis will lock inventory and cannot be undone."
+    );
+
     if (!ok) return;
-    onConfirm(counts);
+
+    // Safe cast: all quantities are filled
+    onConfirm(
+      counts.map((c) => ({
+        sku: c.sku,
+        quantity: c.quantity as number,
+      }))
+    );
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded-xl w-full max-w-lg p-6 space-y-4">
-        <h2 className="text-lg font-semibold">End Shift – Physical Count</h2>
-        <p className="text-sm text-gray-500">
-          Count each item physically and enter the actual quantity left.
-        </p>
+      <div className="bg-white rounded-xl w-full max-w-lg p-6 space-y-5">
+        {/* Header */}
+        <div>
+          <h2 className="text-lg font-semibold">
+            End Shift – Physical Inventory Count
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Count each item physically and enter the actual
+            quantity remaining.
+          </p>
+        </div>
 
+        {/* Inventory list */}
         <div className="max-h-80 overflow-y-auto border rounded-lg p-3 space-y-3">
           {counts.map((c) => (
             <div
               key={c.sku}
               className="flex items-center justify-between gap-3"
             >
-              <span className="text-sm font-medium">{c.sku}</span>
+              <span className="text-sm font-medium">
+                {c.sku}
+              </span>
+
               <input
                 type="number"
                 min={0}
-                value={c.quantity}
+                placeholder="Enter count"
+                value={c.quantity ?? ""}
                 onChange={(e) =>
-                  updateQty(c.sku, Number(e.target.value))
+                  updateQty(
+                    c.sku,
+                    Number(e.target.value)
+                  )
                 }
-                className="w-28 border rounded px-2 py-1 text-sm"
+                className="
+                  w-32 border rounded px-3 py-2 text-sm
+                  focus:ring-2 focus:ring-[#0F766E]/30
+                "
               />
             </div>
           ))}
         </div>
 
+        {/* Actions */}
         <div className="flex justify-end gap-3 pt-2">
           <button
             onClick={onCancel}
@@ -76,6 +121,7 @@ export default function CloseShiftModal({
           >
             Cancel
           </button>
+
           <button
             onClick={submit}
             className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
