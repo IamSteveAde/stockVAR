@@ -58,7 +58,6 @@ export default function InventoryTable() {
   useEffect(() => {
     save(INVENTORY_KEY, inventory);
 
-    // 🔔 Notify the rest of the app (reports, dashboard, etc.)
     window.dispatchEvent(
       new CustomEvent("inventory:updated", {
         detail: inventory,
@@ -110,9 +109,7 @@ export default function InventoryTable() {
 
   const rows = inventory
     .map((i) => {
-      const product = products.find(
-        (p) => p.sku === i.sku
-      );
+      const product = products.find((p) => p.sku === i.sku);
       if (!product) return null;
 
       return {
@@ -134,18 +131,51 @@ export default function InventoryTable() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h3 className="font-medium text-black">Inventory</h3>
         <button
           onClick={() => setOpen(true)}
-          className="bg-[#0F766E] text-white text-sm px-4 py-2 rounded-lg"
+          className="bg-[#0F766E] text-white text-sm px-4 py-2 rounded-lg w-full sm:w-auto"
         >
           Adjust Inventory
         </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+      {/* ================= MOBILE & TABLET (CARDS) ================= */}
+      <div className="md:hidden space-y-3">
+        {rows.length === 0 && (
+          <div className="py-10 text-center text-gray-400 text-sm">
+            No inventory records yet
+          </div>
+        )}
+
+        {rows.map((i) => (
+          <div
+            key={i.sku}
+            className="bg-white rounded-xl border p-4 space-y-3"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-medium">{i.name}</p>
+                <p className="text-xs text-gray-500 font-mono">
+                  SKU: {i.sku}
+                </p>
+              </div>
+
+              <span className="text-sm font-semibold">
+                {i.quantity} {i.unit}
+              </span>
+            </div>
+
+            <div className="text-xs text-gray-500">
+              Last updated: {i.updatedAt}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ================= DESKTOP TABLE ================= */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
@@ -177,7 +207,9 @@ export default function InventoryTable() {
                 <td className="px-6 py-4 font-mono text-xs">
                   {i.sku}
                 </td>
-                <td className="px-6 py-4">{i.quantity}</td>
+                <td className="px-6 py-4">
+                  {i.quantity}
+                </td>
                 <td className="px-6 py-4">{i.unit}</td>
                 <td className="px-6 py-4 text-gray-500">
                   {i.updatedAt}
@@ -188,7 +220,7 @@ export default function InventoryTable() {
         </table>
       </div>
 
-      {/* Modal */}
+      {/* ================= MODAL ================= */}
       {open && (
         <AdjustInventoryModal
           products={products.filter(

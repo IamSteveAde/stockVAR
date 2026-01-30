@@ -114,10 +114,7 @@ export default function ShiftTable() {
 
   /* ================= END SHIFT ================= */
 
-  const endShift = (
-    shiftId: string,
-    closingSnapshot: any[]
-  ) => {
+  const endShift = (shiftId: string, closingSnapshot: any[]) => {
     setShifts((prev) =>
       prev.map((s) => {
         if (s.id !== shiftId) return s;
@@ -143,6 +140,7 @@ export default function ShiftTable() {
     1,
     Math.ceil(shifts.length / PAGE_SIZE)
   );
+
   const current = shifts.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
@@ -153,109 +151,173 @@ export default function ShiftTable() {
   return (
     <div className="bg-white rounded-xl shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b flex justify-between items-center">
+      <div className="px-4 md:px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h3 className="text-lg font-semibold">Shifts</h3>
         <button
           onClick={() => setOpenCreate(true)}
-          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
+          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm w-full sm:w-auto"
         >
           Create shift
         </button>
       </div>
 
-      {/* Table */}
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-gray-500">
-          <tr>
-            <th className="px-6 py-3 text-left">Shift</th>
-            <th className="px-6 py-3 text-left">Schedule</th>
-            <th className="px-6 py-3 text-left">Status</th>
-            <th className="px-6 py-3 text-left">Started</th>
-            <th className="px-6 py-3 text-left">Ended</th>
-            <th className="px-6 py-3 text-left">Staff</th>
-            <th className="px-6 py-3 text-right">Action</th>
-          </tr>
-        </thead>
+      {/* ================= MOBILE & TABLET (CARDS) ================= */}
+      <div className="md:hidden divide-y">
+        {current.length === 0 && (
+          <div className="py-8 text-center text-gray-400 text-sm">
+            No shifts created yet
+          </div>
+        )}
 
-        <tbody>
-          {current.length === 0 && (
-            <tr>
-              <td
-                colSpan={7}
-                className="py-8 text-center text-gray-400"
+        {current.map((s) => (
+          <div key={s.id} className="p-4 space-y-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-medium">{s.label}</p>
+                <p className="text-xs text-gray-500">
+                  {s.startTime} – {s.endTime}
+                </p>
+              </div>
+
+              <span
+                className={`px-2 py-1 rounded text-xs capitalize ${
+                  s.status === "planned"
+                    ? "bg-gray-100 text-gray-600"
+                    : s.status === "running"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-blue-100 text-blue-700"
+                }`}
               >
-                No shifts created yet
-              </td>
-            </tr>
-          )}
+                {s.status}
+              </span>
+            </div>
 
-          {current.map((s) => (
-            <tr key={s.id} className="border-t">
-              <td className="px-6 py-4 font-medium">
-                {s.label}
-              </td>
+            <div className="text-xs text-gray-500 space-y-1">
+              <p>Started: {s.startedAt || "—"}</p>
+              <p>Ended: {s.endedAt || "—"}</p>
+            </div>
 
-              <td className="px-6 py-4">
-                {s.startTime} – {s.endTime}
-              </td>
+            <button
+              onClick={() => setViewStaff(s.staff)}
+              className="text-sm text-[#0F766E]"
+            >
+              {s.staff.length} staff assigned
+            </button>
 
-              <td className="px-6 py-4 capitalize">
-                <span
-                  className={`px-2 py-1 rounded text-xs ${
-                    s.status === "planned"
-                      ? "bg-gray-100 text-gray-600"
-                      : s.status === "running"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {s.status}
-                </span>
-              </td>
-
-              <td className="px-6 py-4 text-xs text-gray-500">
-                {s.startedAt || "—"}
-              </td>
-
-              <td className="px-6 py-4 text-xs text-gray-500">
-                {s.endedAt || "—"}
-              </td>
-
-              <td className="px-6 py-4">
+            <div className="pt-2">
+              {s.status === "planned" && (
                 <button
-                  onClick={() => setViewStaff(s.staff)}
-                  className="text-[#0F766E]"
+                  onClick={() => startShift(s.id)}
+                  className="inline-flex items-center gap-1 text-xs text-green-700 border px-3 py-2 rounded-lg w-full justify-center"
                 >
-                  {s.staff.length} staff
+                  <Play size={12} /> Start shift
                 </button>
-              </td>
+              )}
 
-              <td className="px-6 py-4 text-right">
-                {s.status === "planned" && (
-                  <button
-                    onClick={() => startShift(s.id)}
-                    className="inline-flex items-center gap-1 text-xs text-green-700 border px-3 py-1 rounded-lg"
-                  >
-                    <Play size={12} /> Start shift
-                  </button>
-                )}
+              {s.status === "running" && (
+                <button
+                  onClick={() => setClosingShift(s)}
+                  className="inline-flex items-center gap-1 text-xs text-red-600 border px-3 py-2 rounded-lg w-full justify-center"
+                >
+                  <Square size={12} /> End shift
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
 
-                {s.status === "running" && (
-                  <button
-                    onClick={() => setClosingShift(s)}
-                    className="inline-flex items-center gap-1 text-xs text-red-600 border px-3 py-1 rounded-lg"
-                  >
-                    <Square size={12} /> End shift
-                  </button>
-                )}
-              </td>
+      {/* ================= DESKTOP TABLE ================= */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-gray-500">
+            <tr>
+              <th className="px-6 py-3 text-left">Shift</th>
+              <th className="px-6 py-3 text-left">Schedule</th>
+              <th className="px-6 py-3 text-left">Status</th>
+              <th className="px-6 py-3 text-left">Started</th>
+              <th className="px-6 py-3 text-left">Ended</th>
+              <th className="px-6 py-3 text-left">Staff</th>
+              <th className="px-6 py-3 text-right">Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {current.length === 0 && (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="py-8 text-center text-gray-400"
+                >
+                  No shifts created yet
+                </td>
+              </tr>
+            )}
+
+            {current.map((s) => (
+              <tr key={s.id} className="border-t">
+                <td className="px-6 py-4 font-medium">{s.label}</td>
+                <td className="px-6 py-4">
+                  {s.startTime} – {s.endTime}
+                </td>
+
+                <td className="px-6 py-4 capitalize">
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${
+                      s.status === "planned"
+                        ? "bg-gray-100 text-gray-600"
+                        : s.status === "running"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
+                  >
+                    {s.status}
+                  </span>
+                </td>
+
+                <td className="px-6 py-4 text-xs text-gray-500">
+                  {s.startedAt || "—"}
+                </td>
+                <td className="px-6 py-4 text-xs text-gray-500">
+                  {s.endedAt || "—"}
+                </td>
+
+                <td className="px-6 py-4">
+                  <button
+                    onClick={() => setViewStaff(s.staff)}
+                    className="text-[#0F766E]"
+                  >
+                    {s.staff.length} staff
+                  </button>
+                </td>
+
+                <td className="px-6 py-4 text-right">
+                  {s.status === "planned" && (
+                    <button
+                      onClick={() => startShift(s.id)}
+                      className="inline-flex items-center gap-1 text-xs text-green-700 border px-3 py-1 rounded-lg"
+                    >
+                      <Play size={12} /> Start shift
+                    </button>
+                  )}
+
+                  {s.status === "running" && (
+                    <button
+                      onClick={() => setClosingShift(s)}
+                      className="inline-flex items-center gap-1 text-xs text-red-600 border px-3 py-1 rounded-lg"
+                    >
+                      <Square size={12} /> End shift
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination */}
-      <div className="flex justify-between px-6 py-4 border-t text-sm">
+      <div className="flex justify-between px-4 md:px-6 py-4 border-t text-sm">
         <span>
           Page {page} of {totalPages}
         </span>
@@ -305,11 +367,9 @@ export default function ShiftTable() {
 
       {/* Staff Modal */}
       {viewStaff && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <h4 className="font-semibold mb-3">
-              Assigned staff
-            </h4>
+            <h4 className="font-semibold mb-3">Assigned staff</h4>
             {viewStaff.map((s) => (
               <p key={s.id} className="text-sm">
                 {s.fullName}

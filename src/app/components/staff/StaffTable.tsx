@@ -62,7 +62,6 @@ export default function StaffTable() {
   useEffect(() => {
     const stored = loadStaff();
 
-    // Seed initial owner if empty
     if (stored.length === 0) {
       const owner: Staff = {
         id: crypto.randomUUID(),
@@ -95,7 +94,9 @@ export default function StaffTable() {
 
   /* ================= ACTIONS ================= */
 
-  const handleAddStaff = (newStaff: Omit<Staff, "id" | "pin" | "status">) => {
+  const handleAddStaff = (
+    newStaff: Omit<Staff, "id" | "pin" | "status">
+  ) => {
     const staffMember: Staff = {
       ...newStaff,
       id: crypto.randomUUID(),
@@ -113,7 +114,8 @@ export default function StaffTable() {
         s.id === id
           ? {
               ...s,
-              status: s.status === "archived" ? "active" : "archived",
+              status:
+                s.status === "archived" ? "active" : "archived",
             }
           : s
       )
@@ -129,7 +131,7 @@ export default function StaffTable() {
   return (
     <div className="bg-white rounded-xl shadow-sm">
       {/* Header */}
-      <div className="px-4 md:px-6 py-4 border-b flex items-center justify-between">
+      <div className="px-4 md:px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">Staff</h3>
           <p className="text-sm text-gray-500">
@@ -141,10 +143,58 @@ export default function StaffTable() {
 
         <button
           onClick={() => setOpenAdd(true)}
-          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm font-medium"
+          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm font-medium w-full sm:w-auto"
         >
           Add staff
         </button>
+      </div>
+
+      {/* ================= MOBILE & TABLET (CARDS) ================= */}
+      <div className="md:hidden divide-y">
+        {currentStaff.map((s) => (
+          <div key={s.id} className="p-4 space-y-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-medium">{s.fullName}</p>
+                <p className="text-xs text-gray-500">{s.email}</p>
+              </div>
+              <StatusBadge status={s.status} />
+            </div>
+
+            <div className="text-sm text-gray-600 grid grid-cols-2 gap-2">
+              <span>
+                <strong>Role:</strong> {s.role}
+              </span>
+              <span className="flex items-center gap-1 font-mono">
+                <KeyRound size={12} /> {s.pin}
+              </span>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => toggleArchive(s.id)}
+                className="flex-1 inline-flex items-center justify-center gap-1 border rounded-lg py-2 text-xs"
+              >
+                {s.status === "archived" ? (
+                  <>
+                    <RotateCcw size={12} /> Unarchive
+                  </>
+                ) : (
+                  <>
+                    <Archive size={12} /> Archive
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => deleteStaff(s.id)}
+                className="flex-1 inline-flex items-center justify-center gap-1 border rounded-lg py-2 text-xs text-red-600"
+              >
+                <Trash2 size={12} /> Delete
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* ================= DESKTOP TABLE ================= */}
@@ -164,15 +214,15 @@ export default function StaffTable() {
           <tbody>
             {currentStaff.map((s) => (
               <tr key={s.id} className="border-t">
-                <td className="px-6 py-4 font-medium">{s.fullName}</td>
+                <td className="px-6 py-4 font-medium">
+                  {s.fullName}
+                </td>
                 <td className="px-6 py-4">{s.email}</td>
                 <td className="px-6 py-4 capitalize">{s.role}</td>
 
-                <td className="px-6 py-4 font-mono">
-                  <div className="inline-flex items-center gap-2">
-                    <KeyRound size={14} />
-                    {s.pin}
-                  </div>
+                <td className="px-6 py-4 font-mono flex items-center gap-2">
+                  <KeyRound size={14} />
+                  {s.pin}
                 </td>
 
                 <td className="px-6 py-4">
@@ -197,13 +247,11 @@ export default function StaffTable() {
                       >
                         {s.status === "archived" ? (
                           <>
-                            <RotateCcw size={14} />
-                            Unarchive
+                            <RotateCcw size={14} /> Unarchive
                           </>
                         ) : (
                           <>
-                            <Archive size={14} />
-                            Archive
+                            <Archive size={14} /> Archive
                           </>
                         )}
                       </button>
@@ -212,8 +260,7 @@ export default function StaffTable() {
                         onClick={() => deleteStaff(s.id)}
                         className="flex w-full items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50"
                       >
-                        <Trash2 size={14} />
-                        Delete
+                        <Trash2 size={14} /> Delete
                       </button>
                     </div>
                   )}

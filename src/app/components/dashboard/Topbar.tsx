@@ -8,9 +8,7 @@ import {
   Menu,
   Bell,
   Search,
-  X,
   User,
-  Settings,
   LogOut,
   AlertTriangle,
 } from "lucide-react";
@@ -84,10 +82,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(e.target as Node)
-      ) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpenSearch(false);
         setOpenNotifications(false);
         setOpenUserMenu(false);
@@ -193,10 +188,10 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
   return (
     <header
       ref={wrapperRef}
-      className="relative z-40 h-16 bg-[#19464b] flex items-center justify-between px-4 md:px-6"
+      className="sticky top-0 z-40 h-16 bg-[#19464b] flex items-center justify-between px-4 md:px-6"
     >
       {/* LEFT */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
           className="lg:hidden text-white"
@@ -204,7 +199,19 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
           <Menu size={20} />
         </button>
 
-        {/* SEARCH */}
+        {/* LOGO */}
+        <Link href="/dashboard" className="flex items-center">
+          <Image
+            src="/images/logo/stockvarwm.svg"   // 🔁 change if needed
+            alt="Stockvar"
+            width={120}
+            height={32}
+            priority
+            className="h-7 sm:h-8 md:h-9 w-auto"
+          />
+        </Link>
+
+        {/* SEARCH (Tablet + Desktop) */}
         <div className="relative hidden md:block w-72">
           <Search
             size={16}
@@ -215,7 +222,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
             onFocus={() => setOpenSearch(true)}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search products, staff, shifts…"
-            className="w-full bg-white/10 text-white rounded-lg pl-10 pr-8 py-2 text-sm"
+            className="w-full bg-white/10 text-white rounded-lg pl-10 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/30"
           />
 
           {openSearch && query && (
@@ -277,10 +284,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
                     key={n.id}
                     className="px-4 py-3 border-b text-sm flex gap-2"
                   >
-                    <AlertTriangle
-                      size={16}
-                      className="text-red-600"
-                    />
+                    <AlertTriangle size={16} className="text-red-600" />
                     {n.message}
                   </div>
                 ))

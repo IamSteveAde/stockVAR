@@ -134,11 +134,11 @@ export default function ProductsTable() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h3 className="font-medium text-black">Products</h3>
         <button
           onClick={() => setOpenAdd(true)}
-          className="bg-[#0F766E] text-white text-sm px-4 py-2 rounded-lg"
+          className="bg-[#0F766E] text-white text-sm px-4 py-2 rounded-lg w-full sm:w-auto"
         >
           Add Product
         </button>
@@ -148,8 +148,70 @@ export default function ProductsTable() {
         <div className="text-sm text-red-600">{error}</div>
       )}
 
-      {/* ================= TABLE ================= */}
-      <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+      {/* ================= MOBILE & TABLET (CARDS) ================= */}
+      <div className="md:hidden space-y-3">
+        {products.length === 0 && (
+          <div className="py-10 text-center text-gray-400 text-sm">
+            No products added yet
+          </div>
+        )}
+
+        {products.map((p) => (
+          <div
+            key={p.id}
+            className="bg-white rounded-xl border p-4 space-y-3"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-medium">{p.name}</p>
+                <p className="text-xs text-gray-500 font-mono">
+                  SKU: {p.sku}
+                </p>
+              </div>
+
+              <span className="text-xs capitalize px-2 py-1 rounded-full bg-gray-100">
+                {p.status}
+              </span>
+            </div>
+
+            <div className="text-sm text-gray-600 flex gap-6">
+              <span>
+                <strong>Unit:</strong> {p.unit}
+              </span>
+              <span>
+                <strong>Updated:</strong> {p.updatedAt}
+              </span>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setEditing({ ...p })}
+                className="flex-1 inline-flex items-center justify-center gap-1 text-xs border px-3 py-2 rounded-lg"
+              >
+                <Pencil size={12} /> Edit
+              </button>
+
+              <button
+                onClick={() => toggleArchive(p.id)}
+                className="flex-1 inline-flex items-center justify-center gap-1 text-xs border px-3 py-2 rounded-lg"
+              >
+                {p.status === "archived" ? (
+                  <>
+                    <RotateCcw size={12} /> Unarchive
+                  </>
+                ) : (
+                  <>
+                    <Archive size={12} /> Archive
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ================= DESKTOP TABLE ================= */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
@@ -180,7 +242,9 @@ export default function ProductsTable() {
                 <td className="px-6 py-4 font-mono text-xs">{p.sku}</td>
                 <td className="px-6 py-4">{p.unit}</td>
                 <td className="px-6 py-4 capitalize">{p.status}</td>
-                <td className="px-6 py-4 text-gray-500">{p.updatedAt}</td>
+                <td className="px-6 py-4 text-gray-500">
+                  {p.updatedAt}
+                </td>
                 <td className="px-6 py-4 text-right space-x-2">
                   <button
                     onClick={() => setEditing({ ...p })}
@@ -220,7 +284,7 @@ export default function ProductsTable() {
 
       {/* ================= EDIT MODAL ================= */}
       {editing && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-medium">Edit product</h3>
