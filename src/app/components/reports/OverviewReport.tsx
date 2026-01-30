@@ -9,6 +9,18 @@ import {
   Check,
 } from "lucide-react";
 import { Shift } from "../shifts/types";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+} from "recharts";
+import { Cell, LabelList } from "recharts";
+
 
 /* ================= STORAGE KEYS ================= */
 
@@ -43,7 +55,9 @@ type Row = {
   variance: number;
 };
 
+
 const PAGE_SIZE = 8;
+
 
 /* ================= COMPONENT ================= */
 
@@ -147,6 +161,16 @@ export default function OverviewReport() {
     });
   }, [selectedShiftIds, shifts, logs, products]);
 
+  const varianceChartData = useMemo(() => {
+  return rows.map((r) => ({
+    name: r.name,
+    variance: r.variance,
+    isNegative: r.variance < 0,
+  }));
+}, [rows]);
+
+
+
   /* ================= PAGINATION ================= */
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
@@ -208,6 +232,59 @@ export default function OverviewReport() {
           {selectedShiftIds.length} shift(s) selected
         </span>
       </div>
+
+      {/* ================= VARIANCE CHART ================= */}
+{varianceChartData.length > 0 && (
+  <div className="bg-white rounded-xl shadow-sm p-6">
+    <h3 className="text-sm font-medium text-gray-700 mb-4 text-black">
+      Stock Variance by Item
+    </h3>
+
+    <ResponsiveContainer width="100%" height={320}>
+  <BarChart data={varianceChartData}>
+    <CartesianGrid strokeDasharray="3 3" />
+
+    <XAxis
+      dataKey="name"
+      tick={{ fontSize: 12 }}
+      interval={0}
+    />
+
+    <YAxis
+      tick={{ fontSize: 12 }}
+      label={{
+        value: "Variance (Actual − Expected)",
+        angle: -90,
+        position: "inside",
+        style: { fontSize: 12, fill: "#6B7280" },
+      }}
+    />
+
+    <ReferenceLine y={0} stroke="#000" />
+
+    <Bar dataKey="variance" radius={[6, 6, 0, 0]}>
+      {/* Value labels ON the bars */}
+      <LabelList
+  dataKey="variance"
+  position="top"
+  style={{ fontSize: 12, fill: "#374151" }}
+/>
+
+
+      {/* Dynamic colors */}
+      {varianceChartData.map((entry, index) => (
+        <Cell
+          key={`cell-${index}`}
+          fill={entry.isNegative ? "#DC2626" : "#FACC15"}
+        />
+      ))}
+    </Bar>
+  </BarChart>
+</ResponsiveContainer>
+
+  </div>
+)}
+
 
       {/* ================= MOBILE & TABLET (CARDS) ================= */}
       <div className="md:hidden space-y-3">

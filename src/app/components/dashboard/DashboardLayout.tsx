@@ -1,37 +1,123 @@
 "use client";
 
-import { useState } from "react";
-import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
+import { useEffect, useState } from "react";
 import OverviewCards from "./OverviewCards";
 import VarStatus from "./VarStatus";
 import RecentActivity from "./RecentActivity";
 import QuickActions from "./QuickActions";
+import VarianceChart from "./VarianceChart";
+import { Shift } from "../shifts/types";
+
+/* ================= TYPES ================= */
+
+type Product = {
+  sku: string;
+  name: string;
+  unit: string;
+};
+
+type InventoryLog = {
+  sku: string;
+  quantity: number;
+  action: "in" | "out";
+  shiftId: string;
+};
+
+type StockSnapshot = {
+  sku: string;
+  quantity: number;
+};
+
+type VarianceRow = {
+  name: string;
+  variance: number;
+};
+
+/* ================= COMPONENT ================= */
 
 export default function DashboardLayout() {
-  const [open, setOpen] = useState(false);
+  const [varianceData, setVarianceData] = useState<VarianceRow[]>([]);
+
+  /* ================= LOAD DASHBOARD VARIANCE ================= */
+
+  useEffect(() => {
+    const products: Product[] = JSON.parse(
+      localStorage.getItem("stockvar_products") || "[]"
+    );
+
+    const shifts: Shift[] = JSON.parse(
+      localStorage.getItem("stockvar_shifts") || "[]"
+    );
+
+    const logs: InventoryLog[] = JSON.parse(
+      localStorage.getItem("stockvar_inventory_logs") || "[]"
+    );
+
+    const endedShifts = shifts
+      .filter(
+        (s) =>
+          s.status === "ended" &&
+          s.openingSnapshot &&
+          s.closingSnapshot
+      )
+      .slice(-5);
+
+    const result: VarianceRow[] = products.map((p) => {
+      let variance = 0;
+
+      endedShifts.forEach((shift) => {
+        const opening =
+          shift.openingSnapshot!.find(
+            (i: StockSnapshot) => i.sku === p.sku
+          )?.quantity || 0;
+
+        const closing =
+          shift.closingSnapshot!.find(
+            (i: StockSnapshot) => i.sku === p.sku
+          )?.quantity || 0;
+
+        const shiftLogs = logs.filter(
+          (l) => l.shiftId === shift.id && l.sku === p.sku
+        );
+
+        const added = shiftLogs
+          .filter((l) => l.action === "in")
+          .reduce((s, l) => s + l.quantity, 0);
+
+        const used = shiftLogs
+          .filter((l) => l.action === "out")
+          .reduce((s, l) => s + l.quantity, 0);
+
+        variance += closing - (opening + added - used);
+      });
+
+      return { name: p.name, variance };
+    });
+
+    setVarianceData(
+      result
+        .filter((r) => r.variance !== 0)
+        .sort(
+          (a, b) => Math.abs(b.variance) - Math.abs(a.variance)
+        )
+        .slice(0, 6)
+    );
+  }, []);
+
+  /* ================= UI ================= */
 
   return (
-    <div className="min-h-screen flex bg-[#F9FAFB]">
-      {/* Sidebar */}
-      <div className={`fixed lg:static z-40 ${open ? "block" : "hidden"} lg:block`}>
-        
-      </div>
+    <main className="p-4 space-y-6">
+      <OverviewCards />
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col">
-       
+     <div className="grid lg:grid-cols-2 gap-6 items-stretch">
+  <VarianceChart data={varianceData} />
+  <VarStatus />
+</div>
 
-        <main className="p-4 md:grid-cols-2 gap-6">
-          <OverviewCards />
 
-          <div className="grid lg:grid-cols-2 gap-6">
-            <VarStatus />
-            <RecentActivity />
-          </div>
-          <QuickActions />
-        </main>
-      </div>
-    </div>
+      <RecentActivity />
+      <QuickActions />
+    </main>
   );
 }
