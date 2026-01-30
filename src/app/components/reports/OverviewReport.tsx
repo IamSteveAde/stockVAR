@@ -58,6 +58,19 @@ type Row = {
 
 const PAGE_SIZE = 8;
 
+/* ================= HELPERS ================= */
+
+function formatShiftLabel(shift: Shift) {
+  if (!shift.endedAt) return shift.label;
+  const d = new Date(shift.endedAt);
+  const date = d.toLocaleDateString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  return `${shift.label} • ${date}`;
+}
+
 /* ================= COMPONENT ================= */
 
 export default function OverviewReport() {
@@ -68,12 +81,12 @@ export default function OverviewReport() {
   /* Filters */
   const [selectedShiftIds, setSelectedShiftIds] = useState<string[]>([]);
   const [draftShiftIds, setDraftShiftIds] = useState<string[]>([]);
+
   const [selectedSkus, setSelectedSkus] = useState<string[]>([]);
   const [draftSkus, setDraftSkus] = useState<string[]>([]);
 
-  const [openFilter, setOpenFilter] = useState<
-    "shift" | "product" | null
-  >(null);
+  const [openFilter, setOpenFilter] =
+    useState<"shift" | "product" | null>(null);
 
   const [page, setPage] = useState(1);
 
@@ -90,7 +103,7 @@ export default function OverviewReport() {
     setShifts(s);
     setLogs(l);
 
-    // Default: most recent ended shift
+    // Default → most recent ended shift
     const latestEnded = s
       .filter((x) => x.status === "ended" && x.endedAt)
       .sort(
@@ -104,7 +117,7 @@ export default function OverviewReport() {
     }
   }, []);
 
-  /* ================= FILTER HANDLERS ================= */
+  /* ================= APPLY FILTERS ================= */
 
   const applyShiftFilter = () => {
     setSelectedShiftIds(draftShiftIds);
@@ -131,14 +144,14 @@ export default function OverviewReport() {
 
     if (!endedShifts.length) return [];
 
-    const filteredProducts =
+    const visibleProducts =
       selectedSkus.length === 0
         ? products
         : products.filter((p) =>
             selectedSkus.includes(p.sku)
           );
 
-    return filteredProducts.map((p) => {
+    return visibleProducts.map((p) => {
       let opening = 0;
       let added = 0;
       let used = 0;
@@ -200,6 +213,7 @@ export default function OverviewReport() {
     1,
     Math.ceil(rows.length / PAGE_SIZE)
   );
+
   const slice = rows.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
@@ -243,9 +257,9 @@ export default function OverviewReport() {
       {/* ================= SHIFT FILTER MODAL ================= */}
       {openFilter === "shift" && (
         <FilterModal
-          title="Select shifts"
+          title="Select shifts (by date)"
           items={shifts.filter((s) => s.status === "ended")}
-          getLabel={(s) => s.label}
+          getLabel={(s) => formatShiftLabel(s)}
           isActive={(s) => draftShiftIds.includes(s.id)}
           onToggle={(s) =>
             setDraftShiftIds((p) =>
@@ -280,25 +294,45 @@ export default function OverviewReport() {
         />
       )}
 
-      {/* ================= CHART ================= */}
+      {/* ================= CHART + EXPLANATION ================= */}
       {varianceChartData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-          <div className="flex gap-3 bg-[#0F766E]/5 border border-[#0F766E]/20 rounded-lg p-4">
-            <Info size={18} className="text-[#0F766E]" />
-            <p className="text-sm text-gray-700">
-              Variance = Actual stock − Expected stock.
-              <br />
-              <strong className="text-red-600">
-                Red bars indicate missing stock.
-              </strong>
-            </p>
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+          <div className="flex items-start gap-3 bg-[#0F766E]/5 border border-[#0F766E]/20 rounded-lg p-4">
+            <Info className="text-[#0F766E] mt-0.5" size={18} />
+            <div className="text-sm text-gray-700 space-y-2">
+              <p className="font-medium text-[#0F766E]">
+                How to read this chart
+              </p>
+              <p>
+                This chart compares expected stock versus
+                physically counted stock at the end of
+                each selected shift date.
+              </p>
+              <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
+                <li>
+                  <strong>Yellow</strong> = surplus stock
+                </li>
+                <li>
+                  <strong>Red</strong> = missing stock
+                </li>
+                <li>
+                  Zero line = perfect accuracy
+                </li>
+              </ul>
+            </div>
           </div>
 
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={varianceChartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" interval={0} />
-              <YAxis />
+              <YAxis
+                label={{
+                  value: "Variance (Actual − Expected)",
+                  angle: -90,
+                  position: "insideLeft",
+                }}
+              />
               <ReferenceLine y={0} stroke="#000" />
               <Bar dataKey="variance" radius={[6, 6, 0, 0]}>
                 <LabelList dataKey="variance" position="top" />
@@ -333,17 +367,12 @@ export default function OverviewReport() {
               <th className="px-6 py-3 text-left">Unit</th>
             </tr>
           </thead>
-
           <tbody>
             {slice.map((r) => (
               <tr key={r.sku} className="border-t">
                 <td className="px-6 py-4 font-medium">{r.name}</td>
-                <td className="px-6 py-4 text-right">
-                  {r.expectedLeft}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  {r.actualLeft}
-                </td>
+                <td className="px-6 py-4 text-right">{r.expectedLeft}</td>
+                <td className="px-6 py-4 text-right">{r.actualLeft}</td>
                 <td className="px-6 py-4 text-right font-semibold text-red-600">
                   {r.variance}
                 </td>
@@ -353,7 +382,6 @@ export default function OverviewReport() {
           </tbody>
         </table>
 
-        {/* Pagination */}
         <div className="flex justify-between items-center px-6 py-4 border-t text-sm">
           <span>
             Page {page} of {totalPages}
@@ -378,7 +406,7 @@ export default function OverviewReport() {
   );
 }
 
-/* ================= REUSABLE FILTER MODAL ================= */
+/* ================= FILTER MODAL ================= */
 
 function FilterModal<T>({
   title,
@@ -430,10 +458,7 @@ function FilterModal<T>({
         </div>
 
         <div className="flex justify-between items-center pt-3 border-t">
-          <button
-            onClick={onClear}
-            className="text-sm text-gray-500"
-          >
+          <button onClick={onClear} className="text-sm text-gray-500">
             Clear
           </button>
           <button
