@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  AlertTriangle,
-  Calendar,
-  ArrowRight,
-  Users,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-
 import {
   ResponsiveContainer,
   BarChart,
@@ -34,14 +28,14 @@ export default function VarianceChart({
 
   if (!data.length) {
     return (
-      <div className="bg-white rounded-xl p-5 shadow-sm h-full flex items-center justify-center text-sm text-gray-400">
+      <div className="bg-white rounded-xl p-5 shadow-sm min-h-[240px] flex items-center justify-center text-sm text-gray-400">
         No variance data
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm h-full flex flex-col">
+    <div className="bg-white rounded-xl p-5 shadow-sm flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-[#0F766E]">
@@ -57,8 +51,8 @@ export default function VarianceChart({
         </button>
       </div>
 
-      {/* Chart */}
-      <div className="flex-1">
+      {/* Chart wrapper with GUARANTEED HEIGHT */}
+      <div className="w-full h-[260px] sm:h-[300px] md:h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -75,7 +69,10 @@ export default function VarianceChart({
                 value: "Variance",
                 angle: -90,
                 position: "insideLeft",
-                style: { fontSize: 11, fill: "#6B7280" },
+                style: {
+                  fontSize: 11,
+                  fill: "#6B7280",
+                },
               }}
             />
 
@@ -85,13 +82,20 @@ export default function VarianceChart({
               <LabelList
                 dataKey="variance"
                 position="top"
-                style={{ fontSize: 11, fill: "#374151" }}
+                style={{
+                  fontSize: 11,
+                  fill: "#374151",
+                }}
               />
 
               {data.map((entry, index) => (
                 <Cell
                   key={index}
-                  fill={entry.variance < 0 ? "#DC2626" : "#FACC15"}
+                  fill={
+                    entry.variance < 0
+                      ? "#DC2626" // red = loss
+                      : "#FACC15" // yellow = surplus
+                  }
                 />
               ))}
             </Bar>
