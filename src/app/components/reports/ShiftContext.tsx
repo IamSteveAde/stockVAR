@@ -294,22 +294,50 @@ export default function ShiftContext() {
           <span>
             Page {page} of {totalPages}
           </span>
-          <div className="flex gap-2">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-              className="h-8 w-8 border rounded-md disabled:opacity-40"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-              className="h-8 w-8 border rounded-md disabled:opacity-40"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
+          {/* Controls */}
+  <div className="flex items-center gap-2 self-end sm:self-auto">
+    <button
+      disabled={page === 1}
+      onClick={() => setPage((p) => p - 1)}
+      className="
+        inline-flex items-center justify-center
+        h-9 w-9 rounded-full
+        bg-[#0F766E] text-white
+        border border-[#0F766E]
+        transition-all duration-200
+        hover:bg-white hover:text-[#0F766E]
+        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+        disabled:bg-[#0F766E]/30
+        disabled:border-[#0F766E]/30
+        disabled:text-white/70
+        disabled:cursor-not-allowed
+      "
+      aria-label="Previous page"
+    >
+      <ChevronLeft size={14} />
+    </button>
+
+    <button
+      disabled={page === totalPages}
+      onClick={() => setPage((p) => p + 1)}
+      className="
+        inline-flex items-center justify-center
+        h-9 w-9 rounded-full
+        bg-[#0F766E] text-white
+        border border-[#0F766E]
+        transition-all duration-200
+        hover:bg-white hover:text-[#0F766E]
+        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+        disabled:bg-[#0F766E]/30
+        disabled:border-[#0F766E]/30
+        disabled:text-white/70
+        disabled:cursor-not-allowed
+      "
+      aria-label="Next page"
+    >
+      <ChevronRight size={14} />
+    </button>
+  </div>
         </div>
       </div>
 

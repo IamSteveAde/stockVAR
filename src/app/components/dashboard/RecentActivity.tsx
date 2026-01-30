@@ -134,7 +134,7 @@ export default function OverviewReport() {
   /* ================= UI ================= */
 
   return (
-    <div className="bg-white rounded-xl shadow-sm">
+    <div className="bg-white rounded-xl shadow-sm my-10">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b">
         <div className="flex items-center gap-2">

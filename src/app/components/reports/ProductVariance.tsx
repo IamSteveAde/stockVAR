@@ -56,6 +56,16 @@ type AggregatedProduct = {
 
 const PAGE_SIZE = 10;
 
+/* ================= SAFE DATE ================= */
+
+function safeDate(ts?: number) {
+  if (!ts || Number.isNaN(ts)) return "—";
+  const d = new Date(ts);
+  return Number.isNaN(d.getTime())
+    ? "—"
+    : d.toISOString().split("T")[0];
+}
+
 /* ================= MAIN ================= */
 
 export default function ProductVariance() {
@@ -74,9 +84,15 @@ export default function ProductVariance() {
   /* ================= LOAD DATA ================= */
 
   useEffect(() => {
-    setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
-    setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
-    setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
+    try {
+      setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
+      setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
+      setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
+    } catch {
+      setProducts([]);
+      setShifts([]);
+      setLogs([]);
+    }
   }, []);
 
   /* ================= LATEST ENDED SHIFT ================= */
@@ -84,7 +100,8 @@ export default function ProductVariance() {
   const latestEndedTs = useMemo(() => {
     const ended = shifts
       .filter((s) => s.status === "ended" && s.endedAt)
-      .map((s) => new Date(s.endedAt!).getTime());
+      .map((s) => new Date(s.endedAt!).getTime())
+      .filter((t) => !Number.isNaN(t));
 
     return ended.length ? Math.max(...ended) : null;
   }, [shifts]);
@@ -124,78 +141,76 @@ export default function ProductVariance() {
     return { fromTs, toTs };
   }, [dateRange, fromDate, toDate, latestEndedTs]);
 
-  /* ================= AGGREGATE VARIANCE ================= */
+  /* ================= AGGREGATE ================= */
 
   const aggregated: AggregatedProduct[] = useMemo(() => {
     const acc: Record<string, AggregatedProduct> = {};
 
-    const endedShifts = shifts.filter(
-      (s) =>
-        s.status === "ended" &&
-        s.openingSnapshot &&
-        s.closingSnapshot &&
-        s.endedAt
-    );
+    shifts
+      .filter(
+        (s) =>
+          s.status === "ended" &&
+          s.openingSnapshot &&
+          s.closingSnapshot &&
+          s.endedAt
+      )
+      .forEach((shift) => {
+        const endedTs = new Date(shift.endedAt!).getTime();
+        if (Number.isNaN(endedTs)) return;
 
-    endedShifts.forEach((shift) => {
-      const endedTs = new Date(shift.endedAt!).getTime();
-
-      if (dateBounds) {
-        if (endedTs < dateBounds.fromTs) return;
-        if (endedTs > dateBounds.toTs) return;
-      }
-
-      products.forEach((product) => {
-        const opening =
-          shift.openingSnapshot!.find(
-            (i: StockSnapshot) => i.sku === product.sku
-          )?.quantity || 0;
-
-        const closing =
-          shift.closingSnapshot!.find(
-            (i: StockSnapshot) => i.sku === product.sku
-          )?.quantity || 0;
-
-        const shiftLogs = logs.filter(
-          (l) => l.shiftId === shift.id && l.sku === product.sku
-        );
-
-        const added = shiftLogs
-          .filter((l) => l.action === "in")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const used = shiftLogs
-          .filter((l) => l.action === "out")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const expected = opening + added - used;
-        const variance = closing - expected;
-
-        if (variance >= 0) return; // only losses
-
-        if (!acc[product.sku]) {
-          acc[product.sku] = {
-            sku: product.sku,
-            product: product.name,
-            unit: product.unit,
-            totalVariance: 0,
-            incidents: [],
-            dates: [],
-          };
+        if (dateBounds) {
+          if (endedTs < dateBounds.fromTs) return;
+          if (endedTs > dateBounds.toTs) return;
         }
 
-        acc[product.sku].totalVariance += Math.abs(variance);
-        acc[product.sku].dates.push(endedTs);
+        products.forEach((product) => {
+          const opening =
+            shift.openingSnapshot!.find(
+              (i: StockSnapshot) => i.sku === product.sku
+            )?.quantity || 0;
 
-        acc[product.sku].incidents.push({
-          date: shift.endedAt!,
-          shiftLabel: shift.label,
-          variance: Math.abs(variance),
-          unit: product.unit,
-          staff: shift.staff?.map((s) => s.fullName) || [],
+          const closing =
+            shift.closingSnapshot!.find(
+              (i: StockSnapshot) => i.sku === product.sku
+            )?.quantity || 0;
+
+          const shiftLogs = logs.filter(
+            (l) => l.shiftId === shift.id && l.sku === product.sku
+          );
+
+          const added = shiftLogs
+            .filter((l) => l.action === "in")
+            .reduce((s, l) => s + l.quantity, 0);
+
+          const used = shiftLogs
+            .filter((l) => l.action === "out")
+            .reduce((s, l) => s + l.quantity, 0);
+
+          const variance = closing - (opening + added - used);
+          if (variance >= 0) return;
+
+          if (!acc[product.sku]) {
+            acc[product.sku] = {
+              sku: product.sku,
+              product: product.name,
+              unit: product.unit,
+              totalVariance: 0,
+              incidents: [],
+              dates: [],
+            };
+          }
+
+          acc[product.sku].totalVariance += Math.abs(variance);
+          acc[product.sku].dates.push(endedTs);
+          acc[product.sku].incidents.push({
+            date: shift.endedAt!,
+            shiftLabel: shift.label,
+            variance: Math.abs(variance),
+            unit: product.unit,
+            staff: shift.staff?.map((s) => s.fullName) || [],
+          });
         });
       });
-    });
 
     return Object.values(acc);
   }, [shifts, products, logs, dateBounds]);
@@ -216,9 +231,9 @@ export default function ProductVariance() {
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm w-full overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b space-y-1">
+        <div className="p-4 border-b">
           <h3 className="text-sm font-semibold text-[#0F766E]">
             Product Variance Summary
           </h3>
@@ -272,7 +287,7 @@ export default function ProductVariance() {
         <div className="divide-y">
           {pageData.length === 0 && (
             <p className="p-6 text-sm text-gray-400 text-center">
-              No product variance found for this period
+              No product variance found
             </p>
           )}
 
@@ -280,22 +295,16 @@ export default function ProductVariance() {
             <button
               key={p.sku}
               onClick={() => setActiveProduct(p)}
-              className="w-full text-left flex items-center justify-between p-4 hover:bg-gray-50"
+              className="w-full text-left p-4 flex justify-between hover:bg-gray-50"
             >
               <div>
                 <p className="font-medium">{p.product}</p>
                 <p className="text-xs text-gray-500">
                   {p.incidents.length} incidents •{" "}
-                  {new Date(Math.min(...p.dates))
-                    .toISOString()
-                    .split("T")[0]}{" "}
-                  →{" "}
-                  {new Date(Math.max(...p.dates))
-                    .toISOString()
-                    .split("T")[0]}
+                  {safeDate(Math.min(...p.dates))} →{" "}
+                  {safeDate(Math.max(...p.dates))}
                 </p>
               </div>
-
               <p className="font-semibold text-red-600">
                 -{p.totalVariance}
                 {p.unit}
@@ -309,50 +318,71 @@ export default function ProductVariance() {
           <span>
             Page {page} of {totalPages}
           </span>
-          <div className="flex gap-2">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-              className="h-8 w-8 border rounded-md disabled:opacity-40"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-              className="h-8 w-8 border rounded-md disabled:opacity-40"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+    <button
+      disabled={page === 1}
+      onClick={() => setPage((p) => p - 1)}
+      className="
+        inline-flex items-center justify-center
+        h-9 w-9 rounded-full
+        bg-[#0F766E] text-white
+        border border-[#0F766E]
+        transition-all duration-200
+        hover:bg-white hover:text-[#0F766E]
+        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+        disabled:bg-[#0F766E]/30
+        disabled:border-[#0F766E]/30
+        disabled:text-white/70
+        disabled:cursor-not-allowed
+      "
+      aria-label="Previous page"
+    >
+      <ChevronLeft size={14} />
+    </button>
+
+    <button
+      disabled={page === totalPages}
+      onClick={() => setPage((p) => p + 1)}
+      className="
+        inline-flex items-center justify-center
+        h-9 w-9 rounded-full
+        bg-[#0F766E] text-white
+        border border-[#0F766E]
+        transition-all duration-200
+        hover:bg-white hover:text-[#0F766E]
+        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+        disabled:bg-[#0F766E]/30
+        disabled:border-[#0F766E]/30
+        disabled:text-white/70
+        disabled:cursor-not-allowed
+      "
+      aria-label="Next page"
+    >
+      <ChevronRight size={14} />
+    </button>
+  </div>
         </div>
       </div>
 
-      {/* ================= MODAL ================= */}
+      {/* Modal */}
       {activeProduct && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl w-full max-w-lg shadow-lg">
-            <div className="flex items-center justify-between p-4 border-b">
+          <div className="bg-white rounded-xl w-full max-w-lg">
+            <div className="flex justify-between p-4 border-b">
               <h4 className="font-semibold">
                 {activeProduct.product} – Variance Details
               </h4>
-              <button
-                onClick={() => setActiveProduct(null)}
-                className="p-1 rounded hover:bg-gray-100"
-              >
+              <button onClick={() => setActiveProduct(null)}>
                 <X size={16} />
               </button>
             </div>
 
-            <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
               {activeProduct.incidents.map((i, idx) => (
-                <div
-                  key={idx}
-                  className="border rounded-lg p-3 space-y-1"
-                >
+                <div key={idx} className="border rounded-lg p-3">
                   <div className="flex justify-between">
                     <span className="font-medium text-sm">
-                      {i.shiftLabel} shift
+                      {i.shiftLabel}
                     </span>
                     <span className="font-semibold text-red-600">
                       -{i.variance}
@@ -363,23 +393,10 @@ export default function ProductVariance() {
                     Date: {i.date}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Staff:{" "}
-                    <span className="text-gray-700">
-                      {i.staff.join(", ") || "—"}
-                    </span>
+                    Staff: {i.staff.join(", ") || "—"}
                   </p>
                 </div>
               ))}
-            </div>
-
-            <div className="p-4 border-t flex justify-between text-sm">
-              <span className="text-gray-500">
-                Total incidents: {activeProduct.incidents.length}
-              </span>
-              <span className="font-semibold text-red-600">
-                Total variance: -{activeProduct.totalVariance}
-                {activeProduct.unit}
-              </span>
             </div>
           </div>
         </div>

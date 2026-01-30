@@ -297,27 +297,59 @@ export default function OverviewReport() {
         </table>
 
         {/* Pagination */}
-        <div className="flex justify-between px-6 py-4 border-t text-sm">
-          <span>
-            Page {page} of {totalPages}
-          </span>
-          <div className="flex gap-2">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="h-9 w-9 border rounded-lg disabled:opacity-40"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="h-9 w-9 border rounded-lg disabled:opacity-40"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-t">
+  {/* Page info */}
+  <span className="text-sm text-gray-500">
+    Page <span className="font-medium text-gray-900">{page}</span> of{" "}
+    <span className="font-medium text-gray-900">{totalPages}</span>
+  </span>
+
+  {/* Controls */}
+  <div className="flex items-center gap-2 self-end sm:self-auto">
+    <button
+      disabled={page === 1}
+      onClick={() => setPage((p) => p - 1)}
+      className="
+        inline-flex items-center justify-center
+        h-10 w-10 rounded-full
+        bg-[#0F766E] text-white
+        border border-[#0F766E]
+        transition-all duration-200
+        hover:bg-white hover:text-[#0F766E]
+        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+        disabled:bg-[#0F766E]/30
+        disabled:border-[#0F766E]/30
+        disabled:text-white/70
+        disabled:cursor-not-allowed
+      "
+      aria-label="Previous page"
+    >
+      <ChevronLeft size={16} />
+    </button>
+
+    <button
+      disabled={page === totalPages}
+      onClick={() => setPage((p) => p + 1)}
+      className="
+        inline-flex items-center justify-center
+        h-10 w-10 rounded-full
+        bg-[#0F766E] text-white
+        border border-[#0F766E]
+        transition-all duration-200
+        hover:bg-white hover:text-[#0F766E]
+        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+        disabled:bg-[#0F766E]/30
+        disabled:border-[#0F766E]/30
+        disabled:text-white/70
+        disabled:cursor-not-allowed
+      "
+      aria-label="Next page"
+    >
+      <ChevronRight size={16} />
+    </button>
+  </div>
+</div>
+
       </div>
     </div>
   );

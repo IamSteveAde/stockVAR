@@ -172,7 +172,7 @@ export default function VarStatus() {
   /* ================= UI ================= */
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm">
+    <div className="bg-white rounded-xl p-5 shadow-sm my-10">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-[#0F766E]">
