@@ -202,7 +202,7 @@ export default function ShiftContext() {
       <div className="bg-white rounded-xl shadow-sm w-full overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b">
-          <h3 className="text-sm font-semibold">
+          <h3 className="text-sm font-semibold text-[#0F766E]">
             Shift Variance Context
           </h3>
           <p className="text-xs text-gray-500">

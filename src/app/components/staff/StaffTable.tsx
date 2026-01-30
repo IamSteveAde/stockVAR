@@ -133,7 +133,7 @@ export default function StaffTable() {
       {/* Header */}
       <div className="px-4 md:px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold">Staff</h3>
+          <h3 className="text-lg font-semibold text-[#0F766E]">Staff</h3>
           <p className="text-sm text-gray-500">
             Showing {startIndex + 1}–
             {Math.min(startIndex + PAGE_SIZE, staff.length)} of{" "}

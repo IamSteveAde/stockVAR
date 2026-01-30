@@ -31,11 +31,6 @@ type Log = {
   shiftId: string;
 };
 
-type SnapshotItem = {
-  sku: string;
-  quantity: number;
-};
-
 type Row = {
   sku: string;
   name: string;
@@ -92,7 +87,7 @@ export default function OverviewReport() {
     setSelectedShiftIds([]);
   };
 
-  /* ================= BUILD REPORT (REAL LOGIC) ================= */
+  /* ================= BUILD REPORT ================= */
 
   const rows: Row[] = useMemo(() => {
     const endedShifts = shifts.filter(
@@ -163,20 +158,20 @@ export default function OverviewReport() {
   /* ================= UI ================= */
 
   return (
-    <div className="space-y-6">
-      {/* Filter */}
-      <div className="bg-white rounded-xl shadow-sm p-4 flex justify-between items-center">
-        <div className="relative">
+    <div className="w-full max-w-full overflow-x-hidden space-y-6">
+      {/* ================= FILTER ================= */}
+      <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="relative max-w-full">
           <button
             onClick={() => setOpenFilter((o) => !o)}
-            className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm"
+            className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm w-full sm:w-auto"
           >
             Filter by shift
             <ChevronDown size={16} />
           </button>
 
           {openFilter && (
-            <div className="absolute z-20 mt-2 w-64 bg-white border rounded-xl shadow-lg p-3 space-y-2">
+            <div className="absolute left-0 z-20 mt-2 w-64 max-w-[90vw] bg-white border rounded-xl shadow-lg p-3 space-y-2">
               <div className="flex justify-between text-xs mb-2">
                 <button onClick={selectAll} className="text-[#0F766E]">
                   Select all ended
@@ -200,7 +195,7 @@ export default function OverviewReport() {
                           : "hover:bg-gray-50"
                       }`}
                     >
-                      {s.label}
+                      <span className="truncate">{s.label}</span>
                       {active && <Check size={16} />}
                     </button>
                   );
@@ -214,14 +209,46 @@ export default function OverviewReport() {
         </span>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm">
+      {/* ================= MOBILE & TABLET (CARDS) ================= */}
+      <div className="md:hidden space-y-3">
+        {slice.map((r) => (
+          <div
+            key={r.sku}
+            className="bg-white rounded-xl border p-4 space-y-2 w-full max-w-full"
+          >
+            <div className="flex justify-between items-start gap-2">
+              <p className="font-medium truncate">{r.name}</p>
+              <span
+                className={`font-semibold shrink-0 ${
+                  r.variance === 0
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {r.variance}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 text-xs text-gray-600 gap-y-1">
+              <span>Opening: {r.opening}</span>
+              <span>Added: +{r.added}</span>
+              <span>Used: -{r.used}</span>
+              <span>Expected: {r.expectedLeft}</span>
+              <span>Actual: {r.actualLeft}</span>
+              <span>Unit: {r.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ================= DESKTOP TABLE ================= */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-x-auto">
         <div className="px-6 py-4 border-b flex items-center gap-2">
           <Layers className="text-[#0F766E]" />
-          <h3 className="font-medium">Stock Variance Report</h3>
+          <h3 className="font-medium text-[#0F766E]">Stock Variance Report</h3>
         </div>
 
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
               <th className="px-6 py-3 text-left">Item</th>
@@ -238,7 +265,9 @@ export default function OverviewReport() {
           <tbody>
             {slice.map((r) => (
               <tr key={r.sku} className="border-t">
-                <td className="px-6 py-4 font-medium">{r.name}</td>
+                <td className="px-6 py-4 font-medium truncate">
+                  {r.name}
+                </td>
                 <td className="px-6 py-4 text-right">{r.opening}</td>
                 <td className="px-6 py-4 text-right text-green-600">
                   +{r.added}
@@ -267,6 +296,7 @@ export default function OverviewReport() {
           </tbody>
         </table>
 
+        {/* Pagination */}
         <div className="flex justify-between px-6 py-4 border-t text-sm">
           <span>
             Page {page} of {totalPages}

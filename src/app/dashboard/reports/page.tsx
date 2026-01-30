@@ -2,7 +2,7 @@ import ReportsTabs from "@/app/components/reports/ReportsTabs";
 
 export default function ReportsPage() {
   return (
-    <div className="space-y-6">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto space-y-6">
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-semibold text-[#111827]">
