@@ -3,6 +3,8 @@
 import PaystackButton from "@/app/components/billing/PaystackButton";
 import { useSubscription } from "@/app/context/SubscriptionContext";
 
+export const dynamic = "force-dynamic"
+
 export default function BillingPage() {
   const { subscription } = useSubscription();
 
