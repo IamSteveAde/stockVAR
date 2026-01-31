@@ -2,11 +2,18 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import PaystackButton from "@/app/components/billing/PaystackButton";
+import dynamicImport from "next/dynamic"; // 👈 renamed
 import { useSubscription } from "@/app/context/SubscriptionContext";
 import { useProfile } from "@/app/context/ProfileContext";
 
+/* ✅ Route config (keep this) */
 export const dynamic = "force-dynamic";
+
+/* ✅ Client-only Paystack import */
+const PaystackButton = dynamicImport(
+  () => import("@/app/components/billing/PaystackButton"),
+  { ssr: false }
+);
 
 /* ================= COMPONENT ================= */
 
@@ -77,7 +84,6 @@ export default function BillingPage() {
         Your free trial has ended. Subscribe to continue using StockVAR.
       </p>
 
-      {/* Plan card */}
       <div className="border rounded-xl p-4 space-y-3">
         <h3 className="font-medium text-black">
           StockVAR Pro
@@ -93,6 +99,7 @@ export default function BillingPage() {
         </p>
       </div>
 
+      {/* ✅ Safe client-only Paystack */}
       <PaystackButton amount={100} />
     </div>
   );
