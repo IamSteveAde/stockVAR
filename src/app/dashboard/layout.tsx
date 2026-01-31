@@ -15,18 +15,15 @@ function RoleGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    
     if (!profile) return;
 
-    // 🚫 Staff should never access dashboard root
+    // 🚫 Staff must never access dashboard root
     if (profile.role === "staff" && pathname === "/dashboard") {
       router.replace("/dashboard/shift");
     }
   }, [profile, pathname, router]);
 
-  if ( !profile) {
-    return null; // you can replace with a loader later
-  }
+  if (!profile) return null;
 
   return <>{children}</>;
 }
@@ -42,30 +39,27 @@ export default function DashboardLayout({
     <ProfileProvider>
       <BusinessProvider>
         <SubscriptionProvider>
-      <RoleGuard>
-        {/* 🔒 Lock horizontal overflow at the root */}
-        <div className="flex min-h-screen bg-[#F9FAFB] overflow-x-hidden">
-          {/* Sidebar */}
-          <Sidebar
-            open={sidebarOpen}
-            toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          />
+          <RoleGuard>
+            <div className="flex min-h-screen bg-[#F9FAFB] overflow-x-hidden">
+              <Sidebar
+                open={sidebarOpen}
+                toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+              />
 
-          {/* Main content */}
-          <div className="flex-1 flex flex-col min-w-0">
-            <TrialBanner />
-            <Topbar toggleSidebar={() => setSidebarOpen(true)} />
+              <div className="flex-1 flex flex-col min-w-0">
+                {/* ✅ Display-only, NO redirects */}
+                <TrialBanner />
 
-            {/* 🔑 MAIN CONTENT */}
-            <main className="flex-1 w-full max-w-full overflow-x-hidden p-4 md:p-6">
-              {children}
-            </main>
-          </div>
-        </div>
-      </RoleGuard>
-      </SubscriptionProvider>
+                <Topbar toggleSidebar={() => setSidebarOpen(true)} />
+
+                <main className="flex-1 w-full max-w-full overflow-x-hidden p-4 md:p-6">
+                  {children}
+                </main>
+              </div>
+            </div>
+          </RoleGuard>
+        </SubscriptionProvider>
       </BusinessProvider>
     </ProfileProvider>
-
   );
 }

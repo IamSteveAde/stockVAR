@@ -1,30 +1,33 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSubscription } from "@/app/context/SubscriptionContext";
-import { useProfile } from "@/app/context/ProfileContext";
 
 export default function TrialGuard({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { subscription, isTrialExpired } = useSubscription();
   const router = useRouter();
-  const { isTrialExpired } = useSubscription();
-  const { profile } = useProfile();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!isTrialExpired) return;
+    if (!subscription) return;
 
-    if (profile.role === "owner") {
+    // ✅ ACTIVE users should NEVER be redirected to billing
+    if (subscription.status === "active") return;
+
+    // 🚫 Trial expired → force billing (except if already there)
+    if (
+      subscription.status === "trial" &&
+      isTrialExpired &&
+      pathname !== "/dashboard/billing"
+    ) {
       router.replace("/dashboard/billing");
-    } else {
-      router.replace("/dashboard/access-locked");
     }
-  }, [isTrialExpired, profile.role, router]);
-
-  if (isTrialExpired) return null;
+  }, [subscription, isTrialExpired, pathname, router]);
 
   return <>{children}</>;
 }
