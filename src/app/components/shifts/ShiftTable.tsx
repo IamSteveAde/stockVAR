@@ -11,6 +11,7 @@ import {
 import CreateShiftModal from "./CreateShiftModal";
 import CloseShiftModal from "./CloseShiftModal";
 import { Shift, Staff } from "./types";
+import { useProfile } from "@/app/context/ProfileContext";
 
 /* ================= CONSTANTS ================= */
 
@@ -56,6 +57,12 @@ const formatDateTime = (date?: string, time?: string) => {
 /* ================= COMPONENT ================= */
 
 export default function ShiftTable() {
+  const { profile } = useProfile();
+  const role = profile.role; // "Owner" | "Manager" | "Staff"
+
+  const isStaff = role === "staff";
+  const canManageShifts = role === "owner" || role === "manager";
+
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -127,7 +134,7 @@ export default function ShiftTable() {
   };
 
   const confirmDelete = () => {
-    if (!deleteShift) return;
+    if (!deleteShift || !canManageShifts) return;
     setShifts((prev) =>
       prev.filter((s) => s.id !== deleteShift.id)
     );
@@ -155,12 +162,16 @@ export default function ShiftTable() {
         <h3 className="text-lg font-semibold text-[#0F766E]">
           Shifts
         </h3>
-        <button
-          onClick={() => setOpenCreate(true)}
-          className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Create shift
-        </button>
+
+        {/* 🚫 Staff cannot create shift */}
+        {canManageShifts && (
+          <button
+            onClick={() => setOpenCreate(true)}
+            className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
+          >
+            Create shift
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -200,12 +211,10 @@ export default function ShiftTable() {
                 key={s.id}
                 className="border-t hover:bg-gray-50 transition"
               >
-                {/* Shift */}
                 <td className="px-6 py-4 font-medium">
                   {s.label}
                 </td>
 
-                {/* Scheduled */}
                 <td className="px-6 py-4 text-xs text-gray-600">
                   <div>
                     <span className="font-medium">Start:</span>{" "}
@@ -223,7 +232,6 @@ export default function ShiftTable() {
                   </div>
                 </td>
 
-                {/* Status */}
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -238,17 +246,11 @@ export default function ShiftTable() {
                   </span>
                 </td>
 
-                {/* Actual */}
                 <td className="px-6 py-4 text-xs text-gray-600">
-                  <div>
-                    Started: {s.startedAt || "—"}
-                  </div>
-                  <div>
-                    Ended: {s.endedAt || "—"}
-                  </div>
+                  <div>Started: {s.startedAt || "—"}</div>
+                  <div>Ended: {s.endedAt || "—"}</div>
                 </td>
 
-                {/* Staff */}
                 <td className="px-6 py-4">
                   <button
                     onClick={() => setViewStaff(s.staff)}
@@ -262,6 +264,7 @@ export default function ShiftTable() {
                 <td className="px-6 py-4 text-right space-x-2">
                   {s.status === "planned" && (
                     <>
+                      {/* ✅ Staff CAN start shift */}
                       <button
                         onClick={() => startShift(s.id)}
                         className="inline-flex items-center gap-1 text-xs text-green-700 border px-3 py-1 rounded-lg"
@@ -270,13 +273,16 @@ export default function ShiftTable() {
                         Start
                       </button>
 
-                      <button
-                        onClick={() => setDeleteShift(s)}
-                        className="inline-flex items-center gap-1 text-xs text-red-600 border px-3 py-1 rounded-lg"
-                      >
-                        <Trash2 size={12} />
-                        Delete
-                      </button>
+                      {/* 🚫 Staff CANNOT delete */}
+                      {canManageShifts && (
+                        <button
+                          onClick={() => setDeleteShift(s)}
+                          className="inline-flex items-center gap-1 text-xs text-red-600 border px-3 py-1 rounded-lg"
+                        >
+                          <Trash2 size={12} />
+                          Delete
+                        </button>
+                      )}
                     </>
                   )}
 
@@ -318,18 +324,20 @@ export default function ShiftTable() {
       </div>
 
       {/* Modals */}
-      <CreateShiftModal
-        open={openCreate}
-        onClose={() => setOpenCreate(false)}
-        staffList={staff}
-        existingShifts={shifts}
-        onCreate={(shift) =>
-          setShifts((prev) => [
-            { ...shift, status: "planned" },
-            ...prev,
-          ])
-        }
-      />
+      {canManageShifts && (
+        <CreateShiftModal
+          open={openCreate}
+          onClose={() => setOpenCreate(false)}
+          staffList={staff}
+          existingShifts={shifts}
+          onCreate={(shift) =>
+            setShifts((prev) => [
+              { ...shift, status: "planned" },
+              ...prev,
+            ])
+          }
+        />
+      )}
 
       {closingShift && (
         <CloseShiftModal
@@ -350,8 +358,7 @@ export default function ShiftTable() {
               Delete shift?
             </h4>
             <p className="text-sm text-gray-600">
-              This will permanently delete this planned
-              shift.
+              This will permanently delete this planned shift.
             </p>
             <div className="flex justify-end gap-2">
               <button

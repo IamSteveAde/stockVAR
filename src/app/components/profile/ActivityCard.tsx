@@ -7,14 +7,18 @@ import {
   Clock,
 } from "lucide-react";
 
-/* ================= MOCK ACTIVITY ================= */
+/* ================= TYPES ================= */
 
-type ActivityEvent = {
+export type ActivityType = "stock" | "shift" | "auth";
+
+export type ActivityEvent = {
   id: number;
-  type: "stock" | "shift" | "auth";
+  type: ActivityType;
   message: string;
   time: string;
 };
+
+/* ================= DEFAULT (FALLBACK ONLY) ================= */
 
 const DEFAULT_ACTIVITY: ActivityEvent[] = [
   {
@@ -39,11 +43,17 @@ const DEFAULT_ACTIVITY: ActivityEvent[] = [
 
 /* ================= MAIN ================= */
 
-export default function ActivityCard({
-  activity = DEFAULT_ACTIVITY,
-}: {
+type ActivityCardProps = {
   activity?: ActivityEvent[];
-}) {
+};
+
+export default function ActivityCard({
+  activity,
+}: ActivityCardProps) {
+  const events = activity?.length
+    ? activity
+    : DEFAULT_ACTIVITY;
+
   return (
     <section
       aria-labelledby="activity-heading"
@@ -64,20 +74,21 @@ export default function ActivityCard({
 
       {/* Activity list */}
       <ul className="space-y-4">
-        {activity.map((event) => (
+        {events.map((event) => (
           <li
             key={event.id}
             className="flex items-start gap-3"
           >
             <ActivityIcon type={event.type} />
 
-            <div className="flex-1">
-              <p className="text-sm text-gray-700">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-700 break-words">
                 {event.message}
               </p>
+
               <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
                 <Clock size={12} />
-                {event.time}
+                <span>{event.time}</span>
               </div>
             </div>
           </li>
@@ -92,30 +103,34 @@ export default function ActivityCard({
 function ActivityIcon({
   type,
 }: {
-  type: "stock" | "shift" | "auth";
+  type: ActivityType;
 }) {
   const base =
     "h-8 w-8 rounded-full flex items-center justify-center shrink-0";
 
-  if (type === "stock") {
-    return (
-      <span className={`${base} bg-red-100 text-red-600`}>
-        <Package size={16} />
-      </span>
-    );
-  }
+  switch (type) {
+    case "stock":
+      return (
+        <span className={`${base} bg-red-100 text-red-600`}>
+          <Package size={16} />
+        </span>
+      );
 
-  if (type === "shift") {
-    return (
-      <span className={`${base} bg-blue-100 text-blue-600`}>
-        <Users size={16} />
-      </span>
-    );
-  }
+    case "shift":
+      return (
+        <span className={`${base} bg-blue-100 text-blue-600`}>
+          <Users size={16} />
+        </span>
+      );
 
-  return (
-    <span className={`${base} bg-green-100 text-green-600`}>
-      <LogIn size={16} />
-    </span>
-  );
+    case "auth":
+      return (
+        <span className={`${base} bg-green-100 text-green-600`}>
+          <LogIn size={16} />
+        </span>
+      );
+
+    default:
+      return null;
+  }
 }

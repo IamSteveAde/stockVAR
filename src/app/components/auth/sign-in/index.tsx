@@ -1,43 +1,61 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 
+type UserRole = "owner" | "manager" | "staff";
+
 export default function Login() {
-  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
-const [success, setSuccess] = useState<string | null>(null);
-const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  setError(null);
-  setSuccess(null);
-  setIsLoading(true);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // simulate API call
-  setTimeout(() => {
-    setIsLoading(false);
+    setError(null);
+    setSuccess(null);
+    setIsLoading(true);
 
-    // CHANGE THIS to test error vs success
-    const isSuccess = true;
+    // 🔴 MOCK LOGIN API
+    setTimeout(() => {
+      setIsLoading(false);
 
-    if (isSuccess) {
+      const isSuccess = true;
+
+      if (!isSuccess) {
+        setError("Invalid email or password.");
+        return;
+      }
+
+      // 🔑 MOCK ROLE (change this to test flows)
+      const mockRole: UserRole = "staff"; // "owner" | "manager" | "staff"
+
+      // 🔐 Store mock session (frontend-only for now)
+      localStorage.setItem(
+        "stockvar_user",
+        JSON.stringify({
+          role: mockRole,
+        })
+      );
+
       setSuccess("Login successful. Redirecting...");
 
-setTimeout(() => {
-  router.push("/dashboard");
-}, 1000);
-
-    } else {
-      setError("Invalid email or password.");
-    }
-  }, 1500);
-};
-
+      setTimeout(() => {
+        router.push(
+          mockRole === "staff"
+            ? "/dashboard/shift"
+            : "/dashboard"
+        );
+      }, 800);
+    }, 1500);
+  };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
@@ -65,7 +83,6 @@ setTimeout(() => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-[#111827]">
@@ -109,31 +126,35 @@ setTimeout(() => {
                 Forgot password?
               </Link>
             </div>
-            {/* Error message */}
-{error && (
-  <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-    {error}
-  </div>
-)}
 
-{/* Success message */}
-{success && (
-  <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-    {success}
-  </div>
-)}
+            {/* Error */}
+            {error && (
+              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {/* Success */}
+            {success && (
+              <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+                {success}
+              </div>
+            )}
 
             {/* Submit */}
             <button
-  type="submit"
-  disabled={isLoading}
-  className={`w-full rounded-lg py-3 text-sm font-medium text-white transition
-    ${isLoading ? "bg-[#0F766E]/60 cursor-not-allowed" : "bg-[#0F766E] hover:bg-[#0B5F58]"}
-  `}
->
-  {isLoading ? "Processing..." : "Log in"}
-</button>
-
+              type="submit"
+              disabled={isLoading}
+              className={`w-full rounded-lg py-3 text-sm font-medium text-white transition
+                ${
+                  isLoading
+                    ? "bg-[#0F766E]/60 cursor-not-allowed"
+                    : "bg-[#0F766E] hover:bg-[#0B5F58]"
+                }
+              `}
+            >
+              {isLoading ? "Processing..." : "Log in"}
+            </button>
           </form>
 
           {/* Signup link */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Building2,
   Mail,
@@ -10,76 +10,61 @@ import {
   Pencil,
   Save,
 } from "lucide-react";
-
-type BusinessData = {
-  name: string;
-  type: string;
-  email: string;
-  phone: string;
-  city: string;
-  timezone: string;
-};
+import {
+  useBusiness,
+  BusinessData,
+} from "@/app/context/BusinessContext";
 
 export default function BusinessInfo() {
-  // 🔹 persisted data (pretend this came from API)
-  const [data, setData] = useState<BusinessData>({
-    name: "Red Onion Restaurant",
-    type: "Restaurant",
-    email: "info@redonion.ng",
-    phone: "0803 000 0000",
-    city: "Lagos",
-    timezone: "Africa/Lagos",
-  });
+  const { business, updateBusiness } = useBusiness();
 
-  // 🔹 editable draft
-  const [draft, setDraft] = useState<BusinessData>(data);
-
-  // 🔹 edit mode
   const [editing, setEditing] = useState(false);
+  const [draft, setDraft] =
+    useState<BusinessData | null>(null);
+
+  useEffect(() => {
+    if (business) setDraft(business);
+  }, [business]);
+
+  if (!draft) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-sm text-sm text-gray-500">
+        Business information not set yet.
+      </div>
+    );
+  }
 
   const handleSave = () => {
-    // ✅ here is where API call would go
-    setData(draft);
+    updateBusiness(draft);
     setEditing(false);
   };
 
-  const handleEdit = () => {
-    setDraft(data); // reset draft to last saved state
-    setEditing(true);
-  };
-
   return (
-    <section
-      aria-labelledby="business-info-heading"
-      className="bg-white rounded-xl shadow-sm p-6 space-y-6"
-    >
+    <section className="bg-white rounded-xl shadow-sm p-6 space-y-6">
       {/* Header */}
-      <header className="flex items-start justify-between gap-4">
+      <header className="flex justify-between items-start gap-4">
         <div>
-          <h2
-            id="business-info-heading"
-            className="font-medium text-lg text-gray-900"
-          >
+          <h2 className="font-medium text-lg">
             Business information
           </h2>
           <p className="text-xs text-gray-500">
-            Manage your business identity and contact details
+            Manage your business identity and contact
+            details
           </p>
         </div>
 
-        {/* Action button */}
         {editing ? (
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#0F766E] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d645d]"
+            className="inline-flex items-center gap-2 bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
           >
             <Save size={16} />
-            Save changes
+            Save
           </button>
         ) : (
           <button
-            onClick={handleEdit}
-            className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+            onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-2 border px-4 py-2 rounded-lg text-sm"
           >
             <Pencil size={16} />
             Edit
@@ -87,14 +72,16 @@ export default function BusinessInfo() {
         )}
       </header>
 
-      {/* Form */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Fields */}
+      <div className="grid md:grid-cols-2 gap-4">
         <Field
           label="Business name"
           icon={Building2}
           value={draft.name}
           editable={editing}
-          onChange={(v) => setDraft({ ...draft, name: v })}
+          onChange={(v) =>
+            setDraft({ ...draft, name: v })
+          }
         />
 
         <Field
@@ -102,23 +89,29 @@ export default function BusinessInfo() {
           icon={Building2}
           value={draft.type}
           editable={editing}
-          onChange={(v) => setDraft({ ...draft, type: v })}
+          onChange={(v) =>
+            setDraft({ ...draft, type: v })
+          }
         />
 
         <Field
-          label="Business email"
+          label="Email"
           icon={Mail}
-          value={draft.email}
+          value={draft.email ?? ""}
           editable={editing}
-          onChange={(v) => setDraft({ ...draft, email: v })}
+          onChange={(v) =>
+            setDraft({ ...draft, email: v })
+          }
         />
 
         <Field
-          label="Phone number"
+          label="Phone"
           icon={Phone}
-          value={draft.phone}
+          value={draft.phone ?? ""}
           editable={editing}
-          onChange={(v) => setDraft({ ...draft, phone: v })}
+          onChange={(v) =>
+            setDraft({ ...draft, phone: v })
+          }
         />
 
         <Field
@@ -126,7 +119,9 @@ export default function BusinessInfo() {
           icon={MapPin}
           value={draft.city}
           editable={editing}
-          onChange={(v) => setDraft({ ...draft, city: v })}
+          onChange={(v) =>
+            setDraft({ ...draft, city: v })
+          }
         />
 
         <Field
@@ -141,7 +136,7 @@ export default function BusinessInfo() {
 }
 
 /* =======================
-   FIELD COMPONENT
+   FIELD
 ======================= */
 
 function Field({
@@ -161,23 +156,25 @@ function Field({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-600">
+      <label className="text-xs text-gray-500">
         {label}
       </label>
 
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-          <Icon size={16} />
-        </span>
-
+        <Icon
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        />
         <input
           value={value}
           disabled={!editable || locked}
-          onChange={(e) => onChange?.(e.target.value)}
-          className={`w-full rounded-lg border pl-10 pr-3 py-2 text-sm transition ${
+          onChange={(e) =>
+            onChange?.(e.target.value)
+          }
+          className={`w-full pl-10 pr-3 py-2 text-sm rounded-lg border ${
             locked || !editable
               ? "bg-gray-100 text-gray-500 border-gray-200"
-              : "border-gray-300 focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E]"
+              : "border-gray-300 focus:border-[#0F766E]"
           }`}
         />
       </div>

@@ -1,18 +1,37 @@
 "use client";
 
-import { Shield, KeyRound, CheckCircle, XCircle } from "lucide-react";
+import {
+  Shield,
+  KeyRound,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import { useProfile } from "@/app/context/ProfileContext";
+import type { UserRole } from "@/app/types/profile";
 
-type RoleAccessCardProps = {
-  role?: string;
-  accessLevel?: string;
-  status?: "active" | "suspended";
-};
+/* =======================
+   ACCESS MAP (REAL LOGIC)
+======================= */
 
-export default function RoleAccessCard({
-  role = "Owner",
-  accessLevel = "Full access",
-  status = "active",
-}: RoleAccessCardProps) {
+function getAccessLevel(role: UserRole): string {
+  switch (role) {
+    case "owner":
+      return "Full system access";
+    case "manager":
+      return "Operational access";
+    case "staff":
+      return "Limited access";
+    default:
+      return "Unknown";
+  }
+}
+
+export default function RoleAccessCard() {
+  const { profile } = useProfile();
+
+  const accessLevel = getAccessLevel(profile.role);
+  const isActive = profile.status === "active";
+
   return (
     <section
       aria-labelledby="role-access-heading"
@@ -27,16 +46,16 @@ export default function RoleAccessCard({
           Role & access
         </h3>
         <p className="text-xs text-gray-500">
-          Your role determines permissions and access across the system
+          Your role determines what you can see and do in StockVAR
         </p>
       </header>
 
-      {/* Access info */}
+      {/* Info */}
       <div className="space-y-4">
         <InfoRow
           icon={Shield}
           label="Role"
-          value={role}
+          value={profile.role}
         />
 
         <InfoRow
@@ -45,7 +64,7 @@ export default function RoleAccessCard({
           value={accessLevel}
         />
 
-        <StatusRow status={status} />
+        <StatusRow active={isActive} />
       </div>
     </section>
   );
@@ -71,20 +90,18 @@ function InfoRow({
         <span>{label}</span>
       </div>
 
-      <span className="text-sm font-medium text-gray-900">
+      <span className="text-sm font-medium text-gray-900 capitalize">
         {value}
       </span>
     </div>
   );
 }
 
-function StatusRow({ status }: { status: "active" | "suspended" }) {
-  const isActive = status === "active";
-
+function StatusRow({ active }: { active: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2 text-sm text-gray-500">
-        {isActive ? (
+        {active ? (
           <CheckCircle size={16} className="text-green-600" />
         ) : (
           <XCircle size={16} className="text-red-600" />
@@ -94,12 +111,12 @@ function StatusRow({ status }: { status: "active" | "suspended" }) {
 
       <span
         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-          isActive
+          active
             ? "bg-green-100 text-green-700"
             : "bg-red-100 text-red-700"
         }`}
       >
-        {isActive ? "Active" : "Suspended"}
+        {active ? "Active" : "Suspended"}
       </span>
     </div>
   );
