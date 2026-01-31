@@ -12,6 +12,7 @@ import LocationStep from "./steps/LocationStep";
 import RoleStep from "./steps/RoleStep";
 import StaffSizeStep from "./steps/StaffSizeStep";
 import CompleteStep from "./steps/CompleteStep";
+import { useSubscription } from "@/app/context/SubscriptionContext";
 
 /* ================= TYPES ================= */
 
@@ -30,6 +31,7 @@ const TOTAL_STEPS = 7;
 export default function CreateBusinessWizard() {
   const router = useRouter();
   const { updateBusiness } = useBusiness();
+  const { startTrial } = useSubscription();
 
   const [step, setStep] = useState(0);
 
@@ -69,6 +71,9 @@ export default function CreateBusinessWizard() {
       timezone: "Africa/Lagos",
       createdAt: new Date().toISOString(),
     });
+
+    startTrial(); // Trial begins here
+    
 
     // 🚀 Go to dashboard
     router.push("/dashboard");

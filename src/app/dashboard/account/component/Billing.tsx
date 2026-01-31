@@ -7,24 +7,51 @@ import {
   Receipt,
   X,
 } from "lucide-react";
+import { useSubscription } from "@/app/context/SubscriptionContext";
+import type { Invoice } from "@/app/types/subscription";
+
+/* ================= HELPERS ================= */
+
+const formatMoney = (amount: number) =>
+  `₦${amount.toLocaleString()}`;
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-NG", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
 /* ================= MAIN ================= */
 
 export default function Billing() {
+  const { subscription } = useSubscription();
   const [openInvoices, setOpenInvoices] = useState(false);
+
+  if (!subscription) {
+    return (
+      <section className="bg-white rounded-xl p-6 shadow-sm text-sm text-gray-500">
+        No billing information available yet.
+      </section>
+    );
+  }
+
+  /* ================= DERIVED ================= */
+
+  const isTrial = subscription.status === "trial";
+
+  const nextBillingDate = isTrial
+    ? subscription.trialEndsAt
+    : subscription.nextBillingAt;
+
+  const invoices: Invoice[] = subscription.invoices ?? [];
 
   return (
     <>
-      <section
-        aria-labelledby="billing-heading"
-        className="bg-white rounded-xl shadow-sm p-6 space-y-6"
-      >
+      <section className="bg-white rounded-xl shadow-sm p-6 space-y-6">
         {/* Header */}
         <header>
-          <h2
-            id="billing-heading"
-            className="font-medium text-lg text-gray-900"
-          >
+          <h2 className="font-medium text-lg text-gray-900">
             Billing & subscription
           </h2>
           <p className="text-xs text-gray-500">
@@ -32,24 +59,32 @@ export default function Billing() {
           </p>
         </header>
 
-        {/* Billing summary */}
+        {/* Summary */}
         <div className="space-y-3 text-sm">
           <InfoRow
             icon={CreditCard}
             label="Current plan"
-            value="Standard"
+            value={isTrial ? "Free trial" : "Standard"}
           />
 
           <InfoRow
             icon={Receipt}
             label="Amount"
-            value="₦50,000 / month"
+            value={
+              isTrial || !subscription.amount
+                ? "₦0 (Trial)"
+                : formatMoney(subscription.amount)
+            }
           />
 
           <InfoRow
             icon={Calendar}
-            label="Next billing date"
-            value="February 28, 2026"
+            label={isTrial ? "Trial ends" : "Next billing date"}
+            value={
+              nextBillingDate
+                ? formatDate(nextBillingDate)
+                : "—"
+            }
           />
         </div>
 
@@ -66,7 +101,10 @@ export default function Billing() {
 
       {/* ================= INVOICES MODAL ================= */}
       {openInvoices && (
-        <InvoicesModal onClose={() => setOpenInvoices(false)} />
+        <InvoicesModal
+          invoices={invoices}
+          onClose={() => setOpenInvoices(false)}
+        />
       )}
     </>
   );
@@ -98,29 +136,66 @@ function InfoRow({
 
 /* ================= INVOICES MODAL ================= */
 
-function InvoicesModal({ onClose }: { onClose: () => void }) {
+function InvoicesModal({
+  invoices,
+  onClose,
+}: {
+  invoices: Invoice[];
+  onClose: () => void;
+}) {
   return (
     <Modal title="Invoices" onClose={onClose}>
-      <div className="space-y-3 text-sm">
-        <InvoiceRow date="Jan 28, 2026" amount="₦50,000" />
-        <InvoiceRow date="Dec 28, 2025" amount="₦50,000" />
-        <InvoiceRow date="Nov 28, 2025" amount="₦50,000" />
-      </div>
+      {invoices.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          No invoices yet.
+        </p>
+      ) : (
+        <div className="space-y-3 text-sm">
+          {invoices.map((inv) => (
+            <InvoiceRow
+              key={inv.id}
+              date={formatDate(inv.date)}
+              amount={formatMoney(inv.amount)}
+              status={inv.status}
+            />
+          ))}
+        </div>
+      )}
     </Modal>
   );
 }
 
+/* ================= INVOICE ROW ================= */
+
 function InvoiceRow({
   date,
   amount,
+  status,
 }: {
   date: string;
   amount: string;
+  status: Invoice["status"]; // ✅ FIXED
 }) {
+  const statusColor =
+    status === "paid"
+      ? "text-green-700"
+      : status === "pending"
+      ? "text-yellow-700"
+      : "text-red-600";
+
   return (
-    <div className="flex justify-between border rounded-lg px-4 py-3">
-      <span>{date}</span>
-      <span className="font-medium">{amount}</span>
+    <div className="flex justify-between items-center border rounded-lg px-4 py-3">
+      <div>
+        <p className="text-sm">{date}</p>
+        <p
+          className={`text-xs capitalize ${statusColor}`}
+        >
+          {status}
+        </p>
+      </div>
+      <span className="font-medium">
+        {amount}
+      </span>
     </div>
   );
 }

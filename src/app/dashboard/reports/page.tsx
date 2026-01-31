@@ -1,8 +1,10 @@
 import ReportsTabs from "@/app/components/reports/ReportsTabs";
 import RoleGuard from "@/app/components/auth/RoleGuard";
+import TrialGuard from "@/app/components/guards/TrialGuard";
 
 export default function ReportsPage() {
   return (
+    <TrialGuard>
     <RoleGuard allow={["owner", "manager"]}>
     <div className="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto space-y-6">
       {/* Page header */}
@@ -20,5 +22,6 @@ export default function ReportsPage() {
       
     </div>
     </RoleGuard>
+    </TrialGuard>
   );
 }

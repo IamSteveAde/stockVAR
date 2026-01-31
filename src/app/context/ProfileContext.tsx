@@ -30,7 +30,7 @@ export function ProfileProvider({
     email: "ade@restaurant.com",
 
     // 🔑 IMPORTANT: roles are LOWERCASE
-    role: "staff", // "owner" | "manager" | "staff"
+    role: "owner", // "owner" | "manager" | "staff"
 
     avatar: "/images/avatar.png",
     status: "active", // "active" | "suspended"

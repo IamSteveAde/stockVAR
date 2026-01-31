@@ -6,6 +6,8 @@ import Sidebar from "../components/dashboard/Sidebar";
 import Topbar from "../components/dashboard/Topbar";
 import { ProfileProvider, useProfile } from "../context/ProfileContext";
 import { BusinessProvider } from "../context/BusinessContext";
+import { SubscriptionProvider } from "../context/SubscriptionContext";
+import TrialBanner from "../components/billing/TrialBanner";
 
 function RoleGuard({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
@@ -39,6 +41,7 @@ export default function DashboardLayout({
   return (
     <ProfileProvider>
       <BusinessProvider>
+        <SubscriptionProvider>
       <RoleGuard>
         {/* 🔒 Lock horizontal overflow at the root */}
         <div className="flex min-h-screen bg-[#F9FAFB] overflow-x-hidden">
@@ -50,6 +53,7 @@ export default function DashboardLayout({
 
           {/* Main content */}
           <div className="flex-1 flex flex-col min-w-0">
+            <TrialBanner />
             <Topbar toggleSidebar={() => setSidebarOpen(true)} />
 
             {/* 🔑 MAIN CONTENT */}
@@ -59,6 +63,7 @@ export default function DashboardLayout({
           </div>
         </div>
       </RoleGuard>
+      </SubscriptionProvider>
       </BusinessProvider>
     </ProfileProvider>
 

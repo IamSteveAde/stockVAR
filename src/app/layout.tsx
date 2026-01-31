@@ -5,6 +5,7 @@ import "./globals.css";
 
 import { ThemeProvider } from "next-themes";
 import NextTopLoader from "nextjs-toploader";
+import { SubscriptionProvider } from "@/app/context/SubscriptionContext"
 
 import { AppContextProvider } from "../context-api/PropertyContext";
 
@@ -42,7 +43,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={dmsans.className}>
-        <AppContextProvider>
+        <SubscriptionProvider>
+           <AppContextProvider>
           <ThemeProvider
             attribute="class"
             enableSystem={false}
@@ -62,6 +64,8 @@ export default function RootLayout({
             
           </ThemeProvider>
         </AppContextProvider>
+        </SubscriptionProvider>
+
       </body>
     </html>
   );
