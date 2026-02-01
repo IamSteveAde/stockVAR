@@ -7,7 +7,8 @@ import type { ProfileData } from "../types/profile";
 
 type ProfileContextType = {
   profile: ProfileData;
-  setProfile: (p: ProfileData) => void;
+  setProfile: (p: ProfileData) => void;               // replace user
+  updateProfile: (p: Partial<ProfileData>) => void;  // mutate user
   clearProfile: () => void;
 };
 
@@ -47,7 +48,7 @@ export function ProfileProvider({
     }
   });
 
-  /* ---------- Persist on change ---------- */
+  /* Persist profile */
   useEffect(() => {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   }, [profile]);
@@ -56,9 +57,15 @@ export function ProfileProvider({
     setProfileState(p);
   };
 
+  const updateProfile = (p: Partial<ProfileData>) => {
+    setProfileState((prev) => ({
+      ...prev,
+      ...p,
+    }));
+  };
+
   const clearProfile = () => {
-    const fresh = createDefaultProfile();
-    setProfileState(fresh);
+    setProfileState(createDefaultProfile());
   };
 
   return (
@@ -66,6 +73,7 @@ export function ProfileProvider({
       value={{
         profile,
         setProfile,
+        updateProfile,
         clearProfile,
       }}
     >
@@ -80,9 +88,7 @@ export function useProfile() {
   const ctx = useContext(ProfileContext);
 
   if (!ctx) {
-    throw new Error(
-      "useProfile must be used inside ProfileProvider"
-    );
+    throw new Error("useProfile must be used inside ProfileProvider");
   }
 
   return ctx;
