@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { Shift } from "../shifts/types";
+import { useProfile } from "@/app/context/ProfileContext";
+import { writeAuditLog } from "../../../lib/audit";
 
 /* ================= STORAGE KEYS ================= */
 
@@ -32,6 +34,8 @@ const now = () => new Date().toLocaleString();
 /* ================= COMPONENT ================= */
 
 export default function NewEntryForm() {
+  const { profile } = useProfile();
+
   const [type, setType] = useState<"in" | "out">("out");
   const [products, setProducts] = useState<Product[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -96,6 +100,10 @@ export default function NewEntryForm() {
       return;
     }
 
+    const beforeQty = existing?.quantity ?? 0;
+    const afterQty =
+      type === "in" ? beforeQty + qty : beforeQty - qty;
+
     /* ================= UPDATE INVENTORY ================= */
 
     const updatedInventory: InventoryItem[] = existing
@@ -103,10 +111,7 @@ export default function NewEntryForm() {
           i.sku === sku
             ? {
                 ...i,
-                quantity:
-                  type === "in"
-                    ? i.quantity + qty
-                    : i.quantity - qty,
+                quantity: afterQty,
                 updatedAt: now(),
               }
             : i
@@ -114,7 +119,7 @@ export default function NewEntryForm() {
       : [
           {
             sku,
-            quantity: qty,
+            quantity: afterQty,
             updatedAt: now(),
           },
           ...inventory,
@@ -132,7 +137,7 @@ export default function NewEntryForm() {
       })
     );
 
-    /* ================= WRITE LOG ================= */
+    /* ================= WRITE INVENTORY LOG ================= */
 
     const logs = JSON.parse(
       localStorage.getItem(LOGS_KEY) || "[]"
@@ -158,6 +163,35 @@ export default function NewEntryForm() {
         detail: logs,
       })
     );
+
+    /* ================= WRITE AUDIT LOG (ENTERPRISE) ================= */
+
+    writeAuditLog({
+      actor: {
+        staffId: profile.id,
+        name: profile.fullName,
+        role: profile.role,
+      },
+      action: type === "in" ? "STOCK_IN" : "STOCK_OUT",
+      description:
+        type === "in"
+          ? "Stock added"
+          : "Stock removed",
+      entity: {
+        type: "product",
+        id: product.sku,
+        name: product.name,
+      },
+      changes: {
+        before: { quantity: beforeQty },
+        after: { quantity: afterQty },
+        delta: type === "in" ? qty : -qty,
+      },
+      shift: {
+        id: activeShift.id,
+        label: activeShift.label,
+      },
+    });
 
     /* ================= RESET ================= */
 

@@ -8,6 +8,9 @@ import {
   X,
 } from "lucide-react";
 import AddProductModal from "./AddProductModal";
+import { writeAuditLog } from "../../../lib/audit";
+import { useProfile } from "@/app/context/ProfileContext";
+
 
 /* ================= TYPES ================= */
 
@@ -21,6 +24,8 @@ export type Product = {
 };
 
 const STORAGE_KEY = "stockvar_products";
+
+
 
 /* ================= HELPERS ================= */
 
@@ -45,7 +50,7 @@ const now = () => new Date().toLocaleString();
 export default function ProductsTable() {
   const [products, setProducts] = useState<Product[]>([]);
   const [hydrated, setHydrated] = useState(false);
-
+const { profile } = useProfile();
   const [openAdd, setOpenAdd] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,38 +101,89 @@ export default function ProductsTable() {
   };
 
   const saveEdit = () => {
-    if (!editing) return;
+  if (!editing) return;
 
-    if (productExists(editing.name, editing.id)) {
-      setError("Another product with this name already exists");
-      return;
-    }
+  if (productExists(editing.name, editing.id)) {
+    setError("Another product with this name already exists");
+    return;
+  }
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === editing.id
-          ? { ...editing, updatedAt: now() }
-          : p
-      )
-    );
+  const before = products.find((p) => p.id === editing.id);
 
-    setEditing(null);
-    setError(null);
-  };
+  setProducts((prev) =>
+    prev.map((p) =>
+      p.id === editing.id
+        ? { ...editing, updatedAt: now() }
+        : p
+    )
+  );
+
+  writeAuditLog({
+    actor: {
+      staffId: profile.id,
+      name: profile.fullName,
+      role: profile.role,
+    },
+    action: "PRODUCT_EDIT",
+    description: "Product updated",
+    entity: {
+      type: "product",
+      id: editing.sku,
+      name: editing.name,
+    },
+    changes: {
+      before,
+      after: editing,
+    },
+  });
+
+  setEditing(null);
+  setError(null);
+};
+
 
   const toggleArchive = (id: number) => {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              status: p.status === "active" ? "archived" : "active",
-              updatedAt: now(),
-            }
-          : p
-      )
-    );
-  };
+  const product = products.find((p) => p.id === id);
+  if (!product) return;
+
+  const updatedStatus =
+    product.status === "active" ? "archived" : "active";
+
+  setProducts((prev) =>
+    prev.map((p) =>
+      p.id === id
+        ? {
+            ...p,
+            status: updatedStatus,
+            updatedAt: now(),
+          }
+        : p
+    )
+  );
+
+  writeAuditLog({
+    actor: {
+      staffId: profile.id,
+      name: profile.fullName,
+      role: profile.role,
+    },
+    action: "PRODUCT_ARCHIVE",
+    description:
+      updatedStatus === "archived"
+        ? "Product archived"
+        : "Product unarchived",
+    entity: {
+      type: "product",
+      id: product.sku,
+      name: product.name,
+    },
+    changes: {
+      before: { status: product.status },
+      after: { status: updatedStatus },
+    },
+  });
+};
+
 
   /* ================= RENDER ================= */
 

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { ArrowRight } from "lucide-react";
 
@@ -31,18 +32,25 @@ export default function FinalCTASection() {
           </p>
 
           {/* CTAs */}
-          <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            {/* Primary CTA */}
-            <button className="inline-flex items-center justify-center gap-3 rounded-xl bg-[#0F766E] px-8 py-4 text-sm font-medium text-white transition hover:bg-[#0B5F58]">
-              Get started now
-              <ArrowRight size={16} />
-            </button>
+<div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+  {/* Primary CTA */}
+  <Link
+    href="/auth/signup"
+    className="inline-flex items-center justify-center gap-3 rounded-xl bg-[#0F766E] px-8 py-4 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
+  >
+    Get started now
+    <ArrowRight size={16} />
+  </Link>
 
-            {/* Secondary CTA */}
-            <button className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 py-4 text-sm font-medium text-white transition hover:bg-white/10">
-              Book a demo
-            </button>
-          </div>
+  {/* Secondary CTA */}
+  <Link
+    href="/book-demo"
+    className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 py-4 text-sm font-medium text-white transition hover:bg-white/10"
+  >
+    Book a demo
+  </Link>
+</div>
+
 
           {/* Trust note */}
           <p className="mt-6 text-xs text-white/60">

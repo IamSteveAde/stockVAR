@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { writeAuditLog } from "../../../lib/audit";
+import { useProfile } from "@/app/context/ProfileContext";
+
 
 function generateSKU(name: string) {
+  
+
   const prefix = name.slice(0, 3).toUpperCase();
   const random = Math.random()
     .toString(36)
@@ -25,20 +30,41 @@ export default function AddProductModal({
 }) {
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("");
-
+const { profile } = useProfile();
   const sku = name ? generateSKU(name) : "";
 
   const handleSave = () => {
-    if (!name || !unit) return;
+  if (!name || !unit) return;
 
-    onAdd({
-      name,
-      sku,
-      unit,
-    });
-
-    onClose();
+  const product = {
+    name,
+    sku,
+    unit,
   };
+
+  onAdd(product);
+
+  writeAuditLog({
+    actor: {
+      staffId: profile.id,
+      name: profile.fullName,
+      role: profile.role,
+    },
+    action: "PRODUCT_CREATE",
+    description: "Product created",
+    entity: {
+      type: "product",
+      id: sku,
+      name,
+    },
+    changes: {
+      after: product,
+    },
+  });
+
+  onClose();
+};
+
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">

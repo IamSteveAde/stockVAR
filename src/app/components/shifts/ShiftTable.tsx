@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { writeAuditLog } from "../../../lib/audit";
+
 import {
   ChevronLeft,
   ChevronRight,
@@ -93,12 +95,39 @@ export default function ShiftTable() {
     localStorage.setItem(SHIFTS_KEY, JSON.stringify(shifts));
   }, [shifts]);
 
-  /* ================= ACTIONS ================= */
+   /* ================= ACTIONS ================= */
 
   const startShift = (id: string) => {
     if (shifts.some((s) => s.status === "running")) {
       alert("A shift is already running.");
       return;
+    }
+
+    const shift = shifts.find((s) => s.id === id);
+    if (shift) {
+      writeAuditLog({
+        actor: {
+          staffId: profile.id,
+          name: profile.fullName,
+          role: profile.role,
+        },
+        action: "SHIFT_START",
+        description: "Shift started",
+        entity: {
+          type: "shift",
+          id: shift.id,
+          name: shift.label,
+        },
+        changes: {
+          before: { status: shift.status },
+          after: { status: "running" },
+        },
+        shift: {
+          id: shift.id,
+          label: shift.label,
+        },
+        
+      });
     }
 
     setShifts((prev) =>
@@ -119,6 +148,33 @@ export default function ShiftTable() {
   };
 
   const endShift = (id: string, closingSnapshot: any[]) => {
+    const shift = shifts.find((s) => s.id === id);
+    if (shift) {
+      writeAuditLog({
+        actor: {
+          staffId: profile.id,
+          name: profile.fullName,
+          role: profile.role,
+        },
+        action: "SHIFT_END",
+        description: "Shift ended",
+        entity: {
+          type: "shift",
+          id: shift.id,
+          name: shift.label,
+        },
+        changes: {
+          before: { status: shift.status },
+          after: { status: "ended" },
+        },
+        shift: {
+          id: shift.id,
+          label: shift.label,
+        },
+       
+      });
+    }
+
     setShifts((prev) =>
       prev.map((s) =>
         s.id === id
@@ -135,12 +191,32 @@ export default function ShiftTable() {
 
   const confirmDelete = () => {
     if (!deleteShift || !canManageShifts) return;
+
+    writeAuditLog({
+      actor: {
+        staffId: profile.id,
+        name: profile.fullName,
+        role: profile.role,
+      },
+      action: "SHIFT_DELETE",
+      description: "Shift deleted",
+      entity: {
+        type: "shift",
+        id: deleteShift.id,
+        name: deleteShift.label,
+      },
+      changes: {
+        before: { status: deleteShift.status },
+        after: { status: "deleted" },
+      },
+   
+    });
+
     setShifts((prev) =>
       prev.filter((s) => s.id !== deleteShift.id)
     );
     setDeleteShift(null);
   };
-
   /* ================= PAGINATION ================= */
 
   const totalPages = Math.max(

@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { writeAuditLog } from "../../../lib/audit";
+import { useProfile } from "@/app/context/ProfileContext";
+
 
 type Product = {
   sku: string;
@@ -25,18 +28,47 @@ export default function AdjustInventoryModal({
   const [sku, setSku] = useState("");
   const [quantity, setQuantity] = useState("");
   const [action, setAction] = useState<"add" | "reduce">("add");
+  const { profile } = useProfile();
+
 
   const submit = () => {
-    if (!sku || !quantity) return;
+  if (!sku || !quantity) return;
 
-    onSave({
-      sku,
-      quantity: Number(quantity),
-      action,
-    });
+  const qty = Number(quantity);
+  if (qty <= 0) return;
 
-    onClose();
-  };
+  const product = products.find((p) => p.sku === sku);
+  if (!product) return;
+
+  onSave({
+    sku,
+    quantity: qty,
+    action,
+  });
+
+  writeAuditLog({
+    actor: {
+      staffId: profile.id,
+      name: profile.fullName,
+      role: profile.role,
+    },
+    action: "INVENTORY_ADJUST",
+    description:
+      action === "add"
+        ? "Inventory increased"
+        : "Inventory reduced",
+    entity: {
+      type: "inventory",
+      id: sku,
+      name: product.name,
+    },
+    changes: {
+      delta: action === "add" ? qty : -qty,
+    },
+  });
+
+  onClose();
+};
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">

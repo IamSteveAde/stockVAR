@@ -31,11 +31,9 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
   const { profile } = useProfile();
   const role = profile.role.toLowerCase() as "owner" | "manager" | "staff";
 
- 
-
   return (
     <>
-      {/* Backdrop (mobile only) */}
+      {/* Backdrop — below sidebar, above page */}
       {open && (
         <div
           onClick={toggleSidebar}
@@ -45,10 +43,10 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
 
       <aside
         className={`
-          fixed lg:static z-40
+          fixed lg:static z-50
           bg-[#0F3D3A] text-white
           w-64 min-h-screen
-          transform transition-transform duration-300
+          transform transition-transform duration-300 ease-in-out
           ${open ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0
         `}
@@ -72,9 +70,8 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
           </button>
         </div>
 
-        {/* Nav */}
+        {/* Navigation */}
         <nav className="flex-1 px-4 space-y-1 text-sm">
-          {/* Dashboard — Owner & Manager */}
           {(role === "owner" || role === "manager") && (
             <NavItem
               icon={LayoutDashboard}
@@ -85,7 +82,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             />
           )}
 
-           {/* Shift — ALL ROLES */}
           <NavItem
             icon={Users}
             label="Shift"
@@ -94,7 +90,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             onClick={toggleSidebar}
           />
 
-          {/* Stock Items — Owner & Manager */}
           {(role === "owner" || role === "manager") && (
             <NavItem
               icon={Package}
@@ -105,7 +100,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             />
           )}
 
-          {/* New Entry — ALL ROLES */}
           <NavItem
             icon={PlusCircle}
             label="New Entry"
@@ -114,7 +108,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             onClick={toggleSidebar}
           />
 
-          {/* Staff — Owner & Manager */}
           {(role === "owner" || role === "manager") && (
             <NavItem
               icon={Users}
@@ -125,9 +118,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             />
           )}
 
-         
-
-          {/* Reports — Owner & Manager */}
           {(role === "owner" || role === "manager") && (
             <NavItem
               icon={FileText}
@@ -138,7 +128,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             />
           )}
 
-          {/* Settings — Owner & Manager */}
           {(role === "owner" || role === "manager") && (
             <>
               <button
@@ -159,7 +148,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
 
               {openSettings && (
                 <div className="ml-8 space-y-1 text-xs text-white/80">
-                  {/* Profile — ALL ROLES */}
                   <SubItem
                     icon={User}
                     label="Profile"
@@ -167,7 +155,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
                     onClick={toggleSidebar}
                   />
 
-                  {/* Account Settings — OWNER ONLY */}
                   {role === "owner" && (
                     <SubItem
                       icon={Settings}
@@ -177,7 +164,15 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
                     />
                   )}
 
-                  {/* Help — Owner & Manager */}
+                  {role === "owner" && (
+                    <SubItem
+                      icon={Settings}
+                      label="Audit"
+                      href="/dashboard/audit"
+                      onClick={toggleSidebar}
+                    />
+                  )}
+
                   <SubItem
                     icon={Users}
                     label="Help"
@@ -185,7 +180,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
                     onClick={toggleSidebar}
                   />
 
-                  {/* Logout */}
                   <SubItem
                     icon={LogOut}
                     label="Logout"
@@ -201,7 +195,6 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             </>
           )}
 
-          {/* STAFF ONLY — Profile + Logout (no settings dropdown) */}
           {role === "staff" && (
             <div className="mt-2 space-y-1">
               <NavItem
@@ -227,7 +220,7 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
           )}
         </nav>
 
-        {/* User */}
+        {/* User footer */}
         <div className="px-4 py-4 border-t border-white/10 flex items-center gap-3">
           <Image
             src={profile.avatar}
@@ -238,7 +231,9 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
           />
           <div>
             <p className="text-sm font-medium">{profile.fullName}</p>
-            <p className="text-xs text-white/70 capitalize">{profile.role}</p>
+            <p className="text-xs text-white/70 capitalize">
+              {profile.role}
+            </p>
           </div>
         </div>
       </aside>
@@ -246,9 +241,7 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
   );
 }
 
-/* =======================
-   HELPER COMPONENTS
-======================= */
+/* ================= HELPER COMPONENTS ================= */
 
 function NavItem({
   icon: Icon,

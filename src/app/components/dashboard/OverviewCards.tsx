@@ -168,7 +168,7 @@ export default function OverviewCards() {
       title: "Reports",
       value: "View",
       icon: BarChart,
-      action: () => router.push("/dashboard/report"),
+      action: () => router.push("/dashboard/reports"),
     },
   ];
 

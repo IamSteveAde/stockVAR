@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useBusiness } from "@/app/context/BusinessContext";
+import { useSubscription } from "@/app/context/SubscriptionContext";
 
 import WelcomeStep from "./steps/WelcomeStep";
 import BusinessNameStep from "./steps/BusinessNameStep";
@@ -12,7 +13,6 @@ import LocationStep from "./steps/LocationStep";
 import RoleStep from "./steps/RoleStep";
 import StaffSizeStep from "./steps/StaffSizeStep";
 import CompleteStep from "./steps/CompleteStep";
-import { useSubscription } from "@/app/context/SubscriptionContext";
 
 /* ================= TYPES ================= */
 
@@ -21,7 +21,7 @@ type OnboardingForm = {
   businessType: string;
   city: string;
   role: "owner";
-  staffSize: string; // onboarding-only
+  staffSize: string;
 };
 
 const TOTAL_STEPS = 7;
@@ -63,7 +63,6 @@ export default function CreateBusinessWizard() {
   /* ================= FINAL SUBMIT ================= */
 
   const handleFinish = () => {
-    // ✅ Persist ONLY real business identity
     updateBusiness({
       name: form.businessName,
       type: form.businessType,
@@ -72,85 +71,97 @@ export default function CreateBusinessWizard() {
       createdAt: new Date().toISOString(),
     });
 
-    startTrial(); // Trial begins here
-    
-
-    // 🚀 Go to dashboard
+    startTrial();
     router.push("/dashboard");
   };
 
   /* ================= RENDER ================= */
 
   return (
-    <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl p-6 space-y-6">
-      {/* Progress */}
-      <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-[#0F766E] transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        />
+    <div className="relative min-h-screen w-full flex items-center justify-center">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('/images/hero/make.png')",
+        }}
+      />
+
+      {/* Light overlay for brightness */}
+      <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
+
+      {/* Wizard card */}
+      <div className="relative z-10 w-full max-w-[420px] bg-white rounded-2xl shadow-xl p-6 space-y-6">
+        {/* Progress */}
+        <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#0F766E] transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        {step === 0 && <WelcomeStep onNext={next} />}
+
+        {step === 1 && (
+          <BusinessNameStep
+            value={form.businessName}
+            onChange={(v: string) =>
+              updateForm("businessName", v)
+            }
+            onNext={next}
+            onPrev={prev}
+          />
+        )}
+
+        {step === 2 && (
+          <BusinessTypeStep
+            value={form.businessType}
+            onChange={(v: string) =>
+              updateForm("businessType", v)
+            }
+            onNext={next}
+            onPrev={prev}
+          />
+        )}
+
+        {step === 3 && (
+          <LocationStep
+            value={form.city}
+            onChange={(v: string) =>
+              updateForm("city", v)
+            }
+            onNext={next}
+            onPrev={prev}
+          />
+        )}
+
+        {step === 4 && (
+          <RoleStep
+            value={form.role}
+            onChange={(v: "owner") =>
+              updateForm("role", v)
+            }
+            onNext={next}
+            onPrev={prev}
+          />
+        )}
+
+        {step === 5 && (
+          <StaffSizeStep
+            value={form.staffSize}
+            onChange={(v: string) =>
+              updateForm("staffSize", v)
+            }
+            onNext={next}
+            onPrev={prev}
+          />
+        )}
+
+        {step === 6 && (
+          <CompleteStep onFinish={handleFinish} />
+        )}
       </div>
-
-      {step === 0 && <WelcomeStep onNext={next} />}
-
-      {step === 1 && (
-        <BusinessNameStep
-          value={form.businessName}
-          onChange={(v: string) =>
-            updateForm("businessName", v)
-          }
-          onNext={next}
-          onPrev={prev}
-        />
-      )}
-
-      {step === 2 && (
-        <BusinessTypeStep
-          value={form.businessType}
-          onChange={(v: string) =>
-            updateForm("businessType", v)
-          }
-          onNext={next}
-          onPrev={prev}
-        />
-      )}
-
-      {step === 3 && (
-        <LocationStep
-          value={form.city}
-          onChange={(v: string) =>
-            updateForm("city", v)
-          }
-          onNext={next}
-          onPrev={prev}
-        />
-      )}
-
-      {step === 4 && (
-        <RoleStep
-          value={form.role}
-          onChange={(v: "owner") =>
-            updateForm("role", v)
-          }
-          onNext={next}
-          onPrev={prev}
-        />
-      )}
-
-      {step === 5 && (
-        <StaffSizeStep
-          value={form.staffSize}
-          onChange={(v: string) =>
-            updateForm("staffSize", v)
-          }
-          onNext={next}
-          onPrev={prev}
-        />
-      )}
-
-      {step === 6 && (
-        <CompleteStep onFinish={handleFinish} />
-      )}
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -187,25 +186,19 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
   /* ================= UI ================= */
 
   return (
-    
     <header
       ref={wrapperRef}
-      className="sticky top-0 z-40 h-16 bg-[#19464b] flex items-center justify-between px-4 md:px-6"
+      className="sticky top-0 z-20 h-16 bg-[#19464b] flex items-center justify-between px-4 md:px-6"
     >
-       
       {/* LEFT */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={toggleSidebar}
-          className="lg:hidden text-white"
-        >
+        <button onClick={toggleSidebar} className="lg:hidden text-white">
           <Menu size={20} />
         </button>
 
-        {/* LOGO */}
         <Link href="/dashboard" className="flex items-center">
           <Image
-            src="/images/logo/stockvarwm.svg"   // 🔁 change if needed
+            src="/images/logo/stockvarwm.svg"
             alt="Stockvar"
             width={120}
             height={32}
@@ -214,7 +207,6 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
           />
         </Link>
 
-        {/* SEARCH (Tablet + Desktop) */}
         <div className="relative hidden md:block w-72">
           <Search
             size={16}
@@ -254,11 +246,9 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
           )}
         </div>
       </div>
-      
 
       {/* RIGHT */}
       <div className="flex items-center gap-4">
-        {/* NOTIFICATIONS */}
         <div className="relative">
           <button
             onClick={() => {
@@ -297,7 +287,6 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
           )}
         </div>
 
-        {/* USER */}
         <div className="relative">
           <button
             onClick={() => setOpenUserMenu((v) => !v)}

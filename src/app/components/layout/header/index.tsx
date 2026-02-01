@@ -127,7 +127,7 @@ export default function Header() {
 
             <div className="mt-8 flex flex-col gap-4 w-64">
               <Link
-                href="/start"
+                href="/auth/signup"
                 onClick={() => setMenuOpen(false)}
                 className="w-full rounded-lg bg-[#0F766E] py-3 text-center text-sm font-medium text-white"
               >

@@ -11,6 +11,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import AddStaffModal from "./AddStaffModal";
+import { writeAuditLog } from "../../../lib/audit";
+import { useProfile } from "@/app/context/ProfileContext";
 
 /* ================= TYPES ================= */
 
@@ -53,6 +55,8 @@ const saveStaff = (data: Staff[]) => {
 /* ================= MAIN ================= */
 
 export default function StaffTable() {
+  const { profile } = useProfile();
+
   const [staff, setStaff] = useState<Staff[]>([]);
   const [page, setPage] = useState(1);
   const [openAdd, setOpenAdd] = useState(false);
@@ -106,24 +110,87 @@ export default function StaffTable() {
 
     setStaff((prev) => [staffMember, ...prev]);
     setPage(1);
+
+    /* ===== AUDIT ===== */
+    writeAuditLog({
+      actor: {
+        staffId: profile.id,
+        name: profile.fullName,
+        role: profile.role,
+      },
+      action: "STAFF_CREATE",
+      description: "Staff account created",
+      entity: {
+        type: "staff",
+        id: staffMember.id,
+        name: staffMember.fullName,
+      },
+    });
   };
 
   const toggleArchive = (id: string) => {
     setStaff((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              status:
-                s.status === "archived" ? "active" : "archived",
-            }
-          : s
-      )
+      prev.map((s) => {
+        if (s.id !== id) return s;
+
+        const newStatus =
+          s.status === "archived" ? "active" : "archived";
+
+        /* ===== AUDIT ===== */
+        writeAuditLog({
+  actor: {
+    staffId: profile.id,
+    name: profile.fullName,
+    role: profile.role,
+  },
+  action: "STAFF_ARCHIVE",
+  description:
+    newStatus === "archived"
+      ? "Staff archived"
+      : "Staff unarchived",
+  entity: {
+    type: "staff",
+    id: s.id,
+    name: s.fullName,
+  },
+  changes: {
+    before: { status: s.status },
+    after: { status: newStatus },
+  },
+});
+
+
+        return {
+          ...s,
+          status: newStatus,
+        };
+      })
     );
+
     setOpenMenu(null);
   };
 
   const deleteStaff = (id: string) => {
+    const target = staff.find((s) => s.id === id);
+
+    if (target) {
+      /* ===== AUDIT ===== */
+      writeAuditLog({
+        actor: {
+          staffId: profile.id,
+          name: profile.fullName,
+          role: profile.role,
+        },
+        action: "STAFF_DELETE",
+        description: "Staff deleted",
+        entity: {
+          type: "staff",
+          id: target.id,
+          name: target.fullName,
+        },
+      });
+    }
+
     setStaff((prev) => prev.filter((s) => s.id !== id));
     setOpenMenu(null);
   };
@@ -272,60 +339,31 @@ export default function StaffTable() {
       </div>
 
       {/* Pagination */}
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-4 border-t">
-  {/* Page info */}
-  <p className="text-sm text-gray-500">
-    Page <span className="font-medium text-gray-900">{page}</span> of{" "}
-    <span className="font-medium text-gray-900">{totalPages}</span>
-  </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-4 border-t">
+        <p className="text-sm text-gray-500">
+          Page <span className="font-medium text-gray-900">{page}</span> of{" "}
+          <span className="font-medium text-gray-900">{totalPages}</span>
+        </p>
 
-  {/* Controls */}
-  <div className="flex items-center gap-2 self-end sm:self-auto">
-    <button
-      disabled={page === 1}
-      onClick={() => setPage((p) => p - 1)}
-      className="
-        inline-flex items-center justify-center
-        h-10 w-10 rounded-full
-        bg-[#0F766E] text-white
-        border border-[#0F766E]
-        transition-all duration-200
-        hover:bg-white hover:text-[#0F766E]
-        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
-        disabled:bg-[#0F766E]/30
-        disabled:border-[#0F766E]/30
-        disabled:text-white/70
-        disabled:cursor-not-allowed
-      "
-      aria-label="Previous page"
-    >
-      <ChevronLeft size={16} />
-    </button>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="h-10 w-10 rounded-full bg-[#0F766E] text-white"
+          >
+            <ChevronLeft size={16} />
+          </button>
 
-    <button
-      disabled={page === totalPages}
-      onClick={() => setPage((p) => p + 1)}
-      className="
-        inline-flex items-center justify-center
-        h-10 w-10 rounded-full
-        bg-[#0F766E] text-white
-        border border-[#0F766E]
-        transition-all duration-200
-        hover:bg-white hover:text-[#0F766E]
-        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
-        disabled:bg-[#0F766E]/30
-        disabled:border-[#0F766E]/30
-        disabled:text-white/70
-        disabled:cursor-not-allowed
-      "
-      aria-label="Next page"
-    >
-      <ChevronRight size={16} />
-    </button>
-  </div>
-</div>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="h-10 w-10 rounded-full bg-[#0F766E] text-white"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
 
-      {/* Add Staff Modal */}
       {openAdd && (
         <AddStaffModal
           onClose={() => setOpenAdd(false)}

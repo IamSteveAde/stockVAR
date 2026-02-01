@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { Check } from "lucide-react";
 
@@ -73,22 +74,29 @@ export default function PricingSection() {
               ))}
             </ul>
 
-           {/* CTA */}
+          {/* CTA */}
 <div className="space-y-4">
   {/* Primary CTA */}
-  <button className="inline-flex w-full items-center justify-center rounded-xl bg-[#0F766E] px-8 py-4 text-sm font-medium text-white transition hover:bg-[#0B5F58]">
+  <Link
+    href="/auth/signup"
+    className="inline-flex w-full items-center justify-center rounded-xl bg-[#0F766E] px-8 py-4 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
+  >
     Get started now
-  </button>
+  </Link>
 
   {/* Secondary CTA */}
-  <button className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 py-4 text-sm font-medium text-white transition hover:bg-white/10">
+  <Link
+    href="/book-demo"
+    className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 py-4 text-sm font-medium text-white transition hover:bg-white/10"
+  >
     Book a demo
-  </button>
+  </Link>
 
   <p className="pt-2 text-center text-xs text-white/60">
-    No free trial. Pay to start immediately, or book a guided demo.
+    3-day free trial. No credit card required.
   </p>
 </div>
+
 
           </div>
         </div>
