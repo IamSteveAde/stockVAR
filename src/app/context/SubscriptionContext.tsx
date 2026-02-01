@@ -12,10 +12,6 @@ import type {
   Invoice,
 } from "@/app/types/subscription";
 
-/* ================= TEST MODE ================= */
-// 🔴 SET TO false WHEN YOU ARE DONE TESTING
-const TEST_MODE_FORCE_EXPIRED = true;
-
 /* ================= CONTEXT ================= */
 
 type SubscriptionContextType = {
@@ -41,7 +37,7 @@ export function SubscriptionProvider({
   const [subscription, setSubscription] =
     useState<SubscriptionData | null>(null);
 
-  /* ================= LOAD FROM STORAGE ================= */
+  /* ================= LOAD ================= */
 
   useEffect(() => {
     try {
@@ -54,7 +50,7 @@ export function SubscriptionProvider({
     }
   }, []);
 
-  /* ================= PERSIST ================= */
+  /* ================= SAVE ================= */
 
   const persist = (data: SubscriptionData) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -80,10 +76,10 @@ export function SubscriptionProvider({
     persist(data);
   };
 
-  /* ================= ACTIVATE (PAYSTACK SUCCESS) ================= */
+  /* ================= ACTIVATE (AFTER PAYMENT) ================= */
 
   const activateSubscription = (amount?: number) => {
-    const finalAmount = amount ?? 50000;
+    const finalAmount = amount ?? 50000; // ✅ GUARANTEED NUMBER
 
     const nextBilling = new Date();
     nextBilling.setMonth(nextBilling.getMonth() + 1);
@@ -111,12 +107,9 @@ export function SubscriptionProvider({
     persist(updated);
   };
 
-  /* ================= DERIVED STATE ================= */
+  /* ================= DERIVED ================= */
 
   const isTrialExpired = useMemo(() => {
-    // 🔥 FORCE EXPIRED FOR TESTING
-    if (TEST_MODE_FORCE_EXPIRED) return true;
-
     if (
       subscription?.status !== "trial" ||
       !subscription.trialEndsAt
@@ -130,9 +123,6 @@ export function SubscriptionProvider({
   }, [subscription]);
 
   const trialDaysLeft = useMemo(() => {
-    // 🔥 HIDE COUNTDOWN IN TEST MODE
-    if (TEST_MODE_FORCE_EXPIRED) return 0;
-
     if (
       subscription?.status !== "trial" ||
       !subscription.trialEndsAt
