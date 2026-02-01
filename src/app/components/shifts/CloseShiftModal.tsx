@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Shift, StockSnapshot } from "./types";
+import { useState, useMemo } from "react";
+import { X } from "lucide-react";
+import { Shift, StockSnapshot, Staff } from "./types";
 
 type InventoryItem = {
   sku: string;
-  quantity: number; // current system quantity (NOT shown)
+  quantity: number; // system quantity (NOT shown)
 };
 
 type Props = {
@@ -26,9 +27,24 @@ export default function CloseShiftModal({
    * - Do NOT prefill quantities
    * - Staff must physically count and enter values
    */
+
   const [counts, setCounts] = useState<
     { sku: string; quantity: number | null }[]
   >(inventory.map((i) => ({ sku: i.sku, quantity: null })));
+
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+
+  /**
+   * Resolve responsible staff from assigned staff list
+   */
+  const responsibleStaff = useMemo(
+    () =>
+      shift.staff.find(
+        (s: Staff) => s.id === shift.responsibleStaffId
+      ),
+    [shift]
+  );
 
   const updateQty = (sku: string, qty: number) => {
     setCounts((prev) =>
@@ -41,14 +57,33 @@ export default function CloseShiftModal({
   };
 
   const submit = () => {
-    // Ensure ALL items are counted
+    // Ensure all inventory is counted
     const uncounted = counts.find(
       (c) => c.quantity === null
     );
 
     if (uncounted) {
-      alert(
+      setError(
         "All items must be physically counted before ending the shift."
+      );
+      return;
+    }
+
+    if (!responsibleStaff) {
+      setError(
+        "Responsible staff not found for this shift."
+      );
+      return;
+    }
+
+    if (!pin) {
+      setError("Please enter your PIN.");
+      return;
+    }
+
+    if (pin !== responsibleStaff.pin) {
+      setError(
+        "Invalid PIN. Only the responsible staff can end this shift."
       );
       return;
     }
@@ -59,7 +94,7 @@ export default function CloseShiftModal({
 
     if (!ok) return;
 
-    // Safe cast: all quantities are filled
+    // ✅ PIN verified + inventory counted
     onConfirm(
       counts.map((c) => ({
         sku: c.sku,
@@ -72,14 +107,25 @@ export default function CloseShiftModal({
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <div className="bg-white rounded-xl w-full max-w-lg p-6 space-y-5">
         {/* Header */}
-        <div>
-          <h2 className="text-lg font-semibold">
-            End Shift – Physical Inventory Count
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Count each item physically and enter the actual
-            quantity remaining.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">
+              End Shift – Physical Inventory Count
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Only the responsible staff can end this shift.
+            </p>
+          </div>
+
+          <button onClick={onCancel}>
+            <X />
+          </button>
+        </div>
+
+        {/* Responsible staff */}
+        <div className="text-sm text-gray-600">
+          <strong>Responsible staff:</strong>{" "}
+          {responsibleStaff?.fullName ?? "Unknown"}
         </div>
 
         {/* Inventory list */}
@@ -112,6 +158,30 @@ export default function CloseShiftModal({
             </div>
           ))}
         </div>
+
+        {/* PIN input */}
+        <div>
+          <label className="text-sm font-medium">
+            Enter your PIN to end shift
+          </label>
+          <input
+            type="password"
+            value={pin}
+            onChange={(e) => {
+              setPin(e.target.value);
+              setError("");
+            }}
+            placeholder="••••••"
+            className="mt-1 w-full border rounded-lg px-3 py-2"
+          />
+        </div>
+
+        {/* Error */}
+        {error && (
+          <p className="text-sm text-red-600">
+            {error}
+          </p>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-2">

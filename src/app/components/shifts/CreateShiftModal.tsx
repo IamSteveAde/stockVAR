@@ -33,27 +33,28 @@ const SHIFT_LABELS = [
   "Custom",
 ];
 
-/* ================= HELPERS ================= */
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const timeToMinutes = (t: string) => {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-};
+/* ================= HELPERS ================= */
 
 const isPastDate = (d: string) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   const selected = new Date(d);
   selected.setHours(0, 0, 0, 0);
-
   return selected < today;
 };
 
-/**
- * Normalize a shift into absolute minute range.
- * Handles overnight shifts automatically.
- */
+const formatDate = (d?: string) =>
+  d
+    ? new Date(d).toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "—";
+
 const buildTimeRange = (
   date: string,
   startTime: string,
@@ -61,11 +62,7 @@ const buildTimeRange = (
 ) => {
   const start = new Date(`${date}T${startTime}`);
   const end = new Date(`${date}T${endTime}`);
-
-  // Overnight shift → end is next day
-  if (end <= start) {
-    end.setDate(end.getDate() + 1);
-  }
+  if (end <= start) end.setDate(end.getDate() + 1);
 
   return {
     startMs: start.getTime(),
@@ -87,10 +84,14 @@ export default function CreateShiftModal({
   const [label, setLabel] = useState("Morning");
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("16:00");
-  const [mode, setMode] = useState<"single" | "range">("single");
   const [date, setDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
+  const [responsibleStaffId, setResponsibleStaffId] = useState("");
+
+  const [repeat, setRepeat] = useState(false);
+  const [repeatDays, setRepeatDays] = useState<number[]>([]);
+  const [repeatUntil, setRepeatUntil] = useState("");
 
   /* ================= ACTIVE STAFF ================= */
 
@@ -109,90 +110,104 @@ export default function CreateShiftModal({
         ? prev.filter((s) => s !== id)
         : [...prev, id]
     );
+
+    if (responsibleStaffId === id) {
+      setResponsibleStaffId("");
+    }
   };
 
   /* ================= CREATE ================= */
 
   const handleCreate = () => {
-    if (!date) {
-      alert("Please select a start date");
-      return;
-    }
+    if (!date) return alert("Select a start date");
+    if (isPastDate(date)) return alert("Date cannot be in the past");
 
-    if (isPastDate(date)) {
-      alert("You cannot create a shift in the past");
-      return;
-    }
+    if (selectedStaff.length === 0)
+      return alert("Assign at least one staff");
 
-    if (mode === "range" && !endDate) {
-      alert("Please select an end date");
-      return;
-    }
+    if (!responsibleStaffId)
+      return alert("You must select the staff in charge");
 
-    if (selectedStaff.length === 0) {
-      alert("Please assign at least one staff member");
-      return;
-    }
+    if (repeat && repeatDays.length === 0)
+      return alert("Select at least one repeat day");
 
-    /* ---- Build normalized time range ---- */
-    const newRange = buildTimeRange(
-      date,
-      startTime,
-      endTime
+    const assignedStaff = activeStaff.filter((s) =>
+      selectedStaff.includes(s.id)
     );
 
-    if (newRange.endMs <= newRange.startMs) {
-      alert("Invalid shift duration");
-      return;
+    const baseShiftId = crypto.randomUUID();
+    const shiftsToCreate: CreateShiftPayload[] = [];
+
+    const start = new Date(date);
+    const end = repeatUntil ? new Date(repeatUntil) : start;
+
+    let cursor = new Date(start);
+
+    while (cursor <= end) {
+      if (
+        !repeat ||
+        repeatDays.includes(cursor.getDay())
+      ) {
+        const d = cursor.toISOString().split("T")[0];
+
+        const range = buildTimeRange(
+          d,
+          startTime,
+          endTime
+        );
+
+        const conflict = existingShifts.some((s) => {
+          const existing = buildTimeRange(
+            s.startDate,
+            s.startTime,
+            s.endTime
+          );
+          return (
+            range.startMs < existing.endMs &&
+            existing.startMs < range.endMs
+          );
+        });
+
+        if (conflict) {
+          alert(`Shift on ${d} overlaps`);
+          return;
+        }
+
+        shiftsToCreate.push({
+          id: crypto.randomUUID(),
+          label,
+          startDate: d,
+          startTime,
+          endTime,
+          staff: assignedStaff,
+          responsibleStaffId,
+          parentShiftId: repeat ? baseShiftId : undefined,
+          recurrence: repeat
+            ? {
+                enabled: true,
+                daysOfWeek: repeatDays,
+                until: repeatUntil,
+              }
+            : undefined,
+        });
+      }
+
+      cursor.setDate(cursor.getDate() + 1);
     }
 
-    /* ---- Conflict detection (overnight-safe) ---- */
-    const conflict = existingShifts.some((s) => {
-      if (!s.startDate) return false;
-
-      const existingRange = buildTimeRange(
-        s.startDate,
-        s.startTime,
-        s.endTime
-      );
-
-      return (
-        newRange.startMs < existingRange.endMs &&
-        existingRange.startMs < newRange.endMs
-      );
-    });
-
-    if (conflict) {
-      alert(
-        "This shift overlaps with an existing scheduled shift"
-      );
-      return;
-    }
-
-    /* ---- Create payload (no status yet) ---- */
-    const shift: CreateShiftPayload = {
-      id: crypto.randomUUID(),
-      label,
-      startTime,
-      endTime,
-      startDate: date,
-      endDate: mode === "range" ? endDate : undefined,
-      staff: activeStaff.filter((s) =>
-        selectedStaff.includes(s.id)
-      ),
-    };
-
-    onCreate(shift);
+    shiftsToCreate.forEach(onCreate);
     onClose();
 
-    /* ---- Reset ---- */
+    /* Reset */
     setLabel("Morning");
     setStartTime("08:00");
     setEndTime("16:00");
-    setMode("single");
     setDate("");
-    setEndDate("");
     setSelectedStaff([]);
+    setResponsibleStaffId("");
+    setRepeat(false);
+    setRepeatDays([]);
+    setRepeatUntil("");
   };
 
   /* ================= UI ================= */
@@ -201,151 +216,153 @@ export default function CreateShiftModal({
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-6 space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Create Shift</h2>
+        <div className="flex justify-between">
+          <h2 className="text-lg font-semibold">
+            Create Shift
+          </h2>
           <button onClick={onClose}>
             <X />
           </button>
         </div>
 
-        {/* Shift label */}
-        <div>
-          <label className="text-sm font-medium">
-            Shift type
-          </label>
-          <select
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            className="mt-1 w-full border rounded-lg px-3 py-2"
-          >
-            {SHIFT_LABELS.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Shift type */}
+        <select
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          className="w-full border rounded px-3 py-2"
+        >
+          {SHIFT_LABELS.map((l) => (
+            <option key={l}>{l}</option>
+          ))}
+        </select>
 
         {/* Time */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium">
-              Start time
-            </label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) =>
-                setStartTime(e.target.value)
-              }
-              className="mt-1 w-full border rounded-lg px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">
-              End time
-            </label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) =>
-                setEndTime(e.target.value)
-              }
-              className="mt-1 w-full border rounded-lg px-3 py-2"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Overnight shifts are supported
-            </p>
-          </div>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) =>
+              setStartTime(e.target.value)
+            }
+            className="border rounded px-3 py-2"
+          />
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) =>
+              setEndTime(e.target.value)
+            }
+            className="border rounded px-3 py-2"
+          />
         </div>
 
-        {/* Date mode */}
-        <div className="flex gap-4 text-sm">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              checked={mode === "single"}
-              onChange={() => setMode("single")}
-            />
-            One day
-          </label>
+        {/* Date */}
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="border rounded px-3 py-2"
+        />
 
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              checked={mode === "range"}
-              onChange={() => setMode("range")}
-            />
-            Date range
-          </label>
-        </div>
+        {/* Repeat */}
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={repeat}
+            onChange={(e) => setRepeat(e.target.checked)}
+          />
+          Repeat weekly
+        </label>
 
-        {/* Dates */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium">
-              Start date
-            </label>
+        {repeat && (
+          <>
+            {/* 🆕 Helper description */}
+            <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
+              This shift will repeat on selected days starting{" "}
+              <strong>{formatDate(date)}</strong>{" "}
+              {repeatUntil ? (
+                <>
+                  until <strong>{formatDate(repeatUntil)}</strong>.
+                </>
+              ) : (
+                <>until you choose an end date.</>
+              )}
+            </div>
+
+            {/* Days */}
+            <div className="flex gap-2 flex-wrap">
+              {DAYS.map((d, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() =>
+                    setRepeatDays((prev) =>
+                      prev.includes(i)
+                        ? prev.filter((x) => x !== i)
+                        : [...prev, i]
+                    )
+                  }
+                  className={`px-3 py-1 rounded ${
+                    repeatDays.includes(i)
+                      ? "bg-[#0F766E] text-white"
+                      : "border"
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+
+            {/* Repeat until */}
             <input
               type="date"
-              value={date}
-              min={new Date()
-                .toISOString()
-                .split("T")[0]}
+              value={repeatUntil}
               onChange={(e) =>
-                setDate(e.target.value)
+                setRepeatUntil(e.target.value)
               }
-              className="mt-1 w-full border rounded-lg px-3 py-2"
+              className="border rounded px-3 py-2"
             />
-          </div>
-
-          {mode === "range" && (
-            <div>
-              <label className="text-sm font-medium">
-                End date
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                min={date}
-                onChange={(e) =>
-                  setEndDate(e.target.value)
-                }
-                className="mt-1 w-full border rounded-lg px-3 py-2"
-              />
-            </div>
-          )}
-        </div>
+          </>
+        )}
 
         {/* Staff */}
-        <div>
-          <label className="text-sm font-medium">
-            Assign staff
-          </label>
-          <div className="mt-2 max-h-40 overflow-y-auto border rounded-lg p-3 space-y-2">
-            {activeStaff.map((s) => (
-              <label
-                key={s.id}
-                className="flex items-center gap-2 text-sm"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedStaff.includes(
-                    s.id
-                  )}
-                  onChange={() => toggleStaff(s.id)}
-                />
-                {s.fullName} ({s.role})
-              </label>
-            ))}
-          </div>
+        <div className="border rounded p-3 space-y-2">
+          {activeStaff.map((s) => (
+            <label key={s.id} className="flex gap-2">
+              <input
+                type="checkbox"
+                checked={selectedStaff.includes(s.id)}
+                onChange={() => toggleStaff(s.id)}
+              />
+              {s.fullName}
+            </label>
+          ))}
         </div>
+
+        {/* Responsible staff */}
+        <select
+          value={responsibleStaffId}
+          onChange={(e) =>
+            setResponsibleStaffId(e.target.value)
+          }
+          className="border rounded px-3 py-2"
+        >
+          <option value="">
+            Select staff in charge (required)
+          </option>
+          {activeStaff
+            .filter((s) => selectedStaff.includes(s.id))
+            .map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.fullName}
+              </option>
+            ))}
+        </select>
 
         {/* Action */}
         <button
           onClick={handleCreate}
-          className="w-full bg-[#0F766E] text-white py-3 rounded-lg font-medium hover:bg-[#0B5F58]"
+          className="w-full bg-[#0F766E] text-white py-3 rounded"
         >
           Create shift
         </button>
