@@ -11,6 +11,14 @@ type InventoryItem = {
   quantity: number; // system quantity (NOT shown)
 };
 
+type Product = {
+  sku: string;
+  name: string;
+};
+
+const PRODUCTS_KEY = "stockvar_products";
+
+
 type Props = {
   shift: Shift;
   inventory: InventoryItem[];
@@ -38,6 +46,23 @@ export default function CloseShiftModal({
 
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+
+useState(() => {
+  try {
+    const raw = localStorage.getItem(PRODUCTS_KEY);
+    setProducts(raw ? JSON.parse(raw) : []);
+  } catch {
+    setProducts([]);
+  }
+});
+
+const productMap = useMemo(() => {
+  return Object.fromEntries(
+    products.map((p) => [p.sku, p.name])
+  );
+}, [products]);
+
 
   /* ================= RESPONSIBLE STAFF ================= */
 
@@ -175,9 +200,15 @@ export default function CloseShiftModal({
               key={c.sku}
               className="flex items-center justify-between gap-3"
             >
-              <span className="text-sm font-medium">
-                {c.sku}
-              </span>
+             <div className="flex flex-col">
+  <span className="text-sm font-medium">
+    {productMap[c.sku] || c.sku}
+  </span>
+  <span className="text-xs text-gray-400">
+    SKU: {c.sku}
+  </span>
+</div>
+
 
               <input
                 type="number"
