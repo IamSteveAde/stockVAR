@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 import { Staff, Shift } from "./types";
 
 /* ================= TYPES ================= */
@@ -159,23 +159,23 @@ export default function CreateShiftModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-xl md:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[95vh] overflow-y-auto">
+      <div className="bg-white w-full sm:max-w-xl md:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white z-10 border-b px-5 py-4 flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Create Shift</h2>
+        <div className="sticky top-0 bg-white z-10 border-b px-4 sm:px-5 py-3 sm:py-4 flex justify-between items-center">
+          <h2 className="text-base sm:text-lg font-semibold">Create Shift</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100">
             <X />
           </button>
         </div>
 
-        <div className="p-5 space-y-6">
+        <div className="p-4 sm:p-5 space-y-5 sm:space-y-6">
           {/* Shift type */}
           <div>
             <label className="text-sm font-medium">Shift type</label>
             <select
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              className="mt-1 w-full rounded-lg border px-4 py-3"
+              className="mt-1 w-full rounded-lg border px-3 py-3 sm:px-4"
             >
               {SHIFT_LABELS.map((l) => (
                 <option key={l}>{l}</option>
@@ -184,14 +184,14 @@ export default function CreateShiftModal({
           </div>
 
           {/* Time */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="text-sm font-medium">Start time</label>
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="mt-1 w-full rounded-lg border px-4 py-3"
+                className="mt-1 w-full rounded-lg border px-3 py-3"
               />
             </div>
             <div>
@@ -200,7 +200,7 @@ export default function CreateShiftModal({
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="mt-1 w-full rounded-lg border px-4 py-3"
+                className="mt-1 w-full rounded-lg border px-3 py-3"
               />
             </div>
           </div>
@@ -212,23 +212,25 @@ export default function CreateShiftModal({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border px-4 py-3"
+              className="mt-1 w-full rounded-lg border px-3 py-3"
             />
           </div>
 
           {/* Repeat */}
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={repeat}
-              onChange={(e) => setRepeat(e.target.checked)}
-              className="h-4 w-4"
+          <button
+            type="button"
+            onClick={() => setRepeat((v) => !v)}
+            className="flex w-full justify-between items-center text-sm font-medium"
+          >
+            Repeat weekly
+            <ChevronDown
+              size={18}
+              className={`transition ${repeat ? "rotate-180" : ""}`}
             />
-            <span className="text-sm">Repeat weekly</span>
-          </div>
+          </button>
 
           {repeat && (
-            <div className="space-y-4 bg-gray-50 p-4 rounded-xl">
+            <div className="space-y-3 bg-gray-50 p-3 sm:p-4 rounded-xl">
               <p className="text-xs text-gray-600">
                 Repeats from <strong>{formatDate(date)}</strong>{" "}
                 {repeatUntil && (
@@ -250,7 +252,7 @@ export default function CreateShiftModal({
                           : [...prev, i]
                       )
                     }
-                    className={`px-4 py-2 rounded-full text-sm ${
+                    className={`px-3 py-1.5 rounded-full text-xs ${
                       repeatDays.includes(i)
                         ? "bg-[#0F766E] text-white"
                         : "border bg-white"
@@ -265,7 +267,7 @@ export default function CreateShiftModal({
                 type="date"
                 value={repeatUntil}
                 onChange={(e) => setRepeatUntil(e.target.value)}
-                className="w-full rounded-lg border px-4 py-3"
+                className="w-full rounded-lg border px-3 py-2"
               />
             </div>
           )}
@@ -273,7 +275,7 @@ export default function CreateShiftModal({
           {/* Staff */}
           <div>
             <label className="text-sm font-medium">Assign staff</label>
-            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border rounded-xl p-4">
+            <div className="mt-2 max-h-40 sm:max-h-none overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 border rounded-xl p-3 sm:p-4">
               {activeStaff.map((s) => (
                 <label
                   key={s.id}
@@ -298,7 +300,7 @@ export default function CreateShiftModal({
             <select
               value={responsibleStaffId}
               onChange={(e) => setResponsibleStaffId(e.target.value)}
-              className="mt-1 w-full rounded-lg border px-4 py-3"
+              className="mt-1 w-full rounded-lg border px-3 py-3"
             >
               <option value="">Select staff in charge</option>
               {activeStaff
