@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import { X } from "lucide-react";
 import { Shift, StockSnapshot, Staff } from "./types";
 
+/* ================= TYPES ================= */
+
 type InventoryItem = {
   sku: string;
   quantity: number; // system quantity (NOT shown)
@@ -13,8 +15,10 @@ type Props = {
   shift: Shift;
   inventory: InventoryItem[];
   onCancel: () => void;
-  onConfirm: (closingSnapshot: StockSnapshot[]) => void;
+  onConfirm?: (closingSnapshot: StockSnapshot[]) => void; // optional
 };
+
+/* ================= COMPONENT ================= */
 
 export default function CloseShiftModal({
   shift,
@@ -25,7 +29,7 @@ export default function CloseShiftModal({
   /**
    * IMPORTANT (Industry Standard):
    * - Do NOT prefill quantities
-   * - Staff must physically count and enter values
+   * - Physical count is the source of truth
    */
 
   const [counts, setCounts] = useState<
@@ -35,9 +39,8 @@ export default function CloseShiftModal({
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
 
-  /**
-   * Resolve responsible staff from assigned staff list
-   */
+  /* ================= RESPONSIBLE STAFF ================= */
+
   const responsibleStaff = useMemo(
     () =>
       shift.staff.find(
@@ -45,6 +48,8 @@ export default function CloseShiftModal({
       ),
     [shift]
   );
+
+  /* ================= HELPERS ================= */
 
   const updateQty = (sku: string, qty: number) => {
     setCounts((prev) =>
@@ -56,8 +61,12 @@ export default function CloseShiftModal({
     );
   };
 
+  const now = () => new Date().toLocaleString();
+
+  /* ================= SUBMIT ================= */
+
   const submit = () => {
-    // Ensure all inventory is counted
+    // 1️⃣ Ensure everything is counted
     const uncounted = counts.find(
       (c) => c.quantity === null
     );
@@ -69,6 +78,7 @@ export default function CloseShiftModal({
       return;
     }
 
+    // 2️⃣ Verify responsible staff
     if (!responsibleStaff) {
       setError(
         "Responsible staff not found for this shift."
@@ -88,20 +98,50 @@ export default function CloseShiftModal({
       return;
     }
 
+    // 3️⃣ Final confirmation
     const ok = window.confirm(
-      "End this shift now?\n\nThis will lock inventory and cannot be undone."
+      "End this shift now?\n\nThe physical count will OVERRIDE system inventory.\nThis action cannot be undone."
     );
 
     if (!ok) return;
 
-    // ✅ PIN verified + inventory counted
-    onConfirm(
-      counts.map((c) => ({
+    // 4️⃣ Build authoritative inventory snapshot
+    const closingSnapshot: StockSnapshot[] = counts.map(
+      (c) => ({
         sku: c.sku,
         quantity: c.quantity as number,
-      }))
+      })
     );
+
+    const updatedInventory = closingSnapshot.map(
+      (item) => ({
+        sku: item.sku,
+        quantity: item.quantity,
+        updatedAt: now(),
+      })
+    );
+
+    // 5️⃣ Overwrite inventory (SOURCE OF TRUTH)
+    localStorage.setItem(
+      "stockvar_inventory",
+      JSON.stringify(updatedInventory)
+    );
+
+    // 6️⃣ Broadcast update to InventoryTable
+    window.dispatchEvent(
+      new CustomEvent("inventory:updated", {
+        detail: updatedInventory,
+      })
+    );
+
+    // 7️⃣ Optional callback (shift logs, reports, etc.)
+    onConfirm?.(closingSnapshot);
+
+    // 8️⃣ Close modal
+    onCancel();
   };
+
+  /* ================= UI ================= */
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
@@ -113,7 +153,7 @@ export default function CloseShiftModal({
               End Shift – Physical Inventory Count
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Only the responsible staff can end this shift.
+              Physical count overrides system inventory.
             </p>
           </div>
 

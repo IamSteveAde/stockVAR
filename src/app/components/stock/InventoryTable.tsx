@@ -46,26 +46,34 @@ export default function InventoryTable() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [open, setOpen] = useState(false);
 
-  /* ================= LOAD ================= */
+  /* ================= INITIAL LOAD ================= */
 
   useEffect(() => {
     setProducts(load<Product>(PRODUCTS_KEY));
     setInventory(load<InventoryItem>(INVENTORY_KEY));
   }, []);
 
-  /* ================= SYNC ================= */
+  /* ================= LISTEN FOR AUTHORITATIVE UPDATES ================= */
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      setInventory(e.detail);
+    };
+
+    window.addEventListener("inventory:updated", handler);
+
+    return () => {
+      window.removeEventListener("inventory:updated", handler);
+    };
+  }, []);
+
+  /* ================= PERSIST LOCAL CHANGES ================= */
 
   useEffect(() => {
     save(INVENTORY_KEY, inventory);
-
-    window.dispatchEvent(
-      new CustomEvent("inventory:updated", {
-        detail: inventory,
-      })
-    );
   }, [inventory]);
 
-  /* ================= ADJUST ================= */
+  /* ================= ADJUST INVENTORY ================= */
 
   const adjustInventory = (data: {
     sku: string;
@@ -128,6 +136,8 @@ export default function InventoryTable() {
     updatedAt: string;
   }[];
 
+  /* ================= UI ================= */
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -149,13 +159,16 @@ export default function InventoryTable() {
           </div>
         )}
 
-        {rows.map((i) => (
+        {rows.map((i, index) => (
           <div
             key={i.sku}
             className="bg-white rounded-xl border p-4 space-y-3"
           >
             <div className="flex justify-between items-start">
               <div>
+                <p className="text-xs text-gray-400 font-medium">
+                  #{index + 1}
+                </p>
                 <p className="font-medium">{i.name}</p>
                 <p className="text-xs text-gray-500 font-mono">
                   SKU: {i.sku}
@@ -179,6 +192,7 @@ export default function InventoryTable() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
+              <th className="px-6 py-3 text-left">#</th>
               <th className="px-6 py-3 text-left">Item</th>
               <th className="px-6 py-3 text-left">SKU</th>
               <th className="px-6 py-3 text-left">Quantity</th>
@@ -191,7 +205,7 @@ export default function InventoryTable() {
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="py-10 text-center text-gray-400"
                 >
                   No inventory records yet
@@ -199,8 +213,11 @@ export default function InventoryTable() {
               </tr>
             )}
 
-            {rows.map((i) => (
+            {rows.map((i, index) => (
               <tr key={i.sku} className="border-t">
+                <td className="px-6 py-4 text-gray-400">
+                  {index + 1}
+                </td>
                 <td className="px-6 py-4 font-medium">
                   {i.name}
                 </td>

@@ -212,13 +212,18 @@ const { profile } = useProfile();
           </div>
         )}
 
-        {products.map((p) => (
+        {products.map((p, index) => (
+
           <div
             key={p.id}
             className="bg-white rounded-xl border p-4 space-y-3"
           >
             <div className="flex justify-between items-start">
               <div>
+                <p className="text-xs text-gray-400 font-medium">
+  #{index + 1}
+</p>
+
                 <p className="font-medium">{p.name}</p>
                 <p className="text-xs text-gray-500 font-mono">
                   SKU: {p.sku}
@@ -271,6 +276,8 @@ const { profile } = useProfile();
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
+              <th className="px-6 py-3 text-left">#</th>
+
               <th className="px-6 py-3 text-left">Item</th>
               <th className="px-6 py-3 text-left">SKU</th>
               <th className="px-6 py-3 text-left">Unit</th>
@@ -292,8 +299,11 @@ const { profile } = useProfile();
               </tr>
             )}
 
-            {products.map((p) => (
+            {products.map((p, index) => (
               <tr key={p.id} className="border-t">
+                <td className="px-6 py-4 text-gray-400">
+                  {index + 1}
+                </td>
                 <td className="px-6 py-4 font-medium">{p.name}</td>
                 <td className="px-6 py-4 font-mono text-xs">{p.sku}</td>
                 <td className="px-6 py-4">{p.unit}</td>

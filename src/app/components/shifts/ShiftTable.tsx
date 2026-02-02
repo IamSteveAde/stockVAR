@@ -34,6 +34,20 @@ type InventoryItem = {
 /* ================= HELPERS ================= */
 
 const now = () => new Date().toLocaleString();
+const formatDateWords = (dateStr: string) => {
+  if (!dateStr) return "—";
+
+  const date = new Date(dateStr);
+
+  return date.toLocaleDateString("en-GB", {
+    weekday: "short", // Tue
+    day: "2-digit",   // 02
+    month: "short",   // Feb
+    year: "numeric",  // 2026
+  }).replace(/,/g, "");
+};
+
+
 
 const loadStaff = (): Staff[] => {
   try {
@@ -197,17 +211,63 @@ export default function ShiftTable() {
     setDeleteShift(null);
   };
 
+  /* ================= SORT SHIFTS (PRIORITY ORDER) ================= */
+
+/* ================= SORT SHIFTS (OPERATIONAL ORDER) ================= */
+
+const sortedShifts = [...shifts].sort((a, b) => {
+  // Status priority
+  const priority = (s: Shift) =>
+    s.status === "running"
+      ? 0
+      : s.status === "planned"
+      ? 1
+      : 2;
+
+  const statusDiff = priority(a) - priority(b);
+  if (statusDiff !== 0) return statusDiff;
+
+  // Same status sorting
+  if (a.status === "planned") {
+    // Planned: earliest upcoming first
+    const aTime = new Date(
+      `${a.startDate} ${a.startTime}`
+    ).getTime();
+    const bTime = new Date(
+      `${b.startDate} ${b.startTime}`
+    ).getTime();
+
+    return aTime - bTime;
+  }
+
+  if (a.status === "running") {
+    // Running: most recently started first
+    return (
+      new Date(b.startedAt || 0).getTime() -
+      new Date(a.startedAt || 0).getTime()
+    );
+  }
+
+  // Ended: most recently ended first
+  return (
+    new Date(b.endedAt || 0).getTime() -
+    new Date(a.endedAt || 0).getTime()
+  );
+});
+
+
   /* ================= PAGINATION ================= */
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(shifts.length / PAGE_SIZE)
-  );
+const totalPages = Math.max(
+  1,
+  Math.ceil(sortedShifts.length / PAGE_SIZE)
+);
 
-  const current = shifts.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+const current = sortedShifts.slice(
+  (page - 1) * PAGE_SIZE,
+  page * PAGE_SIZE
+);
+
 
   /* ================= UI ================= */
 
@@ -260,8 +320,9 @@ export default function ShiftTable() {
                     {s.label}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {s.startDate}
-                  </div>
+                  {formatDateWords(s.startDate)}
+                </div>
+
                 </td>
 
                 {/* Schedule */}

@@ -345,23 +345,42 @@ export default function StaffTable() {
           <span className="font-medium text-gray-900">{totalPages}</span>
         </p>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="h-10 w-10 rounded-full bg-[#0F766E] text-white"
-          >
-            <ChevronLeft size={16} />
-          </button>
+        <div className="w-full flex justify-center">
+  <div className="flex items-center gap-3">
+    <button
+      aria-label="Previous page"
+      disabled={page === 1}
+      onClick={() => setPage((p) => p - 1)}
+      className="
+        h-10 w-10 flex items-center justify-center rounded-full
+        bg-[#0F766E] text-white
+        hover:bg-[#0d665f]
+        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0F766E]
+        transition
+      "
+    >
+      <ChevronLeft size={18} />
+    </button>
 
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="h-10 w-10 rounded-full bg-[#0F766E] text-white"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
+    <button
+      aria-label="Next page"
+      disabled={page === totalPages}
+      onClick={() => setPage((p) => p + 1)}
+      className="
+        h-10 w-10 flex items-center justify-center rounded-full
+        bg-[#0F766E] text-white
+        hover:bg-[#0d665f]
+        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0F766E]
+        transition
+      "
+    >
+      <ChevronRight size={18} />
+    </button>
+  </div>
+</div>
+
       </div>
 
       {openAdd && (
