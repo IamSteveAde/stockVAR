@@ -357,30 +357,63 @@ export default function OverviewReport() {
           </h3>
         </div>
 
-        <table className="w-full min-w-[900px] text-sm">
-          <thead className="bg-gray-50 text-gray-500">
-            <tr>
-              <th className="px-6 py-3 text-left">Item</th>
-              <th className="px-6 py-3 text-right">Expected</th>
-              <th className="px-6 py-3 text-right">Actual</th>
-              <th className="px-6 py-3 text-right">Variance</th>
-              <th className="px-6 py-3 text-left">Unit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {slice.map((r) => (
-              <tr key={r.sku} className="border-t">
-                <td className="px-6 py-4 font-medium">{r.name}</td>
-                <td className="px-6 py-4 text-right">{r.expectedLeft}</td>
-                <td className="px-6 py-4 text-right">{r.actualLeft}</td>
-                <td className="px-6 py-4 text-right font-semibold text-red-600">
+        {/* ===== MOBILE VIEW (NO LOGIC CHANGE) ===== */}
+        <div className="md:hidden divide-y">
+          {slice.map((r) => (
+            <div key={r.sku} className="p-4 space-y-3">
+              <div className="flex justify-between">
+                <p className="font-medium">{r.name}</p>
+                <span className="text-xs text-gray-500">{r.unit}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-500">Expected</p>
+                  <p className="font-medium">{r.expectedLeft}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Actual</p>
+                  <p className="font-medium">{r.actualLeft}</p>
+                </div>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Variance</span>
+                <span className="font-semibold text-red-600">
                   {r.variance}
-                </td>
-                <td className="px-6 py-4">{r.unit}</td>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ===== ORIGINAL TABLE (UNCHANGED) ===== */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full min-w-[900px] text-sm">
+            <thead className="bg-gray-50 text-gray-500">
+              <tr>
+                <th className="px-6 py-3 text-left">Item</th>
+                <th className="px-6 py-3 text-right">Expected</th>
+                <th className="px-6 py-3 text-right">Actual</th>
+                <th className="px-6 py-3 text-right">Variance</th>
+                <th className="px-6 py-3 text-left">Unit</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {slice.map((r) => (
+                <tr key={r.sku} className="border-t">
+                  <td className="px-6 py-4 font-medium">{r.name}</td>
+                  <td className="px-6 py-4 text-right">{r.expectedLeft}</td>
+                  <td className="px-6 py-4 text-right">{r.actualLeft}</td>
+                  <td className="px-6 py-4 text-right font-semibold text-red-600">
+                    {r.variance}
+                  </td>
+                  <td className="px-6 py-4">{r.unit}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         <div className="flex justify-between items-center px-6 py-4 border-t text-sm">
           <span>
