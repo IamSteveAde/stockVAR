@@ -61,15 +61,22 @@ const PAGE_SIZE = 8;
 /* ================= HELPERS ================= */
 
 function formatShiftLabel(shift: Shift) {
-  if (!shift.endedAt) return shift.label;
-  const d = new Date(shift.endedAt);
-  const date = d.toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-  return `${shift.label} • ${date}`;
+  const date = shift.endedAt
+    ? new Date(shift.endedAt).toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+
+  const staff =
+    shift.staff?.length > 0
+      ? shift.staff.map((s) => s.fullName).join(", ")
+      : "No staff";
+
+  return `${shift.label} • ${date}\nStaff: ${staff}`;
 }
+
 
 /* ================= COMPONENT ================= */
 
@@ -256,43 +263,55 @@ export default function OverviewReport() {
 
       {/* ================= SHIFT FILTER MODAL ================= */}
       {openFilter === "shift" && (
-        <FilterModal
-          title="Select shifts (by date)"
-          items={shifts.filter((s) => s.status === "ended")}
-          getLabel={(s) => formatShiftLabel(s)}
-          isActive={(s) => draftShiftIds.includes(s.id)}
-          onToggle={(s) =>
-            setDraftShiftIds((p) =>
-              p.includes(s.id)
-                ? p.filter((x) => x !== s.id)
-                : [...p, s.id]
-            )
-          }
-          onClear={() => setDraftShiftIds([])}
-          onApply={applyShiftFilter}
-          onClose={() => setOpenFilter(null)}
-        />
-      )}
+  <FilterModal
+    title="Select shifts"
+    items={shifts.filter((s) => s.status === "ended")}
+    getLabel={(s) => formatShiftLabel(s)}
+    getId={(s) => s.id}
+    isActive={(s) => draftShiftIds.includes(s.id)}
+    onToggle={(s) =>
+      setDraftShiftIds((p) =>
+        p.includes(s.id)
+          ? p.filter((x) => x !== s.id)
+          : [...p, s.id]
+      )
+    }
+    onSelectAll={() =>
+      setDraftShiftIds(
+        shifts
+          .filter((s) => s.status === "ended")
+          .map((s) => s.id)
+      )
+    }
+    onClear={() => setDraftShiftIds([])}
+    onApply={applyShiftFilter}
+    onClose={() => setOpenFilter(null)}
+  />
+)}
 
       {/* ================= PRODUCT FILTER MODAL ================= */}
       {openFilter === "product" && (
-        <FilterModal
-          title="Select products"
-          items={products}
-          getLabel={(p) => p.name}
-          isActive={(p) => draftSkus.includes(p.sku)}
-          onToggle={(p) =>
-            setDraftSkus((s) =>
-              s.includes(p.sku)
-                ? s.filter((x) => x !== p.sku)
-                : [...s, p.sku]
-            )
-          }
-          onClear={() => setDraftSkus([])}
-          onApply={applyProductFilter}
-          onClose={() => setOpenFilter(null)}
-        />
-      )}
+  <FilterModal
+    title="Select products"
+    items={products}
+    getLabel={(p) => p.name}
+    getId={(p) => p.sku}
+    isActive={(p) => draftSkus.includes(p.sku)}
+    onToggle={(p) =>
+      setDraftSkus((s) =>
+        s.includes(p.sku)
+          ? s.filter((x) => x !== p.sku)
+          : [...s, p.sku]
+      )
+    }
+    onSelectAll={() =>
+      setDraftSkus(products.map((p) => p.sku))
+    }
+    onClear={() => setDraftSkus([])}
+    onApply={applyProductFilter}
+    onClose={() => setOpenFilter(null)}
+  />
+)}
 
       {/* ================= CHART + EXPLANATION ================= */}
       {varianceChartData.length > 0 && (
@@ -445,26 +464,33 @@ function FilterModal<T>({
   title,
   items,
   getLabel,
+  getId,
   isActive,
   onToggle,
   onApply,
   onClear,
+  onSelectAll,
   onClose,
 }: {
   title: string;
   items: T[];
   getLabel: (item: T) => string;
+  getId: (item: T) => string;
   isActive: (item: T) => boolean;
   onToggle: (item: T) => void;
   onApply: () => void;
   onClear: () => void;
+  onSelectAll: () => void;
   onClose: () => void;
-}) {
+})
+
+
+{
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full sm:max-w-md rounded-t-xl sm:rounded-xl p-5 space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold">{title}</h3>
+          <h3 className="font-semibold text-black">{title}</h3>
           <button onClick={onClose}>
             <X />
           </button>
@@ -491,16 +517,30 @@ function FilterModal<T>({
         </div>
 
         <div className="flex justify-between items-center pt-3 border-t">
-          <button onClick={onClear} className="text-sm text-gray-500">
-            Clear
-          </button>
-          <button
-            onClick={onApply}
-            className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
-          >
-            Apply
-          </button>
-        </div>
+  <div className="flex gap-3">
+    <button
+      onClick={onSelectAll}
+      className="text-sm text-[#0F766E] font-medium"
+    >
+      Select all
+    </button>
+
+    <button
+      onClick={onClear}
+      className="text-sm text-gray-500"
+    >
+      Clear
+    </button>
+  </div>
+
+  <button
+    onClick={onApply}
+    className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
+  >
+    Apply
+  </button>
+</div>
+
       </div>
     </div>
   );

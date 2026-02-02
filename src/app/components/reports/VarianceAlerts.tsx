@@ -35,6 +35,8 @@ type StockSnapshot = {
 };
 
 type Severity = "High" | "Medium" | "Low";
+type DateRange = "today" | "7d" | "1m" | "2m" | "custom";
+
 
 type AlertRow = {
   sku: string;
@@ -61,17 +63,32 @@ const severityFromVariance = (v: number): Severity => {
 
 const withinDateRange = (
   date: string,
-  range: string,
+  range: DateRange,
   from?: string,
   to?: string
 ) => {
   const ts = new Date(date).getTime();
   if (Number.isNaN(ts)) return false;
 
-  const now = Date.now();
+  const now = new Date();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-  if (range === "7d") return ts >= now - 7 * 86400000;
-  if (range === "30d") return ts >= now - 30 * 86400000;
+  if (range === "today") {
+    return ts >= todayStart.getTime();
+  }
+
+  if (range === "7d") {
+    return ts >= now.getTime() - 7 * 86400000;
+  }
+
+  if (range === "1m") {
+    return ts >= now.getTime() - 30 * 86400000;
+  }
+
+  if (range === "2m") {
+    return ts >= now.getTime() - 60 * 86400000;
+  }
 
   if (range === "custom" && from && to) {
     return (
@@ -83,6 +100,7 @@ const withinDateRange = (
   return true;
 };
 
+
 /* ================= COMPONENT ================= */
 
 export default function VarianceAlerts() {
@@ -93,7 +111,8 @@ export default function VarianceAlerts() {
   const [page, setPage] = useState(1);
 
   /* ---------- Filters ---------- */
-  const [dateRange, setDateRange] = useState<"7d" | "30d" | "custom">("7d");
+  const [dateRange, setDateRange] = useState<DateRange>("7d");
+
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [severity, setSeverity] = useState<Severity | "all">("all");
@@ -222,17 +241,20 @@ export default function VarianceAlerts() {
       {/* ================= FILTER BAR ================= */}
       <div className="bg-white rounded-xl shadow-sm p-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
         <select
-          value={dateRange}
-          onChange={(e) => {
-            setPage(1);
-            setDateRange(e.target.value as any);
-          }}
-          className="border rounded-lg px-3 py-2 text-sm"
-        >
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="custom">Custom range</option>
-        </select>
+  value={dateRange}
+  onChange={(e) => {
+    setPage(1);
+    setDateRange(e.target.value as DateRange);
+  }}
+  className="border rounded-lg px-3 py-2 text-sm"
+>
+  <option value="today">Today</option>
+  <option value="7d">Last 7 days</option>
+  <option value="1m">Last 1 month</option>
+  <option value="2m">Last 2 months</option>
+  <option value="custom">Custom range</option>
+</select>
+
 
         {dateRange === "custom" && (
           <>

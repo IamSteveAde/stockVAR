@@ -9,6 +9,7 @@ import {
   Filter,
   X,
   Package,
+  Users,
 } from "lucide-react";
 import { Shift } from "../shifts/types";
 
@@ -33,44 +34,60 @@ type InventoryLog = {
   shiftId: string;
 };
 
-type StockSnapshot = {
+type Snapshot = {
   sku: string;
   quantity: number;
 };
 
-type ShiftVarianceItem = {
+type ReconciliationItem = {
   product: string;
   unit: string;
+  opening: number;
+  added: number;
+  used: number;
+  expected: number;
+  actual: number;
   variance: number;
 };
 
-type ShiftVariance = {
-  shiftId: string;
-  shiftLabel: string;
-  date: string;
+type ShiftContextRow = {
+  id: string;
+  label: string;
+  endedAt: string;
   staff: string[];
-  items: ShiftVarianceItem[];
+  items: ReconciliationItem[];
 };
 
 /* ================= CONSTANTS ================= */
 
 const PAGE_SIZE = 5;
 
-/* ================= MAIN ================= */
+/* ================= HELPERS ================= */
+
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+/* ================= COMPONENT ================= */
 
 export default function ShiftContext() {
   const [products, setProducts] = useState<Product[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [logs, setLogs] = useState<InventoryLog[]>([]);
 
-  const [dateRange, setDateRange] = useState("7d");
+  const [range, setRange] = useState("7d");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [page, setPage] = useState(1);
-  const [activeShift, setActiveShift] =
-    useState<ShiftVariance | null>(null);
 
-  /* ================= LOAD DATA ================= */
+  const [page, setPage] = useState(1);
+  const [active, setActive] =
+    useState<ShiftContextRow | null>(null);
+
+  /* ================= LOAD ================= */
 
   useEffect(() => {
     setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
@@ -78,9 +95,9 @@ export default function ShiftContext() {
     setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
   }, []);
 
-  /* ================= DATE BOUNDS ================= */
+  /* ================= DATE FILTER ================= */
 
-  const dateBounds = useMemo(() => {
+  const bounds = useMemo(() => {
     const ended = shifts
       .filter((s) => s.status === "ended" && s.endedAt)
       .map((s) => new Date(s.endedAt!).getTime());
@@ -88,32 +105,31 @@ export default function ShiftContext() {
     if (!ended.length) return null;
 
     const latest = Math.max(...ended);
-    let fromTs = 0;
-    let toTs = latest;
+    let from = 0;
+    let to = latest;
 
-    if (dateRange === "today") {
+    if (range === "today") {
       const d = new Date(latest);
       d.setHours(0, 0, 0, 0);
-      fromTs = d.getTime();
+      from = d.getTime();
     }
 
-    if (dateRange === "7d") fromTs = latest - 7 * 86400000;
-    if (dateRange === "1m") fromTs = latest - 30 * 86400000;
-    if (dateRange === "2m") fromTs = latest - 60 * 86400000;
+    if (range === "7d") from = latest - 7 * 86400000;
+    if (range === "1m") from = latest - 30 * 86400000;
+    if (range === "2m") from = latest - 60 * 86400000;
 
-    if (dateRange === "custom") {
-      if (!fromDate || !toDate) return null;
-      fromTs = new Date(fromDate + "T00:00:00").getTime();
-      toTs = new Date(toDate + "T23:59:59").getTime();
+    if (range === "custom" && fromDate && toDate) {
+      from = new Date(fromDate + "T00:00:00").getTime();
+      to = new Date(toDate + "T23:59:59").getTime();
     }
 
-    return { fromTs, toTs };
-  }, [dateRange, fromDate, toDate, shifts]);
+    return { from, to };
+  }, [range, fromDate, toDate, shifts]);
 
-  /* ================= BUILD SHIFT VARIANCE ================= */
+  /* ================= BUILD CONTEXT ================= */
 
-  const shiftVariance = useMemo<ShiftVariance[]>(() => {
-    const results: ShiftVariance[] = [];
+  const rows = useMemo<ShiftContextRow[]>(() => {
+    const out: ShiftContextRow[] = [];
 
     shifts.forEach((shift) => {
       if (
@@ -125,22 +141,22 @@ export default function ShiftContext() {
         return;
 
       const endedTs = new Date(shift.endedAt).getTime();
-      if (dateBounds) {
-        if (endedTs < dateBounds.fromTs) return;
-        if (endedTs > dateBounds.toTs) return;
+      if (bounds) {
+        if (endedTs < bounds.from) return;
+        if (endedTs > bounds.to) return;
       }
 
-      const items: ShiftVarianceItem[] = [];
+      const items: ReconciliationItem[] = [];
 
       products.forEach((p) => {
         const opening =
           shift.openingSnapshot!.find(
-            (i: StockSnapshot) => i.sku === p.sku
+            (i: Snapshot) => i.sku === p.sku
           )?.quantity || 0;
 
-        const closing =
+        const actual =
           shift.closingSnapshot!.find(
-            (i: StockSnapshot) => i.sku === p.sku
+            (i: Snapshot) => i.sku === p.sku
           )?.quantity || 0;
 
         const shiftLogs = logs.filter(
@@ -156,41 +172,48 @@ export default function ShiftContext() {
           .reduce((s, l) => s + l.quantity, 0);
 
         const expected = opening + added - used;
-        const variance = closing - expected;
+        const variance = actual - expected;
 
         if (variance !== 0) {
           items.push({
             product: p.name,
             unit: p.unit,
+            opening,
+            added,
+            used,
+            expected,
+            actual,
             variance,
           });
         }
       });
 
-      if (items.length > 0) {
-        results.push({
-          shiftId: shift.id,
-          shiftLabel: shift.label,
-          date: shift.endedAt.split(",")[0],
+      if (items.length) {
+        out.push({
+          id: shift.id,
+          label: shift.label,
+          endedAt: shift.endedAt,
           staff: shift.staff.map((s) => s.fullName),
           items,
         });
       }
     });
 
-    return results.sort((a, b) =>
-      a.date < b.date ? 1 : -1
+    return out.sort(
+      (a, b) =>
+        new Date(b.endedAt).getTime() -
+        new Date(a.endedAt).getTime()
     );
-  }, [shifts, products, logs, dateBounds]);
+  }, [shifts, products, logs, bounds]);
 
   /* ================= PAGINATION ================= */
 
   const totalPages = Math.max(
     1,
-    Math.ceil(shiftVariance.length / PAGE_SIZE)
+    Math.ceil(rows.length / PAGE_SIZE)
   );
 
-  const pageData = shiftVariance.slice(
+  const pageData = rows.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
   );
@@ -199,28 +222,28 @@ export default function ShiftContext() {
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm w-full overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm">
         {/* Header */}
         <div className="p-4 border-b">
-          <h3 className="text-sm font-semibold text-[#0F766E]">
-            Shift Variance Context
+          <h3 className="font-semibold text-[#0F766E]">
+            Shift Context Report
           </h3>
           <p className="text-xs text-gray-500">
-            Shifts with confirmed stock discrepancies
+            Reconciliation of ended shifts with stock discrepancies
           </p>
         </div>
 
         {/* Filters */}
         <div className="p-4 border-b space-y-3">
           <div className="flex items-center gap-2 text-xs text-gray-600">
-            <Filter size={14} /> Date filter
+            <Filter size={14} /> Date range
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <select
-              value={dateRange}
+              value={range}
               onChange={(e) => {
-                setDateRange(e.target.value);
+                setRange(e.target.value);
                 setPage(1);
               }}
               className="border rounded-lg px-3 py-2 text-sm"
@@ -229,10 +252,10 @@ export default function ShiftContext() {
               <option value="7d">Last 7 days</option>
               <option value="1m">Last 1 month</option>
               <option value="2m">Last 2 months</option>
-              <option value="custom">Custom range</option>
+              <option value="custom">Custom</option>
             </select>
 
-            {dateRange === "custom" && (
+            {range === "custom" && (
               <>
                 <input
                   type="date"
@@ -255,25 +278,23 @@ export default function ShiftContext() {
         <div className="divide-y">
           {pageData.map((s) => (
             <button
-              key={s.shiftId}
-              onClick={() => setActiveShift(s)}
+              key={s.id}
+              onClick={() => setActive(s)}
               className="w-full p-4 text-left hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
             >
               <div>
                 <p className="font-medium">
-                  {s.shiftLabel} Shift
+                  {s.label} Shift
                 </p>
                 <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <Calendar size={12} /> {s.date}
+                  <Calendar size={12} /> {formatDate(s.endedAt)}
                 </p>
               </div>
 
-              <p className="text-xs text-gray-600">
-                Staff:{" "}
-                <span className="text-gray-800">
-                  {s.staff.join(", ")}
-                </span>
-              </p>
+              <div className="flex items-center gap-2 text-xs text-gray-600">
+                <Users size={14} />
+                {s.staff.join(", ")}
+              </div>
 
               <div className="flex items-center gap-2 text-red-600 font-semibold text-sm">
                 <AlertTriangle size={14} />
@@ -284,7 +305,7 @@ export default function ShiftContext() {
 
           {pageData.length === 0 && (
             <div className="p-6 text-center text-sm text-gray-500">
-              No shift variance for selected period
+              No discrepancies for selected period
             </div>
           )}
         </div>
@@ -294,97 +315,92 @@ export default function ShiftContext() {
           <span>
             Page {page} of {totalPages}
           </span>
-          {/* Controls */}
-  <div className="flex items-center gap-2 self-end sm:self-auto">
-    <button
-      disabled={page === 1}
-      onClick={() => setPage((p) => p - 1)}
-      className="
-        inline-flex items-center justify-center
-        h-9 w-9 rounded-full
-        bg-[#0F766E] text-white
-        border border-[#0F766E]
-        transition-all duration-200
-        hover:bg-white hover:text-[#0F766E]
-        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
-        disabled:bg-[#0F766E]/30
-        disabled:border-[#0F766E]/30
-        disabled:text-white/70
-        disabled:cursor-not-allowed
-      "
-      aria-label="Previous page"
-    >
-      <ChevronLeft size={14} />
-    </button>
-
-    <button
-      disabled={page === totalPages}
-      onClick={() => setPage((p) => p + 1)}
-      className="
-        inline-flex items-center justify-center
-        h-9 w-9 rounded-full
-        bg-[#0F766E] text-white
-        border border-[#0F766E]
-        transition-all duration-200
-        hover:bg-white hover:text-[#0F766E]
-        focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
-        disabled:bg-[#0F766E]/30
-        disabled:border-[#0F766E]/30
-        disabled:text-white/70
-        disabled:cursor-not-allowed
-      "
-      aria-label="Next page"
-    >
-      <ChevronRight size={14} />
-    </button>
-  </div>
+          <div className="flex gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              <ChevronLeft />
+            </button>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              <ChevronRight />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ================= MODAL ================= */}
-      {activeShift && (
+      {/* ================= DETAIL MODAL ================= */}
+      {active && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl w-full max-w-lg">
+          <div className="bg-white rounded-xl w-full max-w-xl">
             <div className="p-4 border-b flex justify-between">
               <h4 className="font-semibold">
-                {activeShift.shiftLabel} – {activeShift.date}
+                {active.label} – {formatDate(active.endedAt)}
               </h4>
-              <button onClick={() => setActiveShift(null)}>
+              <button onClick={() => setActive(null)}>
                 <X size={16} />
               </button>
             </div>
 
-            <div className="p-4 space-y-3 max-h-[65vh] overflow-y-auto">
-              {activeShift.items.map((i, idx) => (
+            <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+              {active.items.map((i, idx) => (
                 <div
                   key={idx}
-                  className="border rounded-lg p-3 flex justify-between"
+                  className="border rounded-lg p-3 space-y-2"
                 >
-                  <div className="flex items-center gap-2">
-                    <Package size={14} />
-                    <span className="font-medium">
-                      {i.product}
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-2">
+                      <Package size={14} />
+                      <span className="font-medium">
+                        {i.product}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`font-semibold ${
+                        i.variance < 0
+                          ? "text-red-600"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {i.variance > 0 ? "+" : ""}
+                      {i.variance}
+                      {i.unit}
                     </span>
                   </div>
 
-                  <span
-                    className={`font-semibold ${
-                      i.variance < 0
-                        ? "text-red-600"
-                        : "text-green-600"
-                    }`}
-                  >
-                    {i.variance > 0 ? "+" : ""}
-                    {i.variance}
-                    {i.unit}
-                  </span>
+                  <div className="grid grid-cols-5 gap-2 text-xs text-gray-600">
+                    <div>
+                      <p className="text-gray-400">Opening</p>
+                      <p>{i.opening}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Added</p>
+                      <p>{i.added}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Used</p>
+                      <p>{i.used}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Expected</p>
+                      <p>{i.expected}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Actual</p>
+                      <p>{i.actual}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
 
               <p className="text-xs text-gray-500 pt-2">
                 Staff on duty:{" "}
                 <span className="text-gray-700">
-                  {activeShift.staff.join(", ")}
+                  {active.staff.join(", ")}
                 </span>
               </p>
             </div>
