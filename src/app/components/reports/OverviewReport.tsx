@@ -416,7 +416,7 @@ export default function OverviewReport() {
   <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
     <div className="bg-white rounded-xl w-full max-w-md p-6 space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-lg text-green/70">
+        <h3 className="font-semibold text-lg text-green-700">
           {selectedVariance.name}
         </h3>
         <button onClick={() => setOpenVariance(false)}>
