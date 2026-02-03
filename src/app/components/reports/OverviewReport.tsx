@@ -358,7 +358,7 @@ export default function OverviewReport() {
                   <strong>Red</strong> = missing stock
                 </li>
                 <li>
-                  Zero line = perfect accuracy
+                  Zero line/Green = perfect accuracy
                 </li>
               </ul>
             </div>
