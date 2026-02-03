@@ -372,7 +372,7 @@ export default function OverviewReport() {
                 label={{
                   value: "Variance (Actual − Expected)",
                   angle: -90,
-                  position: "insideLeft",
+                  position: "inside",
                 }}
               />
               <ReferenceLine y={0} stroke="#000" />
