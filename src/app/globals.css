@@ -288,3 +288,6 @@ section {
   -ms-overflow-style: none; /* IE & Edge */
   scrollbar-width: none; /* Firefox */
 }
+.recharts-bar-rectangle:hover {
+  opacity: 0.85;
+}

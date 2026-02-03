@@ -56,7 +56,17 @@ type Row = {
   variance: number;
 };
 
+type VarianceStatus = "negative" | "positive" | "perfect";
+
 const PAGE_SIZE = 8;
+
+const VARIANCE_COLORS: Record<VarianceStatus, string> = {
+  negative: "#DC2626",
+  positive: "#FACC15",
+  perfect: "#16A34A",
+};
+
+
 
 /* ================= HELPERS ================= */
 
@@ -84,6 +94,9 @@ export default function OverviewReport() {
   const [products, setProducts] = useState<Product[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
+  const [selectedVariance, setSelectedVariance] = useState<any>(null);
+  const [openVariance, setOpenVariance] = useState(false);
+
 
   /* Filters */
   const [selectedShiftIds, setSelectedShiftIds] = useState<string[]>([]);
@@ -205,14 +218,24 @@ export default function OverviewReport() {
   }, [selectedShiftIds, selectedSkus, shifts, logs, products]);
 
   const varianceChartData = useMemo(
-    () =>
-      rows.map((r) => ({
-        name: r.name,
-        variance: r.variance,
-        isNegative: r.variance < 0,
-      })),
-    [rows]
-  );
+  () =>
+    rows.map((r) => ({
+      name: r.name,
+      variance: r.variance,
+      expected: r.expectedLeft,
+      actual: r.actualLeft,
+      unit: r.unit,
+      status:
+        r.variance === 0
+          ? ("perfect" as VarianceStatus)
+          : r.variance < 0
+          ? ("negative" as VarianceStatus)
+          : ("positive" as VarianceStatus),
+    })),
+  [rows]
+);
+
+
 
   /* ================= PAGINATION ================= */
 
@@ -353,19 +376,84 @@ export default function OverviewReport() {
                 }}
               />
               <ReferenceLine y={0} stroke="#000" />
-              <Bar dataKey="variance" radius={[6, 6, 0, 0]}>
-                <LabelList dataKey="variance" position="top" />
+              <Bar
+                dataKey="variance"
+                radius={[6, 6, 0, 0]}
+                minPointSize={6}
+                cursor="pointer"
+                onClick={(data) => {
+                  setSelectedVariance(data);
+                  setOpenVariance(true);
+                }}
+              >
+             <LabelList
+  dataKey="variance"
+  position="inside"
+  formatter={(value) =>
+    typeof value === "number" ? value : ""
+  }
+  style={{
+    fill: "#fff",
+    fontWeight: 600,
+    fontSize: 12,
+  }}
+/>
+
                 {varianceChartData.map((d, i) => (
-                  <Cell
-                    key={i}
-                    fill={d.isNegative ? "#DC2626" : "#FACC15"}
-                  />
-                ))}
+  <Cell
+    key={i}
+    fill={VARIANCE_COLORS[d.status]}
+  />
+))}
+
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
+
+      {openVariance && selectedVariance && (
+  <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+    <div className="bg-white rounded-xl w-full max-w-md p-6 space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-semibold text-lg">
+          {selectedVariance.name}
+        </h3>
+        <button onClick={() => setOpenVariance(false)}>
+          <X />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-gray-500">Expected</p>
+          <p className="font-semibold">
+            {selectedVariance.expected}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-500">Actual</p>
+          <p className="font-semibold">
+            {selectedVariance.actual}
+          </p>
+        </div>
+      </div>
+
+      <div
+        className={`rounded-lg px-4 py-3 text-sm font-medium ${
+          selectedVariance.status === "perfect"
+            ? "bg-green-50 text-green-700"
+            : selectedVariance.status === "negative"
+            ? "bg-red-50 text-red-700"
+            : "bg-yellow-50 text-yellow-700"
+        }`}
+      >
+        Variance: {selectedVariance.variance} {selectedVariance.unit}
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* ================= TABLE ================= */}
       <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
