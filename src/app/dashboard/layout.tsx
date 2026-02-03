@@ -8,6 +8,9 @@ import { ProfileProvider, useProfile } from "../context/ProfileContext";
 import { BusinessProvider } from "../context/BusinessContext";
 import { SubscriptionProvider } from "../context/SubscriptionContext";
 import TrialBanner from "../components/billing/TrialBanner";
+import DevProfileSwitcher from "@/app/dev/DevProfileSwitcher";
+
+/* ================= ROLE GUARD ================= */
 
 function RoleGuard({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
@@ -19,7 +22,7 @@ function RoleGuard({ children }: { children: React.ReactNode }) {
 
     // 🚫 Staff must never access dashboard root
     if (profile.role === "staff" && pathname === "/dashboard") {
-      router.replace("/dashboard/shift");
+      router.replace("/dashboard/staff-dashboard");
     }
   }, [profile, pathname, router]);
 
@@ -27,6 +30,8 @@ function RoleGuard({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
+
+/* ================= LAYOUT ================= */
 
 export default function DashboardLayout({
   children,
@@ -47,7 +52,7 @@ export default function DashboardLayout({
               />
 
               <div className="flex-1 flex flex-col min-w-0">
-                {/* ✅ Display-only, NO redirects */}
+                {/* Display-only banner */}
                 <TrialBanner />
 
                 <Topbar toggleSidebar={() => setSidebarOpen(true)} />
@@ -57,6 +62,11 @@ export default function DashboardLayout({
                 </main>
               </div>
             </div>
+
+            {/* ✅ DEV ONLY ROLE SWITCHER */}
+            {process.env.NODE_ENV === "development" && (
+              <DevProfileSwitcher />
+            )}
           </RoleGuard>
         </SubscriptionProvider>
       </BusinessProvider>

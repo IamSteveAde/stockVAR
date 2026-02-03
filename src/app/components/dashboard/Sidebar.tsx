@@ -82,6 +82,17 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
             />
           )}
 
+           
+          {(role === "staff") && (
+            <NavItem
+              icon={LayoutDashboard}
+              label="Dashboard"
+              href="/dashboard/staff-dashboard"
+              active={pathname === "/dashboard/staff-dashboard"}
+              onClick={toggleSidebar}
+            />
+          )}
+
           <NavItem
             icon={Users}
             label="Shift"
