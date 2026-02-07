@@ -136,18 +136,9 @@ export default function CreateBusinessWizard() {
           />
         )}
 
-        {step === 4 && (
-          <RoleStep
-            value={form.role}
-            onChange={(v: "owner") =>
-              updateForm("role", v)
-            }
-            onNext={next}
-            onPrev={prev}
-          />
-        )}
+        
 
-        {step === 5 && (
+        {step === 4 && (
           <StaffSizeStep
             value={form.staffSize}
             onChange={(v: string) =>
@@ -158,7 +149,7 @@ export default function CreateBusinessWizard() {
           />
         )}
 
-        {step === 6 && (
+        {step === 5 && (
           <CompleteStep onFinish={handleFinish} />
         )}
       </div>
