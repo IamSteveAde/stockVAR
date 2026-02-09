@@ -8,32 +8,26 @@ const audiences = [
   {
     title: "Restaurants",
     description:
-      "Owner-managed or manager-led restaurants that need better control over daily stock usage and food cost.",
+      "Owner-managed and manager-led restaurants that need clear visibility into daily stock usage, shift by shift.",
     image: "/images/hero/restaurant.webp",
   },
   {
     title: "Cafés",
     description:
-      "Cafés tracking milk, coffee beans, sugar, and other stock items used consistently throughout the day.",
+      "Cafés tracking fast-moving items like milk, coffee beans, syrups, and pastries across busy daily shifts.",
     image: "/images/hero/cafes.webp",
   },
   {
     title: "Lounges",
     description:
-      "Food and drink lounges where stock movement happens across long operating hours and multiple shifts.",
+      "Food and drink lounges operating long hours, where stock moves across multiple shifts and control is critical.",
     image: "/images/hero/lounges.webp",
   },
   {
     title: "Hotel Kitchens",
     description:
-      "Large and mid-sized hotel kitchens managing buffet service, room service, and staff meals across multiple shifts, where stock control and consistency are critical to profitability.",
+      "Hotel kitchens managing buffet service, à la carte meals, and staff feeding, where consistency and stock discipline protect margins.",
     image: "/images/hero/hotel.webp",
-  },
-  {
-    title: "Retail Experience Spaces",
-    description:
-      "Brand showrooms and retail environments that serve coffee, drinks, or light refreshments as part of the customer experience, where stock control supports consistency and cost management.",
-    image: "/images/hero/retail.webp",
   },
 ];
 
@@ -61,16 +55,19 @@ export default function WhoItsFor() {
       <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
         {/* Header + arrows */}
         <div className="mb-16 flex items-end justify-between gap-6">
-          <div className="max-w-2xl">
+          <div className="max-w-full">
             <span className="text-xs font-medium uppercase tracking-widest text-[#6B7280]">
               Who it is for
             </span>
 
             <h2 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-semibold text-[#111827] leading-tight">
-              Built for food businesses
-              <br />
-              <span className="text-[#6B7280]">that care about control.</span>
-            </h2>
+            Built for kitchens
+            <br />
+            <span className="text-[#6B7280]">
+              that run on shifts and real numbers.
+            </span>
+          </h2>
+
           </div>
 
           {/* Arrows */}

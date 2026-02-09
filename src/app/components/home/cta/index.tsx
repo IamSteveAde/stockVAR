@@ -19,32 +19,35 @@ export default function FinalCTASection() {
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight text-white">
             Take control of your stock.
             <br />
-            <span className="text-white/70">
-              Run VAR with confidence.
+              <span className="text-white/70">
+              See what’s really happening in your kitchen.
             </span>
+
+           
           </h2>
 
           {/* Subtext */}
-          <p className="mt-6 text-lg leading-relaxed text-white/80">
-            StockVAR gives you clarity over how stock is used, where losses
-            happen, and what needs attention — without disrupting daily
-            operations.
-          </p>
+         <p className="mt-6 text-lg leading-relaxed text-white/80">
+          StockVAR shows you how raw food is used across shifts, where losses happen,
+          and what needs attention, clearly and consistently.
+        </p>
+
 
           {/* CTAs */}
 <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
   {/* Primary CTA */}
   <Link
-    href="/auth/signup"
+    href="/auth/signup" target="_blank"
     className="inline-flex items-center justify-center gap-3 rounded-xl bg-[#0F766E] px-8 py-4 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
   >
-    Get started now
+    Start tracking your stock
+
     <ArrowRight size={16} />
   </Link>
 
   {/* Secondary CTA */}
   <Link
-    href="/book-demo"
+    href="https://wa.me/2347048048164?text=Hi%2C%20I%E2%80%99d%20like%20to%20see%20how%20StockVAR%20works%20for%20my%20restaurant" target="_blank"
     className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 py-4 text-sm font-medium text-white transition hover:bg-white/10"
   >
     Book a demo
@@ -54,8 +57,9 @@ export default function FinalCTASection() {
 
           {/* Trust note */}
           <p className="mt-6 text-xs text-white/60">
-            No free trial. Monthly subscription. Cancel anytime.
+            3-day free trial. Monthly subscription. Cancel anytime.
           </p>
+
         </div>
       </div>
     </section>

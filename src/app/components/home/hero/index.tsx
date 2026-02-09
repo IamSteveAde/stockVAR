@@ -20,9 +20,10 @@ export default function Hero() {
             </h1>
 
             <p className="max-w-xl text-lg text-[#374151] leading-relaxed">
-              Track how stock items are used, detect unexplained losses, and
-              understand where your food cost is going — without guesswork.
-            </p>
+            Track how raw food is used per shift, spot unexplained losses, 
+            and finally understand where your food cost is going, clearly and accurately.
+          </p>
+
 
             <p className="text-sm text-[#6B7280]">
               Built for restaurants and cafés in Nigeria.
@@ -30,14 +31,14 @@ export default function Hero() {
 
             <div className="flex flex-wrap items-center gap-4 pt-4">
               <Link
-                href="/auth/signup"
+                href="/auth/signup" target="_blank"
                 className="inline-flex items-center justify-center rounded-lg bg-[#0F766E] px-8 py-4 text-sm font-medium text-white transition hover:bg-[#115E59]"
               >
-                Get Started
+                Start Tracking Stock
               </Link>
 
               <Link
-                href="/demo"
+                href="https://wa.me/2347048048164?text=Hi%2C%20I%E2%80%99d%20like%20to%20see%20how%20StockVAR%20works%20for%20my%20restaurant" target="_blank"
                 className="inline-flex items-center justify-center rounded-lg border border-[#D1D5DB] px-8 py-4 text-sm font-medium text-[#111827] transition hover:bg-white"
               >
                 Request a demo

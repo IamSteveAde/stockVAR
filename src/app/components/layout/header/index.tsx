@@ -72,7 +72,7 @@ export default function Header() {
             {/* DESKTOP CTA */}
             <div className="hidden md:flex items-center gap-3">
               <Link
-                href="/demo"
+                href="https://wa.me/2347048048164?text=Hi%2C%20I%E2%80%99d%20like%20to%20see%20how%20StockVAR%20works%20for%20my%20restaurant" target="_blank"
                 className={`
                   rounded-lg px-5 py-2.5 text-sm font-medium
                   transition
@@ -86,10 +86,11 @@ export default function Header() {
               </Link>
 
               <Link
-                href="/auth/signup"
+                href="/auth/signup" target="_blank"
                 className="rounded-lg bg-[#0F766E] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
               >
-                Get started
+                Start tracking your stock
+
               </Link>
             </div>
 
@@ -127,15 +128,16 @@ export default function Header() {
 
             <div className="mt-8 flex flex-col gap-4 w-64">
               <Link
-                href="/auth/signup"
+                href="/auth/signup" target="_blank"
                 onClick={() => setMenuOpen(false)}
                 className="w-full rounded-lg bg-[#0F766E] py-3 text-center text-sm font-medium text-white"
               >
-                Get started
+                Start tracking your stock
+
               </Link>
 
               <Link
-                href="/demo"
+                href="https://wa.me/2347048048164?text=Hi%2C%20I%E2%80%99d%20like%20to%20see%20how%20StockVAR%20works%20for%20my%20restaurant" target="_blank"
                 onClick={() => setMenuOpen(false)}
                 className="w-full rounded-lg border border-white/30 py-3 text-center text-sm font-medium text-white"
               >

@@ -5,21 +5,21 @@ import { ClipboardList, TrendingDown, AlertTriangle } from "lucide-react";
 const problems = [
   {
     icon: ClipboardList,
-    title: "No structured stock records",
+    title: "No clear record of daily usage",
     description:
-      "Stock items leave storage daily without consistent records explaining how or why they were used.",
+      "Stock leaves the store every day, but there’s no reliable record showing what was used, during which shift, or by who.",
   },
   {
     icon: TrendingDown,
-    title: "Stock finishes faster than expected",
+    title: "Stock runs out earlier than it should",
     description:
-      "Rice, oil, and other stock items run out early, increasing food cost and disrupting planning.",
+      "Items like rice, oil, and protein finish faster than expected, driving up food cost and disrupting purchasing plans.",
   },
   {
     icon: AlertTriangle,
-    title: "Decisions based on assumptions",
+    title: "Too much guesswork, not enough data",
     description:
-      "Without clear data, owners rely on guesswork, leading to tension, suspicion, and repeat losses.",
+      "Without accurate numbers, decisions are based on assumptions, leading to suspicion, tension, and repeat losses.",
   },
 ];
 
@@ -35,16 +35,16 @@ export default function ProblemSection() {
 
       <div className="relative container mx-auto px-6 lg:max-w-screen-xl">
         {/* Section header */}
-        <div className="mb-20 max-w-2xl">
+        <div className="mb-20 max-w-full">
           <span className="inline-block rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-widest text-white/70">
             The Problem
           </span>
 
-          <h2 className="mt-6 text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight text-white">
+          <h2 className="mt-6 text-3xl md:text-4xl w-full lg:text-5xl font-semibold leading-tight text-white">
             Stock loss rarely starts with theft.
-            <br />
-            <span className="text-white/70">
-              It starts with unclear records.
+            <br/>
+            <span className="text-white/70">It starts with not knowing what was used.
+
             </span>
           </h2>
         </div>

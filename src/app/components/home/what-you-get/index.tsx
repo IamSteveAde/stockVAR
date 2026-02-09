@@ -12,25 +12,25 @@ const benefits = [
     icon: BarChart2,
     title: "Clear stock accountability",
     description:
-      "Understand exactly how stock items move each day, backed by proper records and structure.",
+      "See how raw food moves across shifts, with proper records that explain usage instead of raising questions.",
   },
   {
     icon: Clock,
-    title: "See problems early",
+    title: "Catch issues early",
     description:
-      "Identify unusual stock loss before it becomes a habit or a major financial issue.",
+      "Spot unusual stock patterns before they become habits or turn into serious losses.",
   },
   {
     icon: ShieldCheck,
-    title: "Fewer arguments, more facts",
+    title: "Fewer arguments, more clarity",
     description:
-      "Replace assumptions and tension with clear data everyone can agree on.",
+      "Remove tension from stock conversations by relying on clear, shared numbers.",
   },
   {
     icon: TrendingUp,
-    title: "Better control of food cost",
+    title: "Stronger control of food cost",
     description:
-      "Reduce waste, improve planning, and protect your profit margins over time.",
+      "Reduce waste, plan purchases better, and protect your margins as your kitchen scales.",
   },
 ];
 
@@ -59,11 +59,11 @@ export default function BenefitsSection() {
             </span>
           </h2>
 
-          <p className="mt-6 text-lg leading-relaxed text-white/80">
-            StockVAR gives you clarity, discipline, and confidence in how your
-            stock is managed — without disrupting daily operations.
-          </p>
-        </div>
+         <p className="mt-6 text-lg leading-relaxed text-white/80">
+          StockVAR brings clarity and discipline to kitchen inventory,
+          without slowing down your daily operations.
+        </p>
+                </div>
 
         {/* Benefits grid */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">

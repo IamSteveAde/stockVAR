@@ -28,9 +28,10 @@ export default function PricingSection() {
             </span>
           </h2>
 
-          <p className="mt-6 text-lg leading-relaxed text-white/80">
-            One plan. No hidden fees. Full access to StockVAR for your business.
-          </p>
+         <p className="mt-6 text-lg leading-relaxed text-white/80">
+          One simple plan that gives you full visibility into your kitchen stock, shift by shift.
+        </p>
+
         </div>
 
         {/* Pricing card */}
@@ -39,8 +40,12 @@ export default function PricingSection() {
             {/* Price */}
             <div className="mb-8 text-center">
               <p className="text-sm uppercase tracking-widest text-white/70">
-                Monthly subscription
+                Per location, billed monthly
               </p>
+              <strong><p className="mt-3 text-xs text-center text-white/60">
+                Costs less than a single bag of missing stock.
+              </p></strong>
+
 
               <div className="mt-4 flex items-end justify-center gap-2">
                 <span className="text-5xl font-semibold text-white">
@@ -55,10 +60,10 @@ export default function PricingSection() {
             {/* Features */}
             <ul className="mb-10 space-y-4">
               {[
-                "Daily stock recording and tracking",
-                "VAR detection and reporting",
-                "Staff and shift-level visibility",
-                "Manager and owner access",
+                "Stock-in and end-of-shift measurements",
+                "Shift-based usage tracking",
+                "Automatic VAR and discrepancy reports",
+                "Staff and manager-level visibility",
                 "Unlimited stock items",
                 "Email support",
               ].map((feature, index) => (
@@ -78,23 +83,26 @@ export default function PricingSection() {
 <div className="space-y-4">
   {/* Primary CTA */}
   <Link
-    href="/auth/signup"
+    href="/auth/signup" target="_blank"
     className="inline-flex w-full items-center justify-center rounded-xl bg-[#0F766E] px-8 py-4 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
   >
-    Get started now
+    Start Tracking Your Stock
   </Link>
 
   {/* Secondary CTA */}
   <Link
-    href="/book-demo"
+    href="https://wa.me/2347048048164?text=Hi%2C%20I%E2%80%99d%20like%20to%20see%20how%20StockVAR%20works%20for%20my%20restaurant" target="_blank"
     className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 py-4 text-sm font-medium text-white transition hover:bg-white/10"
   >
     Book a demo
   </Link>
 
   <p className="pt-2 text-center text-xs text-white/60">
-    3-day free trial. No credit card required.
+  Try it free for 3 days. No card required.
+
   </p>
+  
+
 </div>
 
 

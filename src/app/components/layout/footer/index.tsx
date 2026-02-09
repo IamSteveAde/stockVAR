@@ -91,14 +91,15 @@ export default function Footer() {
 
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
-                href="/auth/signup"
+                href="/auth/signup" target="_blank"
                 className="inline-flex items-center justify-center rounded-lg bg-[#0F766E] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#0B5F58]"
               >
-                Get started
+                Start tracking your stock
+
               </Link>
 
               <Link
-                href="/demo"
+                href="https://wa.me/2347048048164?text=Hi%2C%20I%E2%80%99d%20like%20to%20see%20how%20StockVAR%20works%20for%20my%20restaurant"target="_blank"
                 className="inline-flex items-center justify-center rounded-lg border border-white/30 px-6 py-3 text-sm font-medium text-white transition hover:bg-white/10"
               >
                 Request demo

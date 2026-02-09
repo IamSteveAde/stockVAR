@@ -7,28 +7,34 @@ const faqs = [
   {
     question: "Is StockVAR a POS system?",
     answer:
-      "No. StockVAR does not process sales or payments. It focuses strictly on stock recording, usage tracking, and variance (VAR) reporting.",
+      "No. StockVAR does not handle sales, payments, or receipts. It focuses strictly on raw food stock recording, shift-based usage tracking, and variance (VAR) reporting.",
   },
   {
-    question: "Do my staff need special training to use it?",
+    question: "Will my staff find it difficult to use?",
     answer:
-      "No. The system is designed to be simple and familiar. Most teams understand the flow within a day of use.",
+      "No. StockVAR is designed for kitchen operations. Most staff understand how to record stock and usage within a single shift.",
   },
   {
-    question: "Can StockVAR work for cafés, lounges, or hotels?",
+    question: "What types of businesses is StockVAR for?",
     answer:
-      "Yes. StockVAR works across restaurants, cafés, lounges, hotel kitchens, cloud kitchens, and experience centres.",
+      "StockVAR is built for restaurants, cafés, lounges, and hotel kitchens that manage raw food stock across shifts.",
   },
   {
     question: "Is there a free trial?",
     answer:
-      "No. StockVAR is a paid product. You can either get started immediately or book a guided demo before subscribing.",
+      "Yes. You get a 3-day free trial with full access. No credit card is required.",
   },
   {
-    question: "Can I cancel anytime?",
+    question: "Can I cancel my subscription anytime?",
     answer:
-      "Yes. Subscriptions are billed monthly and can be cancelled at any time.",
+      "Yes. StockVAR is billed monthly, and you can cancel at any time without penalties.",
   },
+  {
+  question: "Do you provide onboarding or staff training?",
+  answer:
+    "Yes. StockVAR is simple to use, but onboarding and staff training are available if needed to help your team get started smoothly.",
+},
+
 ];
 
 export default function FAQSection() {
@@ -48,8 +54,9 @@ export default function FAQSection() {
           </h2>
 
           <p className="mt-4 text-lg text-[#6B7280]">
-            Short answers to help you decide quickly.
+            Clear answers before you get started.
           </p>
+
         </div>
 
         {/* FAQ list */}
