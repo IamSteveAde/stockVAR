@@ -49,7 +49,7 @@ export default function PricingSection() {
 
               <div className="mt-4 flex items-end justify-center gap-2">
                 <span className="text-5xl font-semibold text-white">
-                  ₦25,000
+                  ₦60,000
                 </span>
                 <span className="mb-1 text-sm text-white/70">
                   / month

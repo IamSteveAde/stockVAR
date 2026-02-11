@@ -95,12 +95,12 @@ export default function BillingPage() {
         </p>
 
         <p className="text-2xl font-semibold">
-          ₦25,000 <span className="text-sm">/ month</span>
+          ₦60,000 <span className="text-sm">/ month</span>
         </p>
       </div>
 
       {/* ✅ Safe client-only Paystack */}
-      <PaystackButton amount={25000} />
+      <PaystackButton amount={60000} />
     </div>
   );
 }

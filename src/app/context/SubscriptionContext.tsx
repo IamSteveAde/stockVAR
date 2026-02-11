@@ -79,7 +79,7 @@ export function SubscriptionProvider({
   /* ================= ACTIVATE (AFTER PAYMENT) ================= */
 
   const activateSubscription = (amount?: number) => {
-    const finalAmount = amount ?? 25000; // ✅ GUARANTEED NUMBER
+    const finalAmount = amount ?? 60000; // ✅ GUARANTEED NUMBER
 
     const nextBilling = new Date();
     nextBilling.setMonth(nextBilling.getMonth() + 1);
