@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { requestPasswordReset } from "@/lib/api/auth";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -10,25 +11,28 @@ export default function ForgotPassword() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setError(null);
     setSuccess(null);
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await requestPasswordReset({ email });
+      setSuccess("Password reset link has been sent to your email.");
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as any).message === "string"
+          ? (err as any).message
+          : "No account found with this email address.";
+      setError(message);
+    } finally {
       setIsLoading(false);
-
-      const isSuccess = true; // change to false to test error
-
-      if (isSuccess) {
-        setSuccess("Password reset link has been sent to your email.");
-      } else {
-        setError("No account found with this email address.");
-      }
-    }, 1500);
+    }
   };
 
   return (

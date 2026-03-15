@@ -5,56 +5,50 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
-
-type UserRole = "owner" | "manager" | "staff";
+import { login } from "@/lib/api/auth";
 
 export default function Login() {
   const router = useRouter();
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setError(null);
     setSuccess(null);
-    setIsLoading(true);
 
-    // 🔴 MOCK LOGIN API
-    setTimeout(() => {
-      setIsLoading(false);
-
-      const isSuccess = true;
-
-      if (!isSuccess) {
-        setError("Invalid email or password.");
-        return;
-      }
-
-      // 🔑 MOCK ROLE (change this to test flows)
-      const mockRole: UserRole = "staff"; // "owner" | "manager" | "staff"
-
-      // 🔐 Store mock session (frontend-only for now)
-      localStorage.setItem(
-        "stockvar_user",
-        JSON.stringify({
-          role: mockRole,
-        })
-      );
+    try {
+      setIsLoading(true);
+      const session = await login({ email, password });
 
       setSuccess("Login successful. Redirecting...");
 
       setTimeout(() => {
-        router.push(
-          mockRole === "staff"
-            ? "/dashboard/shift"
-            : "/dashboard"
-        );
+        const role = session.user?.role;
+        if (role === "staff") {
+          router.push("/dashboard/shift");
+        } else {
+          router.push("/dashboard");
+        }
       }, 800);
-    }, 1500);
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as any).message === "string"
+          ? (err as any).message
+          : "Invalid email or password.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -91,6 +85,8 @@ export default function Login() {
               <input
                 type="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@business.com"
                 className="mt-2 w-full rounded-lg border border-[#E5E7EB] px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
               />
@@ -105,6 +101,8 @@ export default function Login() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border border-[#E5E7EB] px-4 py-3 pr-12 text-sm outline-none focus:border-[#0F766E]"
                 />
                 <button

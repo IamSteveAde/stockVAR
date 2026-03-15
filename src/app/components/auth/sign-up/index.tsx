@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
+import { signUp } from "@/lib/api/auth";
 
 const COUNTRIES = [
   {
@@ -41,13 +42,12 @@ const COUNTRIES = [
 
 export default function Signup() {
   const router = useRouter();
-  const [country, setCountry] = useState(COUNTRIES[0]); // default Nigeria
-
-
+  const [country, setCountry] = useState(COUNTRIES[0]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -57,12 +57,9 @@ export default function Signup() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  
-
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-const fullPhone = `${country.dialCode}${phone}`;
+    const fullPhone = `${country.dialCode}${phone}`;
 
     setError(null);
     setSuccess(null);
@@ -72,27 +69,38 @@ const fullPhone = `${country.dialCode}${phone}`;
       return;
     }
 
-    setIsLoading(true);
+    if (!phone || phone.trim().length < 7) {
+      setError("Please enter a valid phone number.");
+      return;
+    }
 
-    // 🔹 Simulate API call
-    setTimeout(() => {
+    try {
+      setIsLoading(true);
+      await signUp({
+        fullName: fullName || undefined,
+        email,
+        phone: fullPhone,
+        phoneNumber: fullPhone,
+        password,
+      });
+
+      setSuccess("Account created successfully. Check your inbox to verify your email.");
+
+      setTimeout(() => {
+        router.push("/auth/verify-email");
+      }, 1000);
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as any).message === "string"
+          ? (err as any).message
+          : "Unable to create account. Please try again.";
+      setError(message);
+    } finally {
       setIsLoading(false);
-
-      const isSuccess = true; // toggle to test error state
-
-      if (isSuccess) {
-        setSuccess("Account created successfully. Check your email.");
-
-        // Later: persist email + phone
-        // localStorage.setItem("pending_signup", JSON.stringify({ email, phone }));
-
-        setTimeout(() => {
-          router.push("/auth/verify-email");
-        }, 1200);
-      } else {
-        setError("An account with this email already exists.");
-      }
-    }, 1500);
+    }
   };
 
   return (
@@ -121,6 +129,20 @@ const fullPhone = `${country.dialCode}${phone}`;
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Full name */}
+            <div>
+              <label className="block text-sm font-medium text-[#111827]">
+                Full name
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Ade Johnson"
+                className="mt-2 w-full rounded-lg border border-[#E5E7EB] px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
+              />
+            </div>
+
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-[#111827]">

@@ -3,9 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { setPassword as setPasswordApi } from "@/lib/api/auth";
 
 export default function ResetPassword() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -16,7 +21,7 @@ export default function ResetPassword() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setError(null);
@@ -27,20 +32,30 @@ export default function ResetPassword() {
       return;
     }
 
+    if (!token) {
+      setError("Reset token missing from URL. Please use the reset link we emailed you.");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await setPasswordApi({ password, token }, token);
+      setSuccess("Password updated successfully. You can now log in.");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as any).message === "string"
+          ? (err as any).message
+          : "Reset link has expired. Please request a new one.";
+      setError(message);
+    } finally {
       setIsLoading(false);
-
-      const isSuccess = true; // toggle to false to test error
-
-      if (isSuccess) {
-        setSuccess("Password updated successfully. You can now log in.");
-      } else {
-        setError("Reset link has expired. Please request a new one.");
-      }
-    }, 1500);
+    }
   };
 
   return (
