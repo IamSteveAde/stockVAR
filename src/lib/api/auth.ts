@@ -20,7 +20,12 @@ type LoginResponse = {
   user?: AuthUser;
   data?: {
     token?: string;
-    user?: AuthUser;
+    user?: AuthUser & {
+      emailVerified?: boolean;
+      email_verified?: boolean;
+      isEmailVerified?: boolean;
+      verified?: boolean;
+    };
     accessType?: string;
     emailVerified?: boolean;
     email_verified?: boolean;
