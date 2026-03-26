@@ -9,6 +9,8 @@ import {
 } from "react";
 
 import { mockAdminRestaurants } from "../../app/mocks/mockAdminRestaurants";
+import { listAdminRestaurants } from "@/lib/api/admin";
+import { getSession } from "@/lib/api/auth";
 
 /* ================= TYPES ================= */
 
@@ -67,14 +69,43 @@ export function AdminProvider({
   /* ================= LOAD ================= */
 
   const load = useCallback(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      setRestaurants(raw ? JSON.parse(raw) : []);
-    } catch {
-      setRestaurants([]);
-    } finally {
+    const loadFromStorage = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        setRestaurants(parsed);
+      } catch {
+        setRestaurants([]);
+      }
+    };
+
+    const loadFromApi = async () => {
+      const session = getSession();
+      const token = session?.token;
+
+      if (!token) {
+        loadFromStorage();
+        return;
+      }
+
+      try {
+        const data = await listAdminRestaurants(token);
+
+        if (Array.isArray(data)) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          setRestaurants(data as AdminRestaurant[]);
+          return;
+        }
+
+        loadFromStorage();
+      } catch {
+        loadFromStorage();
+      }
+    };
+
+    loadFromApi().finally(() => {
       setLoading(false);
-    }
+    });
   }, []);
 
   /* ================= SEED MOCK DATA (DEV SAFE) ================= */

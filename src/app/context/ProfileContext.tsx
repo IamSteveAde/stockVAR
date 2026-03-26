@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ProfileData } from "../types/profile";
+import { getSession } from "@/lib/api/auth";
+import { getMyProfile, updateMyProfile } from "@/lib/api/profile";
 
 /* ================= TYPES ================= */
 
@@ -53,15 +55,59 @@ export function ProfileProvider({
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   }, [profile]);
 
+  useEffect(() => {
+    const session = getSession();
+    const token = session?.token;
+    if (!token) return;
+
+    let mounted = true;
+
+    getMyProfile(token)
+      .then((apiProfile) => {
+        if (!mounted) return;
+        if (!apiProfile || typeof apiProfile !== "object") return;
+
+        setProfileState((prev) => ({
+          ...prev,
+          ...apiProfile,
+          role: (apiProfile.role as ProfileData["role"]) ?? prev.role,
+        }));
+      })
+      .catch(() => {
+        // Local profile remains fallback if API profile fetch fails.
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const setProfile = (p: ProfileData) => {
     setProfileState(p);
+
+    const token = getSession()?.token;
+    if (!token) return;
+    updateMyProfile(p, token).catch(() => {
+      // Keep local profile if remote update fails.
+    });
   };
 
   const updateProfile = (p: Partial<ProfileData>) => {
-    setProfileState((prev) => ({
-      ...prev,
-      ...p,
-    }));
+    setProfileState((prev) => {
+      const next = {
+        ...prev,
+        ...p,
+      };
+
+      const token = getSession()?.token;
+      if (token) {
+        updateMyProfile(next, token).catch(() => {
+          // Keep local profile if remote update fails.
+        });
+      }
+
+      return next;
+    });
   };
 
   const clearProfile = () => {

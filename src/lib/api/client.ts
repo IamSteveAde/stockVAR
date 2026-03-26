@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = "https://api.stockvar.app/";
+const BASE_URL = "https://api.stockvar.app/";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -19,7 +19,7 @@ export class ApiError extends Error {
   }
 }
 
-type RequestOptions = {
+export type RequestOptions = {
   method?: HttpMethod;
   headers?: Record<string, string>;
   body?: unknown;
@@ -30,7 +30,7 @@ function getBaseUrl() {
   if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL) {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
-  return DEFAULT_BASE_URL;
+  return BASE_URL;
 }
 
 export async function apiFetch<TResponse>(
@@ -71,5 +71,37 @@ export async function apiFetch<TResponse>(
   }
 
   return data as TResponse;
+}
+
+export async function apiFetchFirstSuccess<TResponse>(
+  paths: string[],
+  options: RequestOptions = {}
+): Promise<TResponse> {
+  if (!paths.length) {
+    throw new Error("No API paths were provided.");
+  }
+
+  let lastError: unknown;
+
+  for (const path of paths) {
+    try {
+      return await apiFetch<TResponse>(path, options);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 404 || error.status === 405) {
+          lastError = error;
+          continue;
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  throw new Error("All API path attempts failed.");
 }
 
