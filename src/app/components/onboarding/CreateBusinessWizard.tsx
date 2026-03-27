@@ -7,12 +7,17 @@ import { useBusiness } from "@/app/context/BusinessContext";
 import { useSubscription } from "@/app/context/SubscriptionContext";
 
 import WelcomeStep from "./steps/WelcomeStep";
+import EmailVerificationStep from "./steps/EmailVerificationStep";
 import BusinessNameStep from "./steps/BusinessNameStep";
 import BusinessTypeStep from "./steps/BusinessTypeStep";
 import LocationStep from "./steps/LocationStep";
-import RoleStep from "./steps/RoleStep";
 import StaffSizeStep from "./steps/StaffSizeStep";
 import CompleteStep from "./steps/CompleteStep";
+import {
+  clearSignupEmail,
+  markOnboardingComplete,
+  readSignupEmail,
+} from "@/lib/onboarding";
 
 /* ================= TYPES ================= */
 
@@ -34,6 +39,8 @@ export default function CreateBusinessWizard() {
   const { startTrial } = useSubscription();
 
   const [step, setStep] = useState(0);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const signupEmail = readSignupEmail();
 
   const [form, setForm] = useState<OnboardingForm>({
     businessName: "",
@@ -71,6 +78,8 @@ export default function CreateBusinessWizard() {
       createdAt: new Date().toISOString(),
     });
 
+    markOnboardingComplete();
+    clearSignupEmail();
     startTrial();
     router.push("/dashboard");
   };
@@ -101,9 +110,18 @@ export default function CreateBusinessWizard() {
           />
         </div>
 
-        {step === 0 && <WelcomeStep onNext={next} />}
+        {step === 0 && (
+          <EmailVerificationStep
+            email={signupEmail || undefined}
+            confirmed={emailVerified}
+            onConfirmedChange={setEmailVerified}
+            onNext={next}
+          />
+        )}
 
-        {step === 1 && (
+        {step === 1 && <WelcomeStep onNext={next} />}
+
+        {step === 2 && (
           <BusinessNameStep
             value={form.businessName}
             onChange={(v: string) =>
@@ -114,7 +132,7 @@ export default function CreateBusinessWizard() {
           />
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <BusinessTypeStep
             value={form.businessType}
             onChange={(v: string) =>
@@ -125,7 +143,7 @@ export default function CreateBusinessWizard() {
           />
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <LocationStep
             value={form.city}
             onChange={(v: string) =>
@@ -136,9 +154,7 @@ export default function CreateBusinessWizard() {
           />
         )}
 
-        
-
-        {step === 4 && (
+        {step === 5 && (
           <StaffSizeStep
             value={form.staffSize}
             onChange={(v: string) =>
@@ -149,7 +165,7 @@ export default function CreateBusinessWizard() {
           />
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <CompleteStep onFinish={handleFinish} />
         )}
       </div>

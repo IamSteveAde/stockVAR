@@ -5,28 +5,36 @@ import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "../components/dashboard/Sidebar";
 import Topbar from "../components/dashboard/Topbar";
 import { ProfileProvider, useProfile } from "../context/ProfileContext";
-import { BusinessProvider } from "../context/BusinessContext";
+import { BusinessProvider, useBusiness } from "../context/BusinessContext";
 import { SubscriptionProvider } from "../context/SubscriptionContext";
 import TrialBanner from "../components/billing/TrialBanner";
 import DevProfileSwitcher from "@/app/dev/DevProfileSwitcher";
+import { isOnboardingComplete } from "@/lib/onboarding";
 
 /* ================= ROLE GUARD ================= */
 
 function RoleGuard({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
+  const { isHydrated } = useBusiness();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || !isHydrated) return;
 
     // 🚫 Staff must never access dashboard root
     if (profile.role === "staff" && pathname === "/dashboard") {
       router.replace("/dashboard/staff-dashboard");
+      return;
     }
-  }, [profile, pathname, router]);
 
-  if (!profile) return null;
+    const requiresOnboarding = profile.role === "owner" || profile.role === "manager";
+    if (requiresOnboarding && !isOnboardingComplete()) {
+      router.replace("/onboarding/create-business");
+    }
+  }, [isHydrated, profile, pathname, router]);
+
+  if (!profile || !isHydrated) return null;
 
   return <>{children}</>;
 }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
+import { persistSignupEmail } from "@/lib/onboarding";
 
 const COUNTRIES = [
   {
@@ -84,10 +85,11 @@ export default function Signup() {
         password,
       });
 
-      setSuccess("Account created successfully. Check your inbox to verify your email.");
+      persistSignupEmail(email);
+      setSuccess("Account created. Continue onboarding and verify your email to proceed.");
 
       setTimeout(() => {
-        router.push("/auth/verify-email");
+        router.push("/onboarding/create-business");
       }, 1000);
     } catch (err: unknown) {
       const message =

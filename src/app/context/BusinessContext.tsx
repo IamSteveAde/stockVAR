@@ -23,6 +23,7 @@ export type BusinessData = {
 
 type BusinessContextType = {
   business: BusinessData | null;
+  isHydrated: boolean;
   updateBusiness: (data: Partial<BusinessData>) => void;
   clearBusiness: () => void;
 };
@@ -45,6 +46,7 @@ export function BusinessProvider({
 }) {
   const [business, setBusiness] =
     useState<BusinessData | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   /* 🔹 Load persisted business on mount */
   useEffect(() => {
@@ -58,6 +60,7 @@ export function BusinessProvider({
         localStorage.removeItem("stockvar_business");
       }
     }
+    setIsHydrated(true);
   }, []);
 
   /* 🔹 Update business (used by onboarding + account) */
@@ -98,6 +101,7 @@ export function BusinessProvider({
     <BusinessContext.Provider
       value={{
         business,
+        isHydrated,
         updateBusiness,
         clearBusiness,
       }}

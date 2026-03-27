@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { apiFetch, apiFetchFirstSuccess } from "./client";
 import type { UserRole } from "@/types/auth";
 
 export type AuthUser = {
@@ -61,6 +61,10 @@ type SetPasswordPayload = {
   token?: string | null;
 };
 
+type ResendVerificationPayload = {
+  email?: string;
+};
+
 const SESSION_STORAGE_KEY = "stockvar_session";
 
 function normalizeRole(accessType: string | undefined): UserRole {
@@ -93,6 +97,16 @@ function isEmailVerifiedFromPayload(payload: Record<string, unknown>): boolean |
   if (typeof payload.emailVerified === "boolean") return payload.emailVerified;
   if (typeof payload.isEmailVerified === "boolean") return payload.isEmailVerified;
   if (typeof payload.verified === "boolean") return payload.verified;
+  return undefined;
+}
+
+function readStringClaim(payload: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
   return undefined;
 }
 
@@ -155,10 +169,14 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
 
   const role = normalizeRole(res.data?.accessType ?? "owner");
 
+  const userIdFromJwt = readStringClaim(jwtPayload, "sub", "userId", "id", "uid");
+  const emailFromJwt = readStringClaim(jwtPayload, "email", "upn", "preferred_username");
+  const fullNameFromJwt = readStringClaim(jwtPayload, "name", "fullName", "given_name");
+
   const user: AuthUser = {
-    id: res.user?.id ?? res.data?.user?.id ?? "",
-    fullName: res.user?.fullName ?? res.data?.user?.fullName ?? "",
-    email: res.user?.email ?? res.data?.user?.email ?? payload.email,
+    id: res.user?.id ?? res.data?.user?.id ?? userIdFromJwt ?? "",
+    fullName: res.user?.fullName ?? res.data?.user?.fullName ?? fullNameFromJwt ?? "",
+    email: res.user?.email ?? res.data?.user?.email ?? emailFromJwt ?? payload.email,
     role,
   };
 
@@ -185,6 +203,23 @@ export async function setPassword(
     body: payload,
     token,
   });
+}
+
+export async function resendVerificationEmail(
+  payload: ResendVerificationPayload
+): Promise<void> {
+  await apiFetchFirstSuccess<unknown>(
+    [
+      "api/auth/resend-verification",
+      "api/auth/resendVerification",
+      "api/auth/resend-verification-email",
+      "api/auth/resendVerificationEmail",
+    ],
+    {
+      method: "POST",
+      body: payload,
+    }
+  );
 }
 
 export function saveSession(session: AuthSession) {

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ProfileData } from "../types/profile";
-import { getSession } from "@/lib/api/auth";
+import { getSession, type AuthSession } from "@/lib/api/auth";
 import { getMyProfile, updateMyProfile } from "@/lib/api/profile";
 
 /* ================= TYPES ================= */
@@ -16,19 +16,34 @@ type ProfileContextType = {
 
 /* ================= CONSTANTS ================= */
 
-const PROFILE_KEY = "stockvar_active_profile";
+const PROFILE_KEY_PREFIX = "stockvar_profile";
 
 /* ================= HELPERS ================= */
 
-const createDefaultProfile = (): ProfileData => ({
-  id: crypto.randomUUID(),
-  fullName: "Ade Johnson",
-  phone: "0803 123 4567",
-  email: "ade@restaurant.com",
-  role: "owner",
-  avatar: "/images/avatar.png",
-  status: "active",
-});
+function resolveProfileKey(session: AuthSession | null): string {
+  const userId = session?.user?.id?.trim();
+  if (userId) return `${PROFILE_KEY_PREFIX}:${userId}`;
+
+  const email = session?.user?.email?.trim().toLowerCase();
+  if (email) return `${PROFILE_KEY_PREFIX}:${email}`;
+
+  return `${PROFILE_KEY_PREFIX}:anonymous`;
+}
+
+function createDefaultProfile(session: AuthSession | null): ProfileData {
+  const email = session?.user?.email ?? "";
+  const fallbackName = email.includes("@") ? email.split("@")[0] : "Owner";
+
+  return {
+    id: session?.user?.id || crypto.randomUUID(),
+    fullName: session?.user?.fullName || fallbackName,
+    phone: "",
+    email,
+    role: session?.user?.role ?? "owner",
+    avatar: "/images/avatar.png",
+    status: "active",
+  };
+}
 
 /* ================= CONTEXT ================= */
 
@@ -41,23 +56,34 @@ export function ProfileProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const session = getSession();
+  const profileKey = resolveProfileKey(session);
+
   const [profile, setProfileState] = useState<ProfileData>(() => {
     try {
-      const raw = localStorage.getItem(PROFILE_KEY);
-      return raw ? JSON.parse(raw) : createDefaultProfile();
+      const raw = localStorage.getItem(profileKey);
+      return raw ? JSON.parse(raw) : createDefaultProfile(session);
     } catch {
-      return createDefaultProfile();
+      return createDefaultProfile(session);
     }
   });
 
   /* Persist profile */
   useEffect(() => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-  }, [profile]);
+    localStorage.setItem(profileKey, JSON.stringify(profile));
+  }, [profile, profileKey]);
 
   useEffect(() => {
-    const session = getSession();
     const token = session?.token;
+
+    setProfileState((prev) => ({
+      ...prev,
+      id: session?.user?.id || prev.id,
+      fullName: session?.user?.fullName || prev.fullName,
+      email: session?.user?.email || prev.email,
+      role: session?.user?.role ?? prev.role,
+    }));
+
     if (!token) return;
 
     let mounted = true;
@@ -80,7 +106,7 @@ export function ProfileProvider({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [session?.token, session?.user?.id, session?.user?.fullName, session?.user?.email, session?.user?.role]);
 
   const setProfile = (p: ProfileData) => {
     setProfileState(p);
@@ -111,7 +137,8 @@ export function ProfileProvider({
   };
 
   const clearProfile = () => {
-    setProfileState(createDefaultProfile());
+    localStorage.removeItem(profileKey);
+    setProfileState(createDefaultProfile(getSession()));
   };
 
   return (

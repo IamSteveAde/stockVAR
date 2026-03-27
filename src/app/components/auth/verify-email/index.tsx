@@ -3,29 +3,30 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { resendVerificationEmail } from "@/lib/api/auth";
+import { readSignupEmail } from "@/lib/onboarding";
 
 export default function VerifyEmail() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setError(null);
     setSuccess(null);
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await resendVerificationEmail({
+        email: readSignupEmail() || undefined,
+      });
+
+      setSuccess("Verification email has been resent. Check your inbox.");
+    } catch {
+      setError("Unable to resend verification email. Please try again shortly.");
+    } finally {
       setIsLoading(false);
-
-      const isSuccess = true; // toggle to false to test error
-
-      if (isSuccess) {
-        setSuccess("Verification email has been resent. Check your inbox.");
-      } else {
-        setError("Too many requests. Please try again later.");
-      }
-    }, 1500);
+    }
   };
 
   return (

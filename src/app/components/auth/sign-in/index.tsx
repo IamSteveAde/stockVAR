@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { login } from "@/lib/api/auth";
+import { isOnboardingComplete } from "@/lib/onboarding";
 
 export default function Login() {
   const router = useRouter();
@@ -33,6 +34,8 @@ export default function Login() {
         const role = session.user?.role;
         if (role === "staff") {
           router.push("/dashboard/shift");
+        } else if (!isOnboardingComplete()) {
+          router.push("/onboarding/create-business");
         } else {
           router.push("/dashboard");
         }
