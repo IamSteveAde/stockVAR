@@ -1,6 +1,7 @@
 "use client";
 
 import { BusinessProvider } from "@/app/context/BusinessContext";
+import { ProfileProvider } from "@/app/context/ProfileContext";
 
 export default function OnboardingLayout({
   children,
@@ -8,8 +9,10 @@ export default function OnboardingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <BusinessProvider>
-      {children}
-    </BusinessProvider>
+    <ProfileProvider>
+      <BusinessProvider>
+        {children}
+      </BusinessProvider>
+    </ProfileProvider>
   );
 }

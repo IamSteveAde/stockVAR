@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ProfileData } from "../types/profile";
 import { getSession, type AuthSession } from "@/lib/api/auth";
-import { getMyProfile, updateMyProfile } from "@/lib/api/profile";
+import { createProfile, getMyProfile, updateMyProfile } from "@/lib/api/profile";
+import { ApiError } from "@/lib/api/client";
 
 /* ================= TYPES ================= */
 
@@ -32,7 +33,7 @@ function resolveProfileKey(session: AuthSession | null): string {
 
 function createDefaultProfile(session: AuthSession | null): ProfileData {
   const email = session?.user?.email ?? "";
-  const fallbackName = email.includes("@") ? email.split("@")[0] : "Owner";
+  const fallbackName = "Business Owner";
 
   return {
     id: session?.user?.id || crypto.randomUUID(),
@@ -43,6 +44,34 @@ function createDefaultProfile(session: AuthSession | null): ProfileData {
     avatar: "/images/avatar.png",
     status: "active",
   };
+}
+
+function buildCreatePayload(profile: ProfileData, session: AuthSession | null) {
+  const fullName = profile.fullName?.trim() || session?.user?.fullName?.trim() || "Business Owner";
+  const email = profile.email?.trim() || session?.user?.email?.trim() || "";
+
+  return {
+    fullName,
+    email,
+    phone: profile.phone ?? "",
+    role: profile.role,
+    avatar: profile.avatar,
+  };
+}
+
+async function upsertProfileToBackend(profile: ProfileData, session: AuthSession | null) {
+  const token = session?.token;
+  if (!token) return;
+
+  try {
+    await updateMyProfile(profile, token);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
+      await createProfile(buildCreatePayload(profile, session), token);
+      return;
+    }
+    throw error;
+  }
 }
 
 /* ================= CONTEXT ================= */
@@ -99,7 +128,29 @@ export function ProfileProvider({
           role: (apiProfile.role as ProfileData["role"]) ?? prev.role,
         }));
       })
-      .catch(() => {
+      .catch(async (error) => {
+        if (!mounted) return;
+
+        if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
+          const seed = createDefaultProfile(session);
+
+          try {
+            const created = await createProfile(buildCreatePayload(seed, session), token);
+            if (!mounted) return;
+
+            if (created && typeof created === "object") {
+              setProfileState((prev) => ({
+                ...prev,
+                ...created,
+                role: (created.role as ProfileData["role"]) ?? prev.role,
+              }));
+              return;
+            }
+          } catch {
+            // Local profile remains fallback if create profile fails.
+          }
+        }
+
         // Local profile remains fallback if API profile fetch fails.
       });
 
@@ -111,9 +162,7 @@ export function ProfileProvider({
   const setProfile = (p: ProfileData) => {
     setProfileState(p);
 
-    const token = getSession()?.token;
-    if (!token) return;
-    updateMyProfile(p, token).catch(() => {
+    upsertProfileToBackend(p, getSession()).catch(() => {
       // Keep local profile if remote update fails.
     });
   };
@@ -125,12 +174,9 @@ export function ProfileProvider({
         ...p,
       };
 
-      const token = getSession()?.token;
-      if (token) {
-        updateMyProfile(next, token).catch(() => {
-          // Keep local profile if remote update fails.
-        });
-      }
+      upsertProfileToBackend(next, getSession()).catch(() => {
+        // Keep local profile if remote update fails.
+      });
 
       return next;
     });
