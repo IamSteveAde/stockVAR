@@ -5,6 +5,7 @@ import type { ProfileData } from "../types/profile";
 import { getSession, type AuthSession } from "@/lib/api/auth";
 import { createProfile, getMyProfile, updateMyProfile } from "@/lib/api/profile";
 import { ApiError } from "@/lib/api/client";
+import { readSignupName } from "@/lib/onboarding";
 
 /* ================= TYPES ================= */
 
@@ -33,7 +34,8 @@ function resolveProfileKey(session: AuthSession | null): string {
 
 function createDefaultProfile(session: AuthSession | null): ProfileData {
   const email = session?.user?.email ?? "";
-  let fullName = session?.user?.fullName?.trim() || "";
+  const signupName = readSignupName();
+  let fullName = session?.user?.fullName?.trim() || signupName.trim() || "";
   if (!fullName) {
     fullName = "Business Owner";
   }
@@ -50,8 +52,13 @@ function createDefaultProfile(session: AuthSession | null): ProfileData {
 }
 
 function buildCreatePayload(profile: ProfileData, session: AuthSession | null) {
+  const signupName = readSignupName();
   // Priority: profile.fullName -> session.fullName -> empty string
-  let fullName = profile.fullName?.trim() || session?.user?.fullName?.trim() || "";
+  let fullName =
+    profile.fullName?.trim() ||
+    session?.user?.fullName?.trim() ||
+    signupName.trim() ||
+    "";
   
   // Only use fallback if truly empty
   if (!fullName) {

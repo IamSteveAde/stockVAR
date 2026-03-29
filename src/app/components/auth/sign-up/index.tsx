@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
-import { persistSignupEmail } from "@/lib/onboarding";
+import { persistSignupEmail, persistSignupName } from "@/lib/onboarding";
 
 const COUNTRIES = [
   {
@@ -86,6 +86,7 @@ export default function Signup() {
       });
 
       persistSignupEmail(email);
+      persistSignupName(fullName);
       setSuccess("Account created. Continue onboarding and verify your email to proceed.");
 
       setTimeout(() => {

@@ -6,7 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { login } from "@/lib/api/auth";
-import { isOnboardingComplete } from "@/lib/onboarding";
+import { getMyProfile } from "@/lib/api/profile";
+import { isOnboardingComplete, markOnboardingComplete } from "@/lib/onboarding";
 
 export default function Login() {
   const router = useRouter();
@@ -30,11 +31,28 @@ export default function Login() {
 
       setSuccess("Login successful. Redirecting...");
 
+      // Check if user has completed onboarding by fetching their profile
+      let hasCompletedOnboarding = isOnboardingComplete();
+      
+      if (!hasCompletedOnboarding && session.token) {
+        try {
+          const profile = await getMyProfile(session.token);
+          // If profile exists on backend, user has completed onboarding
+          if (profile && typeof profile === "object" && "id" in profile) {
+            markOnboardingComplete();
+            hasCompletedOnboarding = true;
+          }
+        } catch {
+          // If profile fetch fails, fall back to localStorage flag
+          hasCompletedOnboarding = isOnboardingComplete();
+        }
+      }
+
       setTimeout(() => {
         const role = session.user?.role;
         if (role === "staff") {
           router.push("/dashboard/shift");
-        } else if (!isOnboardingComplete()) {
+        } else if (!hasCompletedOnboarding) {
           router.push("/onboarding/create-business");
         } else {
           router.push("/dashboard");

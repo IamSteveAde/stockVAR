@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 
 import { useBusiness } from "@/app/context/BusinessContext";
 import { useSubscription } from "@/app/context/SubscriptionContext";
-import { useProfile } from "@/app/context/ProfileContext";
-import { getSession } from "@/lib/api/auth";
 
 import WelcomeStep from "./steps/WelcomeStep";
 import EmailVerificationStep from "./steps/EmailVerificationStep";
@@ -17,6 +15,7 @@ import StaffSizeStep from "./steps/StaffSizeStep";
 import CompleteStep from "./steps/CompleteStep";
 import {
   clearSignupEmail,
+  clearSignupName,
   markOnboardingComplete,
   readSignupEmail,
 } from "@/lib/onboarding";
@@ -38,7 +37,6 @@ const TOTAL_STEPS = 7;
 export default function CreateBusinessWizard() {
   const router = useRouter();
   const { updateBusiness } = useBusiness();
-  const { updateProfile } = useProfile();
   const { startTrial } = useSubscription();
 
   const [step, setStep] = useState(0);
@@ -73,16 +71,6 @@ export default function CreateBusinessWizard() {
   /* ================= FINAL SUBMIT ================= */
 
   const handleFinish = () => {
-    // Ensure user profile has correct name from session
-    const session = getSession();
-    if (session?.user?.fullName && session.user.fullName !== "Business Owner") {
-      updateProfile({
-        fullName: session.user.fullName,
-        email: session.user.email,
-      });
-    }
-
-    // Update business info
     updateBusiness({
       name: form.businessName,
       type: form.businessType,
@@ -93,6 +81,7 @@ export default function CreateBusinessWizard() {
 
     markOnboardingComplete();
     clearSignupEmail();
+    clearSignupName();
     startTrial();
     router.push("/dashboard");
   };
