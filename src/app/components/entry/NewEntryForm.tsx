@@ -5,6 +5,8 @@ import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { Shift } from "../shifts/types";
 import { useProfile } from "@/app/context/ProfileContext";
 import { writeAuditLog } from "../../../lib/audit";
+import { addEntry } from "@/lib/api/stock";
+import { getSession } from "@/lib/api/auth";
 
 /* ================= STORAGE KEYS ================= */
 
@@ -79,7 +81,18 @@ export default function NewEntryForm() {
 
   /* ================= SAVE ENTRY ================= */
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (profile.role !== "staff") {
+      alert("Only staff members can update stock entries.");
+      return;
+    }
+
+    const token = getSession()?.token;
+    if (!token) {
+      alert("Your session has expired. Please log in again.");
+      return;
+    }
+
     if (!activeShift) {
       alert("No running shift. Start a shift first.");
       return;
@@ -103,6 +116,35 @@ export default function NewEntryForm() {
     const beforeQty = existing?.quantity ?? 0;
     const afterQty =
       type === "in" ? beforeQty + qty : beforeQty - qty;
+
+    try {
+      await addEntry(
+        {
+          shiftId: activeShift.id,
+          sku,
+          quantity: qty,
+          entryType: type === "in" ? "stock-in" : "stock-out",
+          note: reason || undefined,
+          actorStaffId: profile.id,
+          actorEmail: profile.email,
+          actorRole: "staff",
+          requireStaffAuthorization: true,
+          authorizedRole: "staff",
+        },
+        token
+      );
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+          ? ((error as { message: string }).message)
+          : "Stock entry rejected by authorization checks.";
+
+      alert(message);
+      return;
+    }
 
     /* ================= UPDATE INVENTORY ================= */
 
@@ -280,7 +322,9 @@ export default function NewEntryForm() {
       />
 
       <button
-        onClick={handleSave}
+        onClick={() => {
+          void handleSave();
+        }}
         disabled={!sku || !quantity}
         className="bg-[#0F766E] text-white px-6 py-3 rounded-lg"
       >

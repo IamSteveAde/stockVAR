@@ -20,6 +20,9 @@ export type CreateStaffPayload = {
   email: string;
   phone?: string;
   role: StaffRole;
+  sendCredentialsEmail?: boolean;
+  sendLoginCredentials?: boolean;
+  notifyStaffByEmail?: boolean;
 };
 
 const STAFF_PATHS = {

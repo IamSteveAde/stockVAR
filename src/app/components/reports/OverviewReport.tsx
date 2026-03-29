@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Layers,
   ChevronDown,
@@ -574,6 +574,49 @@ function FilterModal<T>({
 
 
 {
+  const LIST_CHUNK_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(LIST_CHUNK_SIZE);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const visibleItems = useMemo(
+    () => items.slice(0, visibleCount),
+    [items, visibleCount]
+  );
+
+  const hasMore = visibleCount < items.length;
+
+  useEffect(() => {
+    setVisibleCount(LIST_CHUNK_SIZE);
+  }, [items.length]);
+
+  useEffect(() => {
+    if (!hasMore) return;
+
+    const root = listRef.current;
+    const target = sentinelRef.current;
+
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) =>
+            Math.min(prev + LIST_CHUNK_SIZE, items.length)
+          );
+        }
+      },
+      {
+        root,
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [hasMore, items.length]);
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full sm:max-w-md rounded-t-xl sm:rounded-xl p-5 space-y-4">
@@ -584,8 +627,8 @@ function FilterModal<T>({
           </button>
         </div>
 
-        <div className="max-h-64 overflow-y-auto space-y-2">
-          {items.map((item, i) => {
+        <div ref={listRef} className="max-h-64 overflow-y-auto space-y-2">
+          {visibleItems.map((item, i) => {
             const active = isActive(item);
             return (
               <button
@@ -602,6 +645,15 @@ function FilterModal<T>({
               </button>
             );
           })}
+
+          {hasMore && (
+            <div
+              ref={sentinelRef}
+              className="py-2 text-center text-xs text-gray-400"
+            >
+              Loading more...
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between items-center pt-3 border-t">

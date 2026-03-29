@@ -13,6 +13,8 @@ import {
 import AddStaffModal from "./AddStaffModal";
 import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
+import { getSession } from "@/lib/api/auth";
+import { createStaff, listStaff } from "@/lib/api/staff";
 
 /* ================= TYPES ================= */
 
@@ -35,9 +37,6 @@ const PAGE_SIZE = 8;
 const STAFF_KEY = "stockvar_staff";
 
 /* ================= HELPERS ================= */
-
-const generatePin = () =>
-  Math.floor(100000 + Math.random() * 900000).toString();
 
 const loadStaff = (): Staff[] => {
   try {
@@ -64,23 +63,39 @@ export default function StaffTable() {
 
   /* Load once */
   useEffect(() => {
-    const stored = loadStaff();
+    const hydrate = async () => {
+      const token = getSession()?.token;
+      if (!token) {
+        setStaff(loadStaff());
+        return;
+      }
 
-    if (stored.length === 0) {
-      const owner: Staff = {
-        id: crypto.randomUUID(),
-        fullName: "Business Owner",
-        email: "owner@business.com",
-        phone: "0800 000 0000",
-        role: "owner",
-        status: "active",
-        pin: generatePin(),
-      };
-      saveStaff([owner]);
-      setStaff([owner]);
-    } else {
-      setStaff(stored);
-    }
+      try {
+        const apiStaff = await listStaff(token);
+        if (Array.isArray(apiStaff) && apiStaff.length) {
+          const normalized: Staff[] = apiStaff.map((entry) => ({
+            id: String(entry.id),
+            fullName: String(entry.fullName ?? ""),
+            email: String(entry.email ?? ""),
+            phone: String(entry.phone ?? ""),
+            role: (entry.role as StaffRole) ?? "staff",
+            status: (entry.status as StaffStatus) ?? "active",
+            pin: typeof entry.pin === "string" && entry.pin ? entry.pin : "Sent via email",
+          }));
+          setStaff(normalized);
+          return;
+        }
+      } catch {
+        // Fallback to local cache when API list fails.
+      }
+
+      const stored = loadStaff();
+      if (stored.length > 0) {
+        setStaff(stored);
+      }
+    };
+
+    hydrate();
   }, []);
 
   /* Persist */
@@ -98,14 +113,35 @@ export default function StaffTable() {
 
   /* ================= ACTIONS ================= */
 
-  const handleAddStaff = (
+  const handleAddStaff = async (
     newStaff: Omit<Staff, "id" | "pin" | "status">
   ) => {
+    const token = getSession()?.token;
+    if (!token) {
+      throw new Error("Your session has expired. Please log in again.");
+    }
+
+    const created = await createStaff(
+      {
+        fullName: newStaff.fullName,
+        email: newStaff.email,
+        phone: newStaff.phone,
+        role: newStaff.role,
+        sendCredentialsEmail: true,
+        sendLoginCredentials: true,
+        notifyStaffByEmail: true,
+      },
+      token
+    );
+
     const staffMember: Staff = {
-      ...newStaff,
-      id: crypto.randomUUID(),
-      status: "active",
-      pin: generatePin(),
+      id: String(created?.id ?? crypto.randomUUID()),
+      fullName: String(created?.fullName ?? newStaff.fullName),
+      email: String(created?.email ?? newStaff.email),
+      phone: String(created?.phone ?? newStaff.phone),
+      role: ((created?.role as StaffRole) ?? newStaff.role),
+      status: ((created?.status as StaffStatus) ?? "invited"),
+      pin: typeof created?.pin === "string" && created.pin ? created.pin : "Sent via email",
     };
 
     setStaff((prev) => [staffMember, ...prev]);

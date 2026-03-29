@@ -36,6 +36,11 @@ sku: string;
 quantity: number;
 entryType: "stock-in" | "stock-out" | "waste" | "adjustment";
 note?: string;
+actorStaffId?: string;
+actorEmail?: string;
+actorRole?: "owner" | "manager" | "staff";
+requireStaffAuthorization?: boolean;
+authorizedRole?: "staff";
 };
 
 const STOCK_PATHS = {

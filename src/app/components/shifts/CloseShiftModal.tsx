@@ -22,8 +22,11 @@ const PRODUCTS_KEY = "stockvar_products";
 type Props = {
   shift: Shift;
   inventory: InventoryItem[];
+  currentUserId: string;
+  currentUserEmail: string;
+  currentUserRole: "owner" | "manager" | "staff";
   onCancel: () => void;
-  onConfirm?: (closingSnapshot: StockSnapshot[]) => void; // optional
+  onConfirm?: (closingSnapshot: StockSnapshot[], pin: string) => Promise<boolean>; // optional
 };
 
 /* ================= COMPONENT ================= */
@@ -31,6 +34,9 @@ type Props = {
 export default function CloseShiftModal({
   shift,
   inventory,
+  currentUserId,
+  currentUserEmail,
+  currentUserRole,
   onCancel,
   onConfirm,
 }: Props) {
@@ -90,7 +96,12 @@ const productMap = useMemo(() => {
 
   /* ================= SUBMIT ================= */
 
-  const submit = () => {
+  const submit = async () => {
+    if (currentUserRole !== "staff") {
+      setError("Only staff members can end shifts.");
+      return;
+    }
+
     // 1️⃣ Ensure everything is counted
     const uncounted = counts.find(
       (c) => c.quantity === null
@@ -107,6 +118,19 @@ const productMap = useMemo(() => {
     if (!responsibleStaff) {
       setError(
         "Responsible staff not found for this shift."
+      );
+      return;
+    }
+
+    const isResponsibleById = currentUserId === responsibleStaff.id;
+    const isResponsibleByEmail =
+      !!currentUserEmail &&
+      currentUserEmail.trim().toLowerCase() ===
+        responsibleStaff.email.trim().toLowerCase();
+
+    if (!isResponsibleById && !isResponsibleByEmail) {
+      setError(
+        "Only the responsible staff account can end this shift."
       );
       return;
     }
@@ -159,8 +183,15 @@ const productMap = useMemo(() => {
       })
     );
 
-    // 7️⃣ Optional callback (shift logs, reports, etc.)
-    onConfirm?.(closingSnapshot);
+    // 7️⃣ Backend/state callback must succeed before local inventory overwrite.
+    const confirmed = onConfirm
+      ? await onConfirm(closingSnapshot, pin)
+      : true;
+
+    if (!confirmed) {
+      setError("Unable to end shift. Please try again.");
+      return;
+    }
 
     // 8️⃣ Close modal
     onCancel();
@@ -264,7 +295,9 @@ const productMap = useMemo(() => {
           </button>
 
           <button
-            onClick={submit}
+            onClick={() => {
+              void submit();
+            }}
             className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
           >
             End Shift

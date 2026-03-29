@@ -7,13 +7,19 @@ import { Shift, Staff } from "./types";
 type Props = {
   shift: Shift;
   staff: Staff[];
+  currentUserId: string;
+  currentUserEmail: string;
+  currentUserRole: "owner" | "manager" | "staff";
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (pin: string) => Promise<boolean>;
 };
 
 export default function StartShiftModal({
   shift,
   staff,
+  currentUserId,
+  currentUserEmail,
+  currentUserRole,
   onCancel,
   onConfirm,
 }: Props) {
@@ -31,10 +37,28 @@ export default function StartShiftModal({
     [staff, shift.responsibleStaffId]
   );
 
-  const submit = () => {
+  const submit = async () => {
+    if (currentUserRole !== "staff") {
+      setError("Only staff members can start shifts.");
+      return;
+    }
+
     if (!responsibleStaff) {
       setError(
         "Responsible staff not found for this shift."
+      );
+      return;
+    }
+
+    const isResponsibleById = currentUserId === responsibleStaff.id;
+    const isResponsibleByEmail =
+      !!currentUserEmail &&
+      currentUserEmail.trim().toLowerCase() ===
+        responsibleStaff.email.trim().toLowerCase();
+
+    if (!isResponsibleById && !isResponsibleByEmail) {
+      setError(
+        "Only the responsible staff account can start this shift."
       );
       return;
     }
@@ -51,8 +75,11 @@ export default function StartShiftModal({
       return;
     }
 
-    // ✅ PIN verified
-    onConfirm();
+    const ok = await onConfirm(pin);
+    if (!ok) {
+      setError("Unable to start shift. Please try again.");
+      return;
+    }
   };
 
   return (
@@ -113,7 +140,9 @@ export default function StartShiftModal({
             Cancel
           </button>
           <button
-            onClick={submit}
+            onClick={() => {
+              void submit();
+            }}
             className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
           >
             Start Shift

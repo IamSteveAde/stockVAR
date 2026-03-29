@@ -60,17 +60,19 @@ export type AuditLog = {
 export const AUDIT_KEY = "stockvar_audit_logs";
 /* ================= HELPERS ================= */
 
+export function readAuditLogs(): AuditLog[] {
+  try {
+    const raw = localStorage.getItem(AUDIT_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function writeAuditLog(
   log: Omit<AuditLog, "id" | "createdAt">
 ) {
-  const existing: AuditLog[] = (() => {
-    try {
-      const raw = localStorage.getItem(AUDIT_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  })();
+  const existing = readAuditLogs();
 
   const entry: AuditLog = {
     ...log,
@@ -84,4 +86,12 @@ export function writeAuditLog(
     AUDIT_KEY,
     JSON.stringify(existing)
   );
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("audit:updated", {
+        detail: entry,
+      })
+    );
+  }
 }

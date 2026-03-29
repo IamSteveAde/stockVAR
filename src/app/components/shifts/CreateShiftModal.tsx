@@ -20,7 +20,7 @@ type CreateShiftPayload = Omit<
 type Props = {
   open: boolean;
   onClose: () => void;
-  onCreate: (shift: CreateShiftPayload) => void;
+  onCreate: (shift: CreateShiftPayload) => Promise<void>;
   staffList: Staff[];
   existingShifts: Shift[];
 };
@@ -97,7 +97,7 @@ export default function CreateShiftModal({
 
   /* ================= CREATE ================= */
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!date) return alert("Select a start date");
     if (isPastDate(date)) return alert("Date cannot be in the past");
     if (selectedStaff.length === 0) return alert("Assign at least one staff");
@@ -148,8 +148,21 @@ export default function CreateShiftModal({
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    shiftsToCreate.forEach(onCreate);
-    onClose();
+    try {
+      for (const shiftPayload of shiftsToCreate) {
+        await onCreate(shiftPayload);
+      }
+      onClose();
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+          ? ((error as { message: string }).message)
+          : "Unable to create shift right now.";
+      alert(message);
+    }
   };
 
   /* ================= UI ================= */
@@ -338,7 +351,9 @@ export default function CreateShiftModal({
             </button>
           ) : (
             <button
-              onClick={handleCreate}
+              onClick={() => {
+                void handleCreate();
+              }}
               className="flex items-center gap-1 bg-[#0F766E] text-white px-4 py-2 rounded"
             >
               <Check size={16} /> Create shift

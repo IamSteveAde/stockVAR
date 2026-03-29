@@ -10,24 +10,16 @@ export type StaffRole = "manager" | "staff";
 type Props = {
   onClose: () => void;
   onAddStaff: (staff: {
-    id: string;
     fullName: string;
     email: string;
     phone: string;
     role: StaffRole;
-    status: "invited";
-    pin: string;
-  }) => void;
+  }) => Promise<void>;
 };
 
 /* ================= STORAGE ================= */
 
 const STAFF_KEY = "stockvar_staff";
-
-/* ================= HELPERS ================= */
-
-const generatePin = () =>
-  Math.floor(100000 + Math.random() * 900000).toString();
 
 const loadStaffEmails = (): string[] => {
   try {
@@ -59,7 +51,7 @@ export default function AddStaffModal({
     setExistingEmails(loadStaffEmails());
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -73,20 +65,27 @@ export default function AddStaffModal({
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      onAddStaff({
-        id: crypto.randomUUID(),
+    try {
+      await onAddStaff({
         fullName,
         email: normalizedEmail,
         phone,
         role,
-        status: "invited",
-        pin: generatePin(),
       });
 
       setLoading(false);
       onClose();
-    }, 600);
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as { message?: unknown }).message === "string"
+          ? ((err as { message: string }).message)
+          : "Unable to create staff account right now.";
+      setError(message);
+      setLoading(false);
+    }
   };
 
   return (

@@ -16,6 +16,12 @@ import StartShiftModal from "./StartShiftModal";
 
 import { Shift, Staff } from "./types";
 import { useProfile } from "@/app/context/ProfileContext";
+import { getSession } from "@/lib/api/auth";
+import {
+  createShift as createShiftApi,
+  endShift as endShiftApi,
+  startShift as startShiftApi,
+} from "@/lib/api/shifts";
 
 /* ================= CONSTANTS ================= */
 
@@ -107,10 +113,55 @@ export default function ShiftTable() {
 
   /* ================= START SHIFT ================= */
 
-  const confirmStartShift = (shift: Shift) => {
+  const confirmStartShift = async (shift: Shift, pin: string): Promise<boolean> => {
+    if (profile.role !== "staff") {
+      return false;
+    }
+
+    const responsible = staff.find((s) => s.id === shift.responsibleStaffId);
+    const isResponsibleById = profile.id === shift.responsibleStaffId;
+    const isResponsibleByEmail =
+      !!profile.email &&
+      !!responsible?.email &&
+      profile.email.trim().toLowerCase() === responsible.email.trim().toLowerCase();
+
+    if (!isResponsibleById && !isResponsibleByEmail) {
+      return false;
+    }
+
     if (shifts.some((s) => s.status === "running")) {
       alert("Another shift is already running.");
-      return;
+      return false;
+    }
+
+    const token = getSession()?.token;
+    if (!token) {
+      alert("Your session has expired. Please log in again.");
+      return false;
+    }
+
+    try {
+      await startShiftApi(
+        {
+          shiftId: shift.id,
+          pin,
+          openingSnapshot: inventory.map((i) => ({
+            sku: i.sku,
+            quantity: i.quantity,
+          })),
+        },
+        token
+      );
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+          ? ((error as { message: string }).message)
+          : "Unable to start shift right now.";
+      alert(message);
+      return false;
     }
 
     setShifts((prev) =>
@@ -147,11 +198,60 @@ export default function ShiftTable() {
         name: shift.label,
       },
     });
+
+    return true;
   };
 
   /* ================= END SHIFT ================= */
 
-  const endShift = (id: string, closingSnapshot: any[]) => {
+  const endShift = async (id: string, closingSnapshot: any[], pin: string): Promise<boolean> => {
+    if (profile.role !== "staff") {
+      return false;
+    }
+
+    const targetShift = shifts.find((s) => s.id === id);
+    if (!targetShift) {
+      return false;
+    }
+
+    const responsible = staff.find((s) => s.id === targetShift.responsibleStaffId);
+    const isResponsibleById = profile.id === targetShift.responsibleStaffId;
+    const isResponsibleByEmail =
+      !!profile.email &&
+      !!responsible?.email &&
+      profile.email.trim().toLowerCase() === responsible.email.trim().toLowerCase();
+
+    if (!isResponsibleById && !isResponsibleByEmail) {
+      return false;
+    }
+
+    const token = getSession()?.token;
+    if (!token) {
+      alert("Your session has expired. Please log in again.");
+      return false;
+    }
+
+    try {
+      await endShiftApi(
+        {
+          shiftId: id,
+          pin,
+          closingSnapshot,
+        },
+        token
+      );
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+          ? ((error as { message: string }).message)
+          : "Unable to end shift right now.";
+      alert(message);
+      return false;
+    }
+
     setShifts((prev) =>
       prev.map((s) =>
         s.id === id
@@ -182,6 +282,8 @@ export default function ShiftTable() {
         id,
       },
     });
+
+    return true;
   };
 
   /* ================= DELETE ================= */
@@ -447,12 +549,30 @@ const current = sortedShifts.slice(
           onClose={() => setOpenCreate(false)}
           staffList={staff}
           existingShifts={shifts}
-          onCreate={(shift) =>
+          onCreate={async (shift) => {
+            const token = getSession()?.token;
+            if (!token) {
+              throw new Error("Your session has expired. Please log in again.");
+            }
+
+            await createShiftApi(
+              {
+                label: shift.label,
+                startDate: shift.startDate,
+                startTime: shift.startTime,
+                endTime: shift.endTime,
+                responsibleStaffId: shift.responsibleStaffId,
+                staffIds: shift.staff.map((member) => member.id),
+                recurrence: shift.recurrence,
+              },
+              token
+            );
+
             setShifts((prev) => [
               { ...shift, status: "planned" },
               ...prev,
-            ])
-          }
+            ]);
+          }}
         />
       )}
 
@@ -460,10 +580,16 @@ const current = sortedShifts.slice(
         <StartShiftModal
           shift={startingShift}
           staff={staff}
+          currentUserId={profile.id}
+          currentUserEmail={profile.email}
+          currentUserRole={profile.role}
           onCancel={() => setStartingShift(null)}
-          onConfirm={() => {
-            confirmStartShift(startingShift);
-            setStartingShift(null);
+          onConfirm={async (pin) => {
+            const ok = await confirmStartShift(startingShift, pin);
+            if (ok) {
+              setStartingShift(null);
+            }
+            return ok;
           }}
         />
       )}
@@ -472,10 +598,16 @@ const current = sortedShifts.slice(
         <CloseShiftModal
           shift={closingShift}
           inventory={inventory}
+          currentUserId={profile.id}
+          currentUserEmail={profile.email}
+          currentUserRole={profile.role}
           onCancel={() => setClosingShift(null)}
-          onConfirm={(snapshot) => {
-            endShift(closingShift.id, snapshot);
-            setClosingShift(null);
+          onConfirm={async (snapshot, pin) => {
+            const ok = await endShift(closingShift.id, snapshot, pin);
+            if (ok) {
+              setClosingShift(null);
+            }
+            return ok;
           }}
         />
       )}
