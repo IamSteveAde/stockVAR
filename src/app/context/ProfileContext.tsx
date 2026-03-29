@@ -33,11 +33,14 @@ function resolveProfileKey(session: AuthSession | null): string {
 
 function createDefaultProfile(session: AuthSession | null): ProfileData {
   const email = session?.user?.email ?? "";
-  const fallbackName = "Business Owner";
+  let fullName = session?.user?.fullName?.trim() || "";
+  if (!fullName) {
+    fullName = "Business Owner";
+  }
 
   return {
     id: session?.user?.id || crypto.randomUUID(),
-    fullName: session?.user?.fullName || fallbackName,
+    fullName,
     phone: "",
     email,
     role: session?.user?.role ?? "owner",
@@ -47,7 +50,14 @@ function createDefaultProfile(session: AuthSession | null): ProfileData {
 }
 
 function buildCreatePayload(profile: ProfileData, session: AuthSession | null) {
-  const fullName = profile.fullName?.trim() || session?.user?.fullName?.trim() || "Business Owner";
+  // Priority: profile.fullName -> session.fullName -> empty string
+  let fullName = profile.fullName?.trim() || session?.user?.fullName?.trim() || "";
+  
+  // Only use fallback if truly empty
+  if (!fullName) {
+    fullName = "Business Owner";
+  }
+  
   const email = profile.email?.trim() || session?.user?.email?.trim() || "";
 
   return {
