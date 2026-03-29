@@ -13,7 +13,7 @@ import {
 import AddStaffModal from "./AddStaffModal";
 import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
-import { getSession } from "@/lib/api/auth";
+import { getSession, clearSession, isTokenExpired } from "@/lib/api/auth";
 import { createStaff, listStaff } from "@/lib/api/staff";
 
 /* ================= TYPES ================= */
@@ -116,52 +116,72 @@ export default function StaffTable() {
   const handleAddStaff = async (
     newStaff: Omit<Staff, "id" | "pin" | "status">
   ) => {
-    const token = getSession()?.token;
+    const session = getSession();
+    const token = session?.token;
     if (!token) {
       throw new Error("Your session has expired. Please log in again.");
     }
 
-    const created = await createStaff(
-      {
-        fullName: newStaff.fullName,
-        email: newStaff.email,
-        phone: newStaff.phone,
-        role: newStaff.role,
-        sendCredentialsEmail: true,
-        sendLoginCredentials: true,
-        notifyStaffByEmail: true,
-      },
-      token
-    );
+    if (isTokenExpired(token)) {
+      clearSession();
+      throw new Error("Your session has expired. Please log in again.");
+    }
 
-    const staffMember: Staff = {
-      id: String(created?.id ?? crypto.randomUUID()),
-      fullName: String(created?.fullName ?? newStaff.fullName),
-      email: String(created?.email ?? newStaff.email),
-      phone: String(created?.phone ?? newStaff.phone),
-      role: ((created?.role as StaffRole) ?? newStaff.role),
-      status: ((created?.status as StaffStatus) ?? "invited"),
-      pin: typeof created?.pin === "string" && created.pin ? created.pin : "Sent via email",
-    };
+    try {
+      const created = await createStaff(
+        {
+          fullName: newStaff.fullName,
+          email: newStaff.email,
+          phone: newStaff.phone,
+          role: newStaff.role,
+          sendCredentialsEmail: true,
+          sendLoginCredentials: true,
+          notifyStaffByEmail: true,
+        },
+        token
+      );
 
-    setStaff((prev) => [staffMember, ...prev]);
-    setPage(1);
+      const staffMember: Staff = {
+        id: String(created?.id ?? crypto.randomUUID()),
+        fullName: String(created?.fullName ?? newStaff.fullName),
+        email: String(created?.email ?? newStaff.email),
+        phone: String(created?.phone ?? newStaff.phone),
+        role: ((created?.role as StaffRole) ?? newStaff.role),
+        status: ((created?.status as StaffStatus) ?? "invited"),
+        pin: typeof created?.pin === "string" && created.pin ? created.pin : "Sent via email",
+      };
 
-    /* ===== AUDIT ===== */
-    writeAuditLog({
-      actor: {
-        staffId: profile.id,
-        name: profile.fullName,
-        role: profile.role,
-      },
-      action: "STAFF_CREATE",
-      description: "Staff account created",
-      entity: {
-        type: "staff",
-        id: staffMember.id,
-        name: staffMember.fullName,
-      },
-    });
+      setStaff((prev) => [staffMember, ...prev]);
+      setPage(1);
+
+      /* ===== AUDIT ===== */
+      writeAuditLog({
+        actor: {
+          staffId: profile.id,
+          name: profile.fullName,
+          role: profile.role,
+        },
+        action: "STAFF_CREATE",
+        description: "Staff account created",
+        entity: {
+          type: "staff",
+          id: staffMember.id,
+          name: staffMember.fullName,
+        },
+      });
+    } catch (error) {
+      // Handle token-related API errors
+      if (
+        error instanceof Error &&
+        (error.message.includes("Invalid or expired token") ||
+          error.message.includes("Unauthorized") ||
+          error.message.includes("401"))
+      ) {
+        clearSession();
+        throw new Error("Your session has expired. Please log in again.");
+      }
+      throw error;
+    }
   };
 
   const toggleArchive = (id: string) => {

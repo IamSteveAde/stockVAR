@@ -110,6 +110,19 @@ function readStringClaim(payload: Record<string, unknown>, ...keys: string[]): s
   return undefined;
 }
 
+export function isTokenExpired(token: string | null | undefined): boolean {
+  if (!token) return true;
+  try {
+    const payload = decodeJwt(token);
+    const exp = payload.exp as number | undefined;
+    if (!exp) return false; // No expiration claim, assume valid
+    const now = Math.floor(Date.now() / 1000);
+    return exp < now;
+  } catch {
+    return true; // Invalid token format
+  }
+}
+
 export async function signUp(payload: SignUpPayload): Promise<void> {
   const body: Record<string, unknown> = {
     fullName: payload.fullName,
