@@ -1,5 +1,3 @@
-const BASE_URL = "https://api.stockvar.app/";
-
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export type ApiErrorShape = {
@@ -27,10 +25,13 @@ export type RequestOptions = {
 };
 
 function getBaseUrl() {
-  if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!apiUrl) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_API_BASE_URL environment variable. Please set it in your .env.local file."
+    );
   }
-  return BASE_URL;
+  return apiUrl;
 }
 
 export async function apiFetch<TResponse>(
