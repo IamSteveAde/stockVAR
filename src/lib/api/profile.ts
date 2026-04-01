@@ -16,7 +16,7 @@ Pick<ProfileData, "fullName" | "phone" | "email" | "avatar" | "status">
 
 const PROFILE_PATHS = {
 me: ["api/profile/me"],
-updateMe: ["api/profile/update-me", "api/profile/updateMe"],
+updateMe: ["api/profile/me"],
 createProfile: ["api/profile/create-profile", "api/profile/createProfile"],
 auditTrail: ["api/profile/audit-trail", "api/profile/auditTrail"],
 };

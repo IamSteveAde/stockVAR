@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
-import { updateMyProfile } from "@/lib/api/profile";
 
 const COUNTRIES = [
   {

@@ -18,8 +18,15 @@ export default function DebugProfileLoader() {
           const profile = await getMyProfile(session.token);
           console.log("=== DEBUG PROFILE ===", profile);
 
-          const business = await getMyBusinessProfile(session.token);
-          console.log("=== DEBUG BUSINESS ===", business);
+          let business = null;
+          let businessError = null;
+          try {
+            business = await getMyBusinessProfile(session.token);
+            console.log("=== DEBUG BUSINESS ===", business);
+          } catch (err: unknown) {
+            businessError = err instanceof Error ? err.message : String(err);
+            console.error("=== DEBUG BUSINESS ERROR ===", businessError);
+          }
 
           setDebug({
             sessionUserId: session.user?.id,
@@ -28,6 +35,7 @@ export default function DebugProfileLoader() {
             profileEmail: profile?.email,
             businessId: business?.id,
             businessName: business?.name,
+            businessError: businessError || "None",
             match: session.user?.id === profile?.id,
           });
         } catch (error) {

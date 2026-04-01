@@ -3,8 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ProfileData } from "../types/profile";
 import { getSession, type AuthSession } from "@/lib/api/auth";
-import { createProfile, getMyProfile, updateMyProfile } from "@/lib/api/profile";
-import { ApiError } from "@/lib/api/client";
+import { getMyProfile } from "@/lib/api/profile";
 import { readSignupName } from "@/lib/onboarding";
 
 /* ================= TYPES ================= */
@@ -51,45 +50,6 @@ function createDefaultProfile(session: AuthSession | null): ProfileData {
   };
 }
 
-function buildCreatePayload(profile: ProfileData, session: AuthSession | null) {
-  const signupName = readSignupName();
-  // Priority: profile.fullName -> session.fullName -> signupName -> fallback
-  let fullName =
-    profile.fullName?.trim() ||
-    session?.user?.fullName?.trim() ||
-    signupName.trim() ||
-    "";
-
-  // Only use fallback if truly empty
-  if (!fullName) {
-    fullName = "Business Owner";
-  }
-
-  const email = profile.email?.trim() || session?.user?.email?.trim() || "";
-
-  return {
-    fullName,
-    email,
-    phone: profile.phone?.trim() || "",
-    role: profile.role,
-    avatar: profile.avatar,
-  };
-}
-
-async function upsertProfileToBackend(profile: ProfileData, session: AuthSession | null) {
-  const token = session?.token;
-  if (!token) return;
-
-  try {
-    await updateMyProfile(profile, token);
-  } catch (error) {
-    if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
-      await createProfile(buildCreatePayload(profile, session), token);
-      return;
-    }
-    throw error;
-  }
-}
 
 /* ================= CONTEXT ================= */
 
@@ -122,6 +82,7 @@ export function ProfileProvider({
   useEffect(() => {
     const token = session?.token;
 
+    // Update profile state with session user data
     setProfileState((prev) => ({
       ...prev,
       id: session?.user?.id || prev.id,
@@ -134,6 +95,7 @@ export function ProfileProvider({
 
     let mounted = true;
 
+    // Load profile from backend (read-only)
     getMyProfile(token)
       .then((apiProfile) => {
         if (!mounted) return;
@@ -145,30 +107,10 @@ export function ProfileProvider({
           role: (apiProfile.role as ProfileData["role"]) ?? prev.role,
         }));
       })
-      .catch(async (error) => {
-        if (!mounted) return;
-
-        if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
-          const seed = createDefaultProfile(session);
-
-          try {
-            const created = await createProfile(buildCreatePayload(seed, session), token);
-            if (!mounted) return;
-
-            if (created && typeof created === "object") {
-              setProfileState((prev) => ({
-                ...prev,
-                ...created,
-                role: (created.role as ProfileData["role"]) ?? prev.role,
-              }));
-              return;
-            }
-          } catch {
-            // Local profile remains fallback if create profile fails.
-          }
-        }
-
-        // Local profile remains fallback if API profile fetch fails.
+      .catch(() => {
+        // Local profile remains as fallback if API load fails.
+        // Do NOT attempt to create profile here.
+        // User profile will be created when needed (e.g., on settings page).
       });
 
     return () => {
@@ -178,25 +120,13 @@ export function ProfileProvider({
 
   const setProfile = (p: ProfileData) => {
     setProfileState(p);
-
-    upsertProfileToBackend(p, getSession()).catch(() => {
-      // Keep local profile if remote update fails.
-    });
   };
 
   const updateProfile = (p: Partial<ProfileData>) => {
-    setProfileState((prev) => {
-      const next = {
-        ...prev,
-        ...p,
-      };
-
-      upsertProfileToBackend(next, getSession()).catch(() => {
-        // Keep local profile if remote update fails.
-      });
-
-      return next;
-    });
+    setProfileState((prev) => ({
+      ...prev,
+      ...p,
+    }));
   };
 
   const clearProfile = () => {
