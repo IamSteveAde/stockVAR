@@ -28,7 +28,7 @@ function getBaseUrl() {
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!apiUrl) {
     throw new Error(
-      "Missing NEXT_PUBLIC_API_BASE_URL environment variable. Please set it in your .env.local file."
+      "Missing NEXT_PUBLIC_API_BASE_URL environment variable. Please set it in your .env file."
     );
   }
   return apiUrl;

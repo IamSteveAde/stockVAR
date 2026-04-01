@@ -6,17 +6,21 @@ import {
   useEffect,
   useState,
 } from "react";
+import { getSession } from "@/lib/api/auth";
+import { getMyBusinessProfile } from "@/lib/api/business";
 
 /* =======================
    TYPES
 ======================= */
 
 export type BusinessData = {
+  id: string;
   name: string;
   type: string;
   email?: string;
   phone?: string;
   city: string;
+  staffSize?: string;
   timezone: string;
   createdAt: string;
 };
@@ -48,32 +52,52 @@ export function BusinessProvider({
     useState<BusinessData | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  /* 🔹 Load persisted business on mount */
+  /* 🔹 Load business profile from backend on mount */
   useEffect(() => {
-    const stored = localStorage.getItem(
-      "stockvar_business"
-    );
-    if (stored) {
-      try {
-        setBusiness(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem("stockvar_business");
+    const loadBusinessProfile = async () => {
+      const session = getSession();
+      if (!session?.token) {
+        setIsHydrated(true);
+        return;
       }
-    }
-    setIsHydrated(true);
+
+      try {
+        const profile = await getMyBusinessProfile(session.token);
+        if (profile) {
+          setBusiness({
+            id: profile.id,
+            name: profile.name,
+            type: profile.type,
+            city: profile.city,
+            staffSize: profile.staffSize,
+            timezone: profile.timezone,
+            createdAt: profile.createdAt,
+          });
+        }
+      } catch (error) {
+        // Business profile doesn't exist yet or API error
+        // This is OK - user just needs to onboard
+      } finally {
+        setIsHydrated(true);
+      }
+    };
+
+    loadBusinessProfile();
   }, []);
 
-  /* 🔹 Update business (used by onboarding + account) */
+  /* 🔹 Update business (used by onboarding) */
   const updateBusiness = (
     data: Partial<BusinessData>
   ) => {
     setBusiness((prev) => {
       const updated: BusinessData = {
+        id: data.id ?? prev?.id ?? crypto.randomUUID(),
         name: data.name ?? prev?.name ?? "",
         type: data.type ?? prev?.type ?? "",
         email: data.email ?? prev?.email,
         phone: data.phone ?? prev?.phone,
         city: data.city ?? prev?.city ?? "",
+        staffSize: data.staffSize ?? prev?.staffSize,
         timezone:
           data.timezone ??
           prev?.timezone ??
@@ -83,17 +107,11 @@ export function BusinessProvider({
           new Date().toISOString(),
       };
 
-      localStorage.setItem(
-        "stockvar_business",
-        JSON.stringify(updated)
-      );
-
       return updated;
     });
   };
 
   const clearBusiness = () => {
-    localStorage.removeItem("stockvar_business");
     setBusiness(null);
   };
 

@@ -53,24 +53,24 @@ function createDefaultProfile(session: AuthSession | null): ProfileData {
 
 function buildCreatePayload(profile: ProfileData, session: AuthSession | null) {
   const signupName = readSignupName();
-  // Priority: profile.fullName -> session.fullName -> empty string
+  // Priority: profile.fullName -> session.fullName -> signupName -> fallback
   let fullName =
     profile.fullName?.trim() ||
     session?.user?.fullName?.trim() ||
     signupName.trim() ||
     "";
-  
+
   // Only use fallback if truly empty
   if (!fullName) {
     fullName = "Business Owner";
   }
-  
+
   const email = profile.email?.trim() || session?.user?.email?.trim() || "";
 
   return {
     fullName,
     email,
-    phone: profile.phone ?? "",
+    phone: profile.phone?.trim() || "",
     role: profile.role,
     avatar: profile.avatar,
   };

@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 import { useBusiness } from "@/app/context/BusinessContext";
 import { useSubscription } from "@/app/context/SubscriptionContext";
+import { getSession } from "@/lib/api/auth";
+import { createBusinessProfile } from "@/lib/api/business";
 
 import WelcomeStep from "./steps/WelcomeStep";
 import EmailVerificationStep from "./steps/EmailVerificationStep";
@@ -17,7 +20,6 @@ import {
   clearSignupEmail,
   clearSignupName,
   markOnboardingComplete,
-  readSignupEmail,
 } from "@/lib/onboarding";
 
 /* ================= TYPES ================= */
@@ -41,7 +43,10 @@ export default function CreateBusinessWizard() {
 
   const [step, setStep] = useState(0);
   const [emailVerified, setEmailVerified] = useState(false);
-  const signupEmail = readSignupEmail();
+
+  // Get email from active session (user already signed up)
+  const session = getSession();
+  const signupEmail = session?.user?.email || "";
 
   const [form, setForm] = useState<OnboardingForm>({
     businessName: "",
@@ -70,20 +75,59 @@ export default function CreateBusinessWizard() {
 
   /* ================= FINAL SUBMIT ================= */
 
-  const handleFinish = () => {
-    updateBusiness({
-      name: form.businessName,
-      type: form.businessType,
-      city: form.city,
-      timezone: "Africa/Lagos",
-      createdAt: new Date().toISOString(),
-    });
+  const handleFinish = async () => {
+    try {
+      // Get current session
+      const session = getSession();
+      if (!session?.token) {
+        toast.error("Session expired. Please log in again.");
+        window.location.href = "/auth/login";
+        return;
+      }
 
-    markOnboardingComplete();
-    clearSignupEmail();
-    clearSignupName();
-    startTrial();
-    router.push("/dashboard");
+      // Call backend to create/update business profile
+      const businessProfile = await createBusinessProfile(
+        {
+          name: form.businessName,
+          type: form.businessType,
+          city: form.city,
+          staffSize: form.staffSize,
+          timezone: "Africa/Lagos",
+        },
+        session.token
+      );
+
+      // Update local context with backend data
+      updateBusiness({
+        id: businessProfile.id,
+        name: businessProfile.name,
+        type: businessProfile.type,
+        city: businessProfile.city,
+        staffSize: businessProfile.staffSize,
+        timezone: businessProfile.timezone,
+        createdAt: businessProfile.createdAt,
+      });
+
+      // Mark onboarding complete in local storage
+      // This allows users to persist state across sessions
+      markOnboardingComplete();
+      clearSignupEmail();
+      clearSignupName();
+
+      // Start trial period
+      startTrial();
+
+      toast.success("Business profile created successfully!");
+
+      // Redirect to dashboard
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create business profile";
+      toast.error(message);
+    }
   };
 
   /* ================= RENDER ================= */

@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
-import { persistSignupEmail, persistSignupName } from "@/lib/onboarding";
+import { updateMyProfile } from "@/lib/api/profile";
 
 const COUNTRIES = [
   {
@@ -77,6 +77,8 @@ export default function Signup() {
 
     try {
       setIsLoading(true);
+
+      // Step 1: Create account on backend
       await signUp({
         fullName: fullName || undefined,
         email,
@@ -85,10 +87,10 @@ export default function Signup() {
         password,
       });
 
-      persistSignupEmail(email);
-      persistSignupName(fullName);
-      setSuccess("Account created. Continue onboarding and verify your email to proceed.");
+      setSuccess("Account created. Continue onboarding to set up your business.");
 
+      // Step 2: Redirect to onboarding
+      // ProfileContext will auto-fetch profile from backend
       setTimeout(() => {
         router.push("/onboarding/create-business");
       }, 1000);

@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { login } from "@/lib/api/auth";
-import { getMyProfile } from "@/lib/api/profile";
-import { isOnboardingComplete, markOnboardingComplete } from "@/lib/onboarding";
+import { getMyBusinessProfile } from "@/lib/api/business";
+import { markOnboardingComplete } from "@/lib/onboarding";
 
 export default function Login() {
   const router = useRouter();
@@ -27,34 +27,41 @@ export default function Login() {
 
     try {
       setIsLoading(true);
+
+      // Step 1: Sign in and get session
       const session = await login({ email, password });
 
       setSuccess("Login successful. Redirecting...");
 
-      // Check if user has completed onboarding by fetching their profile
-      let hasCompletedOnboarding = isOnboardingComplete();
-      
-      if (!hasCompletedOnboarding && session.token) {
-        try {
-          const profile = await getMyProfile(session.token);
-          // If profile exists on backend, user has completed onboarding
-          if (profile && typeof profile === "object" && "id" in profile) {
-            markOnboardingComplete();
-            hasCompletedOnboarding = true;
-          }
-        } catch {
-          // If profile fetch fails, fall back to localStorage flag
-          hasCompletedOnboarding = isOnboardingComplete();
+      // Step 2: Check if user has completed onboarding by fetching business profile
+      let hasCompletedOnboarding = false;
+      try {
+        const businessProfile = await getMyBusinessProfile(session.token);
+        hasCompletedOnboarding = businessProfile !== null;
+
+        // Mark onboarding complete if business profile exists
+        if (hasCompletedOnboarding) {
+          markOnboardingComplete();
         }
+      } catch {
+        // Business profile fetch failed - assume not onboarded
+        hasCompletedOnboarding = false;
       }
 
+      // Step 3: Route based on role and onboarding status
       setTimeout(() => {
         const role = session.user?.role;
+
+        // Staff always goes to shift dashboard
         if (role === "staff") {
           router.push("/dashboard/shift");
-        } else if (!hasCompletedOnboarding) {
+        }
+        // Owner/Manager: check if onboarded
+        else if (!hasCompletedOnboarding) {
           router.push("/onboarding/create-business");
-        } else {
+        }
+        // Already onboarded → go to dashboard
+        else {
           router.push("/dashboard");
         }
       }, 800);

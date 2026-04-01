@@ -9,13 +9,13 @@ import { BusinessProvider, useBusiness } from "../context/BusinessContext";
 import { SubscriptionProvider } from "../context/SubscriptionContext";
 import TrialBanner from "../components/billing/TrialBanner";
 import DevProfileSwitcher from "@/app/dev/DevProfileSwitcher";
-import { isOnboardingComplete } from "@/lib/onboarding";
+import DebugProfileLoader from "@/app/components/debug/DebugProfileLoader";
 
 /* ================= ROLE GUARD ================= */
 
 function RoleGuard({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
-  const { isHydrated } = useBusiness();
+  const { business, isHydrated } = useBusiness();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -24,15 +24,20 @@ function RoleGuard({ children }: { children: React.ReactNode }) {
 
     // 🚫 Staff must never access dashboard root
     if (profile.role === "staff" && pathname === "/dashboard") {
-      router.replace("/dashboard/staff-dashboard");
+      router.replace("/dashboard/shift");
       return;
     }
 
-    const requiresOnboarding = profile.role === "owner" || profile.role === "manager";
-    if (requiresOnboarding && !isOnboardingComplete()) {
+    // 🚫 Owner/Manager must have completed onboarding (business profile exists)
+    const requiresOnboarding =
+      profile.role === "owner" || profile.role === "manager";
+
+    if (requiresOnboarding && !business) {
+      // No business profile = not onboarded yet
       router.replace("/onboarding/create-business");
+      return;
     }
-  }, [isHydrated, profile, pathname, router]);
+  }, [isHydrated, profile, business, pathname, router]);
 
   if (!profile || !isHydrated) return null;
 
@@ -70,6 +75,9 @@ export default function DashboardLayout({
                 </main>
               </div>
             </div>
+
+            {/* ✅ DEBUG COMPONENT - REMOVE AFTER TESTING */}
+            <DebugProfileLoader />
 
             {/* ✅ DEV ONLY ROLE SWITCHER */}
             {process.env.NODE_ENV === "development" && (
