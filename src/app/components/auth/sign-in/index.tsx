@@ -66,6 +66,7 @@ export default function Login() {
         }
       }, 800);
     } catch (err: unknown) {
+      console.error("=== SIGN IN ERROR ===", err);
       const message =
         typeof err === "object" &&
         err !== null &&
