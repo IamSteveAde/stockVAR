@@ -8,8 +8,7 @@ staffUpcomingShift: [
     "api/dashboard/staff/recentUpcomingShift",
 ],
 managerOwnerMetrics: [
-    "api/dashboard/manager-owner/metrics",
-    "api/dashboard/manager/metrics",
+    "/api/dashboard/base/metric"
 ],
 managerOwnerVarSummary: [
     "api/dashboard/manager-owner/var-summary",
@@ -33,8 +32,14 @@ const res = await apiFetchFirstSuccess<ApiEnvelope<unknown> | unknown>(
 return unwrapData(res);
 }
 
+export type DashboardMetricsData = {
+  stockCount: number;
+  unresolvedVar: number;
+  staff: number;
+};
+
 export async function getManagerOwnerDashboardMetrics(token: string) {
-const res = await apiFetchFirstSuccess<ApiEnvelope<unknown> | unknown>(
+const res = await apiFetchFirstSuccess<ApiEnvelope<DashboardMetricsData> | DashboardMetricsData>(
     DASHBOARD_PATHS.managerOwnerMetrics,
     { token }
 );
