@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { login } from "@/lib/api/auth";
 import { getMyBusinessProfile } from "@/lib/api/business";
 import { markOnboardingComplete } from "@/lib/onboarding";
@@ -172,7 +172,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full rounded-lg py-3 text-sm font-medium text-white transition
+              className={`w-full rounded-lg py-3 text-sm font-medium text-white transition flex items-center justify-center gap-2
                 ${
                   isLoading
                     ? "bg-[#0F766E]/60 cursor-not-allowed"
@@ -180,6 +180,7 @@ export default function Login() {
                 }
               `}
             >
+              {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
               {isLoading ? "Processing..." : "Log in"}
             </button>
           </form>

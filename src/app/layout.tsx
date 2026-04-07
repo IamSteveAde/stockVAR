@@ -12,6 +12,7 @@ import { AppContextProvider } from "../context-api/PropertyContext";
 
 import ScrollToTop from "./components/scroll-to-top";
 import Aoscompo from "@/utils/aos";
+import { Toaster } from "react-hot-toast";
 
 
 
@@ -53,6 +54,7 @@ export default function RootLayout({
             <Aoscompo>
               
               <NextTopLoader />
+              <Toaster />
               {children}
               
              

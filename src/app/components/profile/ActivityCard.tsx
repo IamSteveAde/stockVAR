@@ -23,11 +23,12 @@ export type ActivityEvent = {
 };
 
 function toActivityType(log: Partial<AuditLog>): ActivityType {
-  if (log.action?.startsWith("SHIFT_")) return "shift";
+  const action = (log.action || "").toUpperCase();
+  if (action.startsWith("SHIFT_") || action.includes("SHIFT")) return "shift";
   if (
-    log.action?.startsWith("STOCK_") ||
-    log.action?.startsWith("PRODUCT_") ||
-    log.action === "INVENTORY_ADJUST"
+    action.startsWith("STOCK_") ||
+    action.startsWith("PRODUCT_") ||
+    action.includes("INVENTORY")
   ) {
     return "stock";
   }
@@ -48,14 +49,13 @@ function formatAuditTime(value: string | undefined): string {
   });
 }
 
-function normalizeAuditLog(raw: unknown): AuditLog | null {
+function normalizeAuditLog(raw: any): AuditLog | null {
   if (!raw || typeof raw !== "object") return null;
 
-  const candidate = raw as Partial<AuditLog>;
-  const action = candidate.action;
-  const description = candidate.description;
-  const createdAt = candidate.createdAt;
-  const actor = candidate.actor;
+  const action = raw.action;
+  const description = raw.detail || raw.description;
+  const createdAt = raw.createdAt;
+  const actor = raw.staff || raw.actor;
 
   if (!action || typeof action !== "string") return null;
   if (!description || typeof description !== "string") return null;
@@ -63,8 +63,19 @@ function normalizeAuditLog(raw: unknown): AuditLog | null {
   if (!actor || typeof actor !== "object") return null;
 
   return {
-    ...(candidate as AuditLog),
-    id: candidate.id || crypto.randomUUID(),
+    id: raw.id || crypto.randomUUID(),
+    action: action as any,
+    description,
+    createdAt,
+    actor: {
+      staffId: actor.staffId || "unknown",
+      name: actor.name || "Unknown",
+      role: actor.role?.toLowerCase() || "staff",
+    },
+    entity: {
+      type: (raw.entity?.toLowerCase() as any) || "system",
+      name: raw.product && raw.product !== "N/A" ? raw.product : undefined,
+    },
   };
 }
 
@@ -111,9 +122,10 @@ export default function ActivityCard({
       let backendAudit: AuditLog[] = [];
       if (token) {
         try {
-          const response = await getProfileAuditTrail(token);
-          if (Array.isArray(response)) {
-            backendAudit = response
+          const response = await getProfileAuditTrail(token) as any;
+          const trailArray = response?.trail || response;
+          if (Array.isArray(trailArray)) {
+            backendAudit = trailArray
               .map(normalizeAuditLog)
               .filter((entry): entry is AuditLog => Boolean(entry));
           }

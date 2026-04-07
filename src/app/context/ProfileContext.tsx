@@ -40,12 +40,12 @@ function createDefaultProfile(session: AuthSession | null): ProfileData {
   }
 
   return {
-    id: session?.user?.id || crypto.randomUUID(),
+    
     fullName,
-    phone: "",
+    phoneNumber: "",
     email,
     role: session?.user?.role ?? "owner",
-    avatar: "/images/avatar.png",
+    profileUrl: "/images/avatar.png",
     status: "active",
   };
 }
@@ -85,7 +85,7 @@ export function ProfileProvider({
     // Update profile state with session user data
     setProfileState((prev) => ({
       ...prev,
-      id: session?.user?.id || prev.id,
+      
       fullName: session?.user?.fullName || prev.fullName,
       email: session?.user?.email || prev.email,
       role: session?.user?.role ?? prev.role,

@@ -68,7 +68,7 @@ export function BusinessProvider({
             id: profile.id,
             name: profile.name,
             type: profile.type,
-            city: profile.city,
+            city: profile.location,
             staffSize: profile.staffSize,
             timezone: profile.timezone,
             createdAt: profile.createdAt,

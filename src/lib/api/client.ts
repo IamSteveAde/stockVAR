@@ -58,6 +58,8 @@ export async function apiFetch<TResponse>(
         ? JSON.stringify(options.body)
         : undefined,
   });
+  
+  // console.log("API FETH RESPONSE ====> ", await response.text())
 
   const contentType = response.headers.get("content-type") ?? "";
   const isJson = contentType.includes("application/json");

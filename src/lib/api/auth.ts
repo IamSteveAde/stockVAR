@@ -2,15 +2,15 @@ import { apiFetch, apiFetchFirstSuccess } from "./client";
 import type { UserRole } from "@/types/auth";
 
 export type AuthUser = {
-  id: string;
-  fullName: string;
-  email: string;
-  role: UserRole;
+  id?: string;
+  fullName?: string;
+  email?: string;
+  role?: UserRole;
 };
 
 export type AuthSession = {
-  token: string;
-  user: AuthUser;
+  token?: string;
+  user?: AuthUser;
 };
 
 type LoginResponse = {
@@ -141,6 +141,11 @@ export async function signUp(payload: SignUpPayload): Promise<void> {
     method: "POST",
     body,
   });
+  clearSession()
+
+  const session: AuthSession = { user: { email: payload.email } };
+  saveSession(session);
+  // return session;
 }
 
 export async function login(payload: LoginPayload): Promise<AuthSession> {
@@ -150,11 +155,13 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
   });
 
   if (res.status && res.status !== "success") {
+    clearSession()
     throw new Error(res.message || "Invalid email or password.");
   }
 
   const token = res.token ?? res.data?.token;
   if (!token) {
+    clearSession()
     throw new Error("Login response is missing a token.");
   }
 
