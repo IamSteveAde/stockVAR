@@ -16,8 +16,8 @@ export default function ProfileHeader() {
         {/* Avatar */}
         <div className="relative h-20 w-20 shrink-0 rounded-full overflow-hidden">
           <Image
-            key={profile.avatar} // ✅ THIS FIXES IT
-            src={profile.avatar}
+            key={profile.profileUrl} // ✅ THIS FIXES IT
+            src={profile.profileUrl}
             alt={`${profile.fullName} profile picture`}
             fill
             className="object-cover rounded-full"
@@ -42,14 +42,12 @@ export default function ProfileHeader() {
 
             <span
               className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                profile.status === "active"
+                profile.status.toLowerCase() === "active"
                   ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
               }`}
             >
-              {profile.status === "active"
-                ? "Active"
-                : "Suspended"}
+              {profile.status}
             </span>
           </div>
 

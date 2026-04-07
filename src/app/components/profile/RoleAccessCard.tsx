@@ -30,7 +30,7 @@ export default function RoleAccessCard() {
   const { profile } = useProfile();
 
   const accessLevel = getAccessLevel(profile.role);
-  const isActive = profile.status === "active";
+  const isActive = profile.status.toLowerCase() === "active";
 
   return (
     <section
@@ -64,7 +64,7 @@ export default function RoleAccessCard() {
           value={accessLevel}
         />
 
-        <StatusRow active={isActive} />
+        <StatusRow active={isActive} status_={profile.status} />
       </div>
     </section>
   );
@@ -97,7 +97,7 @@ function InfoRow({
   );
 }
 
-function StatusRow({ active }: { active: boolean }) {
+function StatusRow({ active, status_ }: { active: boolean, status_: string }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -116,7 +116,8 @@ function StatusRow({ active }: { active: boolean }) {
             : "bg-red-100 text-red-700"
         }`}
       >
-        {active ? "Active" : "Suspended"}
+        {/* {active ? "Active" : "Suspended"} */}
+        {status_}
       </span>
     </div>
   );

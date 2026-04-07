@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
 import { persistSignupEmail, persistSignupName, persistSignupPhone } from "@/lib/onboarding";
 
@@ -287,8 +287,15 @@ export default function Signup() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-lg bg-[#0F766E] py-3 text-sm font-medium text-white transition hover:bg-[#0B5F58] disabled:opacity-60"
+              className={`w-full rounded-lg py-3 text-sm font-medium text-white transition flex items-center justify-center gap-2
+                ${
+                  isLoading
+                    ? "bg-[#0F766E]/60 cursor-not-allowed"
+                    : "bg-[#0F766E] hover:bg-[#0B5F58]"
+                }
+              `}
             >
+              {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
               {isLoading ? "Creating account…" : "Create account"}
             </button>
           </form>

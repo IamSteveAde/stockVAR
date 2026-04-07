@@ -6,16 +6,22 @@ import {
   RotateCcw,
   Pencil,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import AddProductModal from "./AddProductModal";
 import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
 
 
+import { getSession } from "@/lib/api/auth";
+import { createProduct, listProducts } from "@/lib/api/stock";
+import { useRouter } from "next/navigation";
+
 /* ================= TYPES ================= */
 
 export type Product = {
-  id: number;
+  id: string | number;
   sku: string;
   name: string;
   unit: string;
@@ -48,18 +54,58 @@ const now = () => new Date().toLocaleString();
 /* ================= COMPONENT ================= */
 
 export default function ProductsTable() {
+  const PAGE_SIZE = 10;
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [hydrated, setHydrated] = useState(false);
-const { profile } = useProfile();
+  const { profile } = useProfile();
   const [openAdd, setOpenAdd] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   /* Load */
   useEffect(() => {
-    setProducts(loadProducts());
-    setHydrated(true);
-  }, []);
+    let mounted = true;
+    const hydrate = async () => {
+      const token = getSession()?.token;
+      if (!token) {
+        router.push("/auth/login");
+        return;
+      }
+      try {
+        const response: any = await listProducts(token, page, PAGE_SIZE);
+        if (mounted && response && response.products) {
+          const mapped = response.products.map((p: any) => ({
+            id: p.uid || p.id,
+            sku: p.uid || p.sku,
+            name: p.name,
+            unit: p.unit,
+            status: (p.status?.toLowerCase() as "active" | "archived") || "active",
+            updatedAt: p.updatedAt || now()
+          }));
+          setProducts(mapped);
+          setTotalPages(response.meta?.pageCount || 1);
+          setTotalCount(response.meta?.totalCount || mapped.length);
+          setHydrated(true);
+          return;
+        }
+      } catch (err) { }
+
+      if (mounted) {
+        const stored = loadProducts();
+        if (stored.length > 0) {
+          setProducts(stored);
+          setTotalCount(stored.length);
+        }
+        setHydrated(true);
+      }
+    };
+    hydrate();
+    return () => { mounted = false; };
+  }, [page]);
 
   /* Persist */
   useEffect(() => {
@@ -68,121 +114,126 @@ const { profile } = useProfile();
 
   /* ================= ACTIONS ================= */
 
-  const productExists = (name: string, ignoreId?: number) =>
+  const productExists = (name: string, ignoreId?: string | number) =>
     products.some(
       (p) =>
         p.name.toLowerCase() === name.toLowerCase() &&
         p.id !== ignoreId
     );
 
-  const addProduct = (data: {
+  const addProduct = async (data: {
     name: string;
-    sku: string;
     unit: string;
   }) => {
-    if (productExists(data.name)) {
-      setError("Product already exists");
-      return;
+    const token = getSession()?.token;
+    if (!token) throw new Error("Authentication required");
+
+    try {
+      const created = (await createProduct(data, token)) as any;
+
+      setProducts((prev) => [
+        {
+          id: created.uid || Date.now(),
+          sku: created.uid || `STK-${data.name}`,
+          name: created.name || data.name,
+          unit: created.unit || data.unit,
+          status: (created.status?.toLowerCase() as "active" | "archived") || "active",
+          updatedAt: created.updatedAt || now(),
+        },
+        ...prev,
+      ]);
+
+      setError(null);
+
+    } catch (err: any) {
+      setError(err.message || "An error occurred creating the product");
+      throw err;
     }
-
-    setProducts((prev) => [
-      {
-        id: Date.now(),
-        name: data.name,
-        sku: data.sku,
-        unit: data.unit,
-        status: "active",
-        updatedAt: now(),
-      },
-      ...prev,
-    ]);
-
-    setError(null);
   };
 
   const saveEdit = () => {
-  if (!editing) return;
+    if (!editing) return;
 
-  if (productExists(editing.name, editing.id)) {
-    setError("Another product with this name already exists");
-    return;
-  }
+    if (productExists(editing.name, editing.id)) {
+      setError("Another product with this name already exists");
+      return;
+    }
 
-  const before = products.find((p) => p.id === editing.id);
+    const before = products.find((p) => p.id === editing.id);
 
-  setProducts((prev) =>
-    prev.map((p) =>
-      p.id === editing.id
-        ? { ...editing, updatedAt: now() }
-        : p
-    )
-  );
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === editing.id
+          ? { ...editing, updatedAt: now() }
+          : p
+      )
+    );
 
-  writeAuditLog({
-    actor: {
-      staffId: profile.id,
-      name: profile.fullName,
-      role: profile.role,
-    },
-    action: "PRODUCT_EDIT",
-    description: "Product updated",
-    entity: {
-      type: "product",
-      id: editing.sku,
-      name: editing.name,
-    },
-    changes: {
-      before,
-      after: editing,
-    },
-  });
+    writeAuditLog({
+      actor: {
+        staffId: (profile as any).id,
+        name: profile.fullName,
+        role: profile.role,
+      },
+      action: "PRODUCT_EDIT",
+      description: "Product updated",
+      entity: {
+        type: "product",
+        id: editing.sku,
+        name: editing.name,
+      },
+      changes: {
+        before,
+        after: editing,
+      },
+    });
 
-  setEditing(null);
-  setError(null);
-};
+    setEditing(null);
+    setError(null);
+  };
 
 
-  const toggleArchive = (id: number) => {
-  const product = products.find((p) => p.id === id);
-  if (!product) return;
+  const toggleArchive = (id: string | number) => {
+    const product = products.find((p) => p.id === id);
+    if (!product) return;
 
-  const updatedStatus =
-    product.status === "active" ? "archived" : "active";
+    const updatedStatus =
+      product.status === "active" ? "archived" : "active";
 
-  setProducts((prev) =>
-    prev.map((p) =>
-      p.id === id
-        ? {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
             ...p,
             status: updatedStatus,
             updatedAt: now(),
           }
-        : p
-    )
-  );
+          : p
+      )
+    );
 
-  writeAuditLog({
-    actor: {
-      staffId: profile.id,
-      name: profile.fullName,
-      role: profile.role,
-    },
-    action: "PRODUCT_ARCHIVE",
-    description:
-      updatedStatus === "archived"
-        ? "Product archived"
-        : "Product unarchived",
-    entity: {
-      type: "product",
-      id: product.sku,
-      name: product.name,
-    },
-    changes: {
-      before: { status: product.status },
-      after: { status: updatedStatus },
-    },
-  });
-};
+    writeAuditLog({
+      actor: {
+        staffId: (profile as any).id,
+        name: profile.fullName,
+        role: profile.role,
+      },
+      action: "PRODUCT_ARCHIVE",
+      description:
+        updatedStatus === "archived"
+          ? "Product archived"
+          : "Product unarchived",
+      entity: {
+        type: "product",
+        id: product.sku,
+        name: product.name,
+      },
+      changes: {
+        before: { status: product.status },
+        after: { status: updatedStatus },
+      },
+    });
+  };
 
 
   /* ================= RENDER ================= */
@@ -221,8 +272,8 @@ const { profile } = useProfile();
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs text-gray-400 font-medium">
-  #{index + 1}
-</p>
+                  #{index + 1}
+                </p>
 
                 <p className="font-medium">{p.name}</p>
                 <p className="text-xs text-gray-500 font-mono">
@@ -338,6 +389,50 @@ const { profile } = useProfile();
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* ================= PAGINATION ================= */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-4 border-t bg-white rounded-xl shadow-sm">
+        <p className="text-sm text-gray-500">
+          Page <span className="font-medium text-gray-900">{page}</span> of{" "}
+          <span className="font-medium text-gray-900">{totalPages}</span>
+        </p>
+
+        <div className="w-full flex justify-center sm:justify-end">
+          <div className="flex items-center gap-3">
+            <button
+              aria-label="Previous page"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="
+                h-10 w-10 flex items-center justify-center rounded-full
+                bg-[#0F766E] text-white
+                hover:bg-[#0d665f]
+                focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+                disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0F766E]
+                transition
+              "
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <button
+              aria-label="Next page"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="
+                h-10 w-10 flex items-center justify-center rounded-full
+                bg-[#0F766E] text-white
+                hover:bg-[#0d665f]
+                focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+                disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0F766E]
+                transition
+              "
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ================= ADD MODAL ================= */}

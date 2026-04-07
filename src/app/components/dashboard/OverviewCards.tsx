@@ -9,131 +9,71 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-/* ================= STORAGE KEYS ================= */
-
-const PRODUCTS_KEY = "stockvar_products";
-const SHIFTS_KEY = "stockvar_shifts";
-const LOGS_KEY = "stockvar_inventory_logs";
-const STAFF_KEY = "stockvar_staff";
-
 /* ================= TYPES ================= */
 
-type Product = {
-  sku: string;
-  name: string;
-  unit: string;
-};
-
-type InventoryLog = {
-  sku: string;
-  quantity: number;
-  action: "in" | "out";
-  shiftId: string;
-};
-
-type Staff = {
-  id: string;
-  status: "active" | "invited" | "archived";
-};
-
-type SnapshotItem = {
-  sku: string;
-  quantity: number;
-};
-
-type Shift = {
-  id: string;
-  status: "created" | "started" | "ended";
-  openingSnapshot?: SnapshotItem[];
-  closingSnapshot?: SnapshotItem[];
-};
+import { getSession } from "@/lib/api/auth";
+import { getManagerOwnerDashboardMetrics, type DashboardMetricsData } from "@/lib/api/dashboard";
 
 /* ================= COMPONENT ================= */
 
 export default function OverviewCards() {
   const router = useRouter();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [logs, setLogs] = useState<InventoryLog[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
+  const [metrics, setMetrics] = useState<DashboardMetricsData>({
+    stockCount: 0,
+    unresolvedVar: 0,
+    staff: 0,
+  });
+  
+  const [loading, setLoading] = useState(true);
 
   /* ================= LOAD DATA ================= */
 
   useEffect(() => {
-    const load = () => {
-      setProducts(
-        JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]")
-      );
-      setShifts(
-        JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]")
-      );
-      setLogs(
-        JSON.parse(localStorage.getItem(LOGS_KEY) || "[]")
-      );
-      setStaff(
-        JSON.parse(localStorage.getItem(STAFF_KEY) || "[]")
-      );
+    let mounted = true;
+
+    async function loadMetrics() {
+      const session = getSession();
+      if (!session?.token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const data = await getManagerOwnerDashboardMetrics(session.token);
+        if (mounted && data) {
+          setMetrics({
+            stockCount: data.stockCount || 0,
+            unresolvedVar: data.unresolvedVar || 0,
+            staff: data.staff || 0,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard metrics", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadMetrics();
+
+    // Trigger refresh when requested elsewhere in the app
+    const handleRefresh = () => {
+      setLoading(true);
+      void loadMetrics();
     };
 
-    load();
-    window.addEventListener("stockvar:updated", load);
-    return () =>
-      window.removeEventListener("stockvar:updated", load);
+    window.addEventListener("stockvar:updated", handleRefresh);
+    return () => {
+      mounted = false;
+      window.removeEventListener("stockvar:updated", handleRefresh);
+    };
   }, []);
 
   /* ================= METRICS ================= */
 
-  /** 1️⃣ Total stock items */
-  const totalItems = products.length;
-
-  /** 2️⃣ Active staff count */
-  const activeStaffCount = staff.filter(
-    (s) => s.status === "active"
-  ).length;
-
-  /** 3️⃣ Unresolved variance from ended shifts */
-  const unresolvedVariance = useMemo(() => {
-    let variance = 0;
-
-    shifts.forEach((shift) => {
-      if (
-        shift.status !== "ended" ||
-        !shift.openingSnapshot ||
-        !shift.closingSnapshot
-      )
-        return;
-
-      products.forEach((p) => {
-        const opening =
-          shift.openingSnapshot?.find(
-            (i) => i.sku === p.sku
-          )?.quantity ?? 0;
-
-        const closing =
-          shift.closingSnapshot?.find(
-            (i) => i.sku === p.sku
-          )?.quantity ?? 0;
-
-        const shiftLogs = logs.filter(
-          (l) => l.shiftId === shift.id && l.sku === p.sku
-        );
-
-        const added = shiftLogs
-          .filter((l) => l.action === "in")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const used = shiftLogs
-          .filter((l) => l.action === "out")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const expected = opening + added - used;
-        variance += closing - expected;
-      });
-    });
-
-    return variance;
-  }, [shifts, products, logs]);
+  const totalItems = metrics.stockCount;
+  const activeStaffCount = metrics.staff;
+  const unresolvedVariance = metrics.unresolvedVar;
 
   /* ================= CARD CONFIG ================= */
 

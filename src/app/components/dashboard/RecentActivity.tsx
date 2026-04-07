@@ -1,135 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Shift } from "../shifts/types";
-
-/* ================= STORAGE KEYS ================= */
-
-const PRODUCTS_KEY = "stockvar_products";
-const SHIFTS_KEY = "stockvar_shifts";
-const LOGS_KEY = "stockvar_inventory_logs";
-
-/* ================= TYPES ================= */
-
-type Product = {
-  sku: string;
-  name: string;
-  unit: string;
-};
-
-type Log = {
-  sku: string;
-  quantity: number;
-  action: "in" | "out";
-  shiftId: string;
-};
-
-type SnapshotItem = {
-  sku: string;
-  quantity: number;
-};
-
-type Row = {
-  sku: string;
-  name: string;
-  unit: string;
-  opening: number;
-  added: number;
-  used: number;
-  expectedLeft: number;
-  actualLeft: number;
-  variance: number;
-};
+import { type VarSummaryItem } from "@/lib/api/dashboard";
 
 /* ================= COMPONENT ================= */
 
-export default function OverviewReport() {
+export default function OverviewReport({ data }: { data: VarSummaryItem[] }) {
   const router = useRouter();
-
-  const [products, setProducts] = useState<Product[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [logs, setLogs] = useState<Log[]>([]);
-
-  /* ================= LOAD DATA ================= */
-
-  useEffect(() => {
-    const load = () => {
-      setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
-      setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
-      setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
-    };
-
-    load();
-    window.addEventListener("stockvar:updated", load);
-
-    return () =>
-      window.removeEventListener("stockvar:updated", load);
-  }, []);
-
-  /* ================= BUILD VARIANCE ================= */
-
-  const rows: Row[] = useMemo(() => {
-    const endedShifts = shifts.filter(
-      (s) =>
-        s.status === "ended" &&
-        s.openingSnapshot &&
-        s.closingSnapshot
-    );
-
-    if (!endedShifts.length) return [];
-
-    return products
-      .map((p) => {
-        let opening = 0;
-        let added = 0;
-        let used = 0;
-        let actualLeft = 0;
-
-        endedShifts.forEach((shift) => {
-          const o = shift.openingSnapshot?.find(
-            (i: SnapshotItem) => i.sku === p.sku
-          );
-          const c = shift.closingSnapshot?.find(
-            (i: SnapshotItem) => i.sku === p.sku
-          );
-
-          opening += o?.quantity || 0;
-          actualLeft += c?.quantity || 0;
-
-          const shiftLogs = logs.filter(
-            (l) => l.shiftId === shift.id && l.sku === p.sku
-          );
-
-          added += shiftLogs
-            .filter((l) => l.action === "in")
-            .reduce((s, l) => s + l.quantity, 0);
-
-          used += shiftLogs
-            .filter((l) => l.action === "out")
-            .reduce((s, l) => s + l.quantity, 0);
-        });
-
-        const expectedLeft = opening + added - used;
-        const variance = actualLeft - expectedLeft;
-
-        return {
-          sku: p.sku,
-          name: p.name,
-          unit: p.unit,
-          opening,
-          added,
-          used,
-          expectedLeft,
-          actualLeft,
-          variance,
-        };
-      })
-      .filter((r) => r.variance !== 0)
-      .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))
-      .slice(0, 5); // dashboard limit
-  }, [products, shifts, logs]);
 
   /* ================= UI ================= */
 
@@ -154,21 +32,21 @@ export default function OverviewReport() {
       </div>
 
       {/* Content */}
-      {rows.length === 0 ? (
+      {!data || data.length === 0 ? (
         <div className="p-6 text-sm text-gray-400 text-center">
           No stock variance recorded
         </div>
       ) : (
         <div className="divide-y">
-          {rows.map((r) => (
+          {data.map((r, idx) => (
             <div
-              key={r.sku}
+              key={r.name || idx}
               className="px-5 py-4 flex items-center justify-between"
             >
               <div>
                 <p className="font-medium text-sm">{r.name}</p>
                 <p className="text-xs text-gray-500">
-                  Expected {r.expectedLeft} • Actual {r.actualLeft}{" "}
+                  Expected {r.expectedCount} • Actual {r.actualCount}{" "}
                   {r.unit}
                 </p>
               </div>

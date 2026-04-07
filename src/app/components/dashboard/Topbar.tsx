@@ -293,10 +293,10 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
             className="h-8 w-8 overflow-hidden rounded-full bg-white/20 flex items-center justify-center text-white text-xs"
             aria-label="Open user menu"
           >
-            {profile.avatar ? (
+            {profile.profileUrl ? (
               <Image
-                key={profile.avatar}
-                src={profile.avatar}
+                key={profile.profileUrl}
+                src={profile.profileUrl}
                 alt={profile.fullName}
                 width={32}
                 height={32}

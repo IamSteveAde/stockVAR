@@ -6,9 +6,10 @@ import toast from "react-hot-toast";
 
 import { useBusiness } from "@/app/context/BusinessContext";
 import { useSubscription } from "@/app/context/SubscriptionContext";
-import { getSession } from "@/lib/api/auth";
+import { clearSession, getSession } from "@/lib/api/auth";
 import { createBusinessProfile } from "@/lib/api/business";
 import { updateMyProfile } from "@/lib/api/profile";
+import { ApiError } from "@/lib/api/client";
 
 import WelcomeStep from "./steps/WelcomeStep";
 import EmailVerificationStep from "./steps/EmailVerificationStep";
@@ -45,6 +46,7 @@ export default function CreateBusinessWizard() {
 
   const [step, setStep] = useState(0);
   const [emailVerified, setEmailVerified] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get email from active session (user already signed up)
   const session = getSession();
@@ -78,6 +80,9 @@ export default function CreateBusinessWizard() {
   /* ================= FINAL SUBMIT ================= */
 
   const handleFinish = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       // Get current session
       const session = getSession();
@@ -88,42 +93,20 @@ export default function CreateBusinessWizard() {
       }
 
       // Call backend to create/update business profile
+
       const businessProfile = await createBusinessProfile(
         {
           name: form.businessName,
           businessType: form.businessType,
-          location: form.city,
+          // city: form.city,
           dailyStaffSize: form.staffSize,
-          staffSize: form.staffSize,
-          timezone: "Africa/Lagos",
+          location: form.city,
+          // timezone: "Africa/Lagos",
         },
         session.token
       );
 
       // Update local context with backend data
-      updateBusiness({
-        id: businessProfile.id,
-        name: businessProfile.name,
-        type: businessProfile.type,
-        city: businessProfile.city,
-        staffSize: businessProfile.staffSize,
-        timezone: businessProfile.timezone,
-        createdAt: businessProfile.createdAt,
-      });
-
-      const preferredFullName =
-        readSignupName().trim() || session.user?.fullName?.trim() || undefined;
-
-      if (preferredFullName) {
-        await updateMyProfile(
-          {
-            fullName: preferredFullName,
-            email: session.user?.email,
-            status: "active",
-          },
-          session.token
-        );
-      }
 
       // Mark onboarding complete in local storage
       // This allows users to persist state across sessions
@@ -132,18 +115,30 @@ export default function CreateBusinessWizard() {
       clearSignupName();
 
       // Start trial period
-      startTrial();
+      // startTrial();
 
       toast.success("Business profile created successfully!");
+      clearSession()
 
-      // Redirect to dashboard
+      // Redirect to signin
       setTimeout(() => {
-        router.push("/dashboard");
-      }, 500);
+        router.push("/auth/login");
+      }, 5000);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create business profile";
+      let message = "Failed to create business profile";
+
+      if (error instanceof ApiError) {
+        if (error.status !== 500) {
+          message = error.message || error.data?.message || message;
+        } else {
+          message = "An internal server error occurred. Please try again later.";
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+
       toast.error(message);
+      setIsSubmitting(false);
     }
   };
 
@@ -229,7 +224,7 @@ export default function CreateBusinessWizard() {
         )}
 
         {step === 6 && (
-          <CompleteStep onFinish={handleFinish} />
+          <CompleteStep onFinish={handleFinish} isLoading={isSubmitting} />
         )}
       </div>
     </div>

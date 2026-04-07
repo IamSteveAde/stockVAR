@@ -9,11 +9,18 @@ import {
   EyeOff,
   X,
 } from "lucide-react";
+import { useProfile } from "@/app/context/ProfileContext";
+import { formatDistanceToNow } from "date-fns";
 
 /* ================= MAIN ================= */
 
 export default function SecurityCard() {
   const [open, setOpen] = useState(false);
+  const { profile } = useProfile();
+
+  const lastChangedText = profile?.lastPasswordChange
+    ? `Last changed ${formatDistanceToNow(new Date(profile.lastPasswordChange), { addSuffix: true })}`
+    : "No record of password change";
 
   return (
     <>
@@ -42,7 +49,7 @@ export default function SecurityCard() {
               Password
             </div>
             <div className="text-xs text-gray-500">
-              Last changed 2 weeks ago
+              {lastChangedText}
             </div>
           </div>
 

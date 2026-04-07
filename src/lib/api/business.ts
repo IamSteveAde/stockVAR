@@ -1,4 +1,5 @@
-import { apiFetchFirstSuccess } from "./client";
+import { BaseResponse } from "@/types/auth";
+import { ApiError, apiFetch, apiFetchFirstSuccess } from "./client";
 import { unwrapData, type ApiEnvelope } from "./response";
 
 type BackendBusinessProfile = {
@@ -26,7 +27,7 @@ export type BusinessProfile = {
   phone?: string;
   name: string;
   type: string;
-  city: string;
+  location: string;
   staffSize?: string;
   timezone: string;
   createdAt: string;
@@ -34,11 +35,8 @@ export type BusinessProfile = {
 
 export type CreateBusinessPayload = {
   name: string;
-  type?: string;
-  businessType?: string;
-  city?: string;
-  location?: string;
-  staffSize?: string;
+  businessType: string;
+  location: string;
   dailyStaffSize?: string;
   timezone?: string;
 };
@@ -46,17 +44,17 @@ export type CreateBusinessPayload = {
 export type UpdateBusinessPayload = Partial<CreateBusinessPayload>;
 
 const BUSINESS_PATHS = {
-  me: ["api/profile/me/business"],
-  create: ["api/profile/me/business"],
+  me: ["api/profile/me"],
+  create: ["api/business/profile/create"],
   update: ["api/profile/me/business"],
 };
 
 function toBackendPayload(payload: CreateBusinessPayload | UpdateBusinessPayload) {
   return {
     name: payload.name,
-    businessType: payload.businessType ?? payload.type,
-    location: payload.location ?? payload.city,
-    dailyStaffSize: payload.dailyStaffSize ?? payload.staffSize,
+    businessType: payload.businessType ?? payload.businessType,
+    location: payload.location ,
+    dailyStaffSize: payload.dailyStaffSize ,
   };
 }
 
@@ -68,10 +66,10 @@ function normalizeBusinessProfile(
 
   const value = payload as BackendBusinessProfile;
   const name = value.name ?? fallback?.name ?? "";
-  const type = value.type ?? value.businessType ?? fallback?.type ?? fallback?.businessType ?? "";
-  const city = value.city ?? value.location ?? fallback?.city ?? fallback?.location ?? "";
+  const type = value.businessType;
+  const location = value.location;
 
-  if (!name || !type || !city) {
+  if (!name || !type || !location) {
     return null;
   }
 
@@ -83,8 +81,8 @@ function normalizeBusinessProfile(
     phone: value.phone,
     name,
     type,
-    city,
-    staffSize: value.staffSize ?? value.dailyStaffSize ?? fallback?.staffSize ?? fallback?.dailyStaffSize,
+    location,
+    staffSize: value.dailyStaffSize ,
     timezone: value.timezone ?? fallback?.timezone ?? "Africa/Lagos",
     createdAt: value.createdAt ?? new Date().toISOString(),
   };
@@ -94,9 +92,9 @@ function fallbackBusinessProfile(payload: CreateBusinessPayload | UpdateBusiness
   return {
     id: `local-${Date.now()}`,
     name: payload.name ?? "",
-    type: payload.businessType ?? payload.type ?? "",
-    city: payload.location ?? payload.city ?? "",
-    staffSize: payload.dailyStaffSize ?? payload.staffSize,
+    type: payload.businessType ?? payload.businessType ?? "",
+    location: payload.location ?? payload.location ?? "",
+    staffSize: payload.dailyStaffSize,
     timezone: payload.timezone ?? "Africa/Lagos",
     createdAt: new Date().toISOString(),
   };
@@ -108,8 +106,9 @@ export async function getMyBusinessProfile(token: string) {
       BUSINESS_PATHS.me,
       { token }
     );
-    const data = unwrapData(res);
-    return normalizeBusinessProfile(data);
+
+    // const res = await apiFetch(BUSINESS_PATHS.me, { token })
+    return unwrapData(res);
   } catch {
     // Business profile doesn't exist yet (not onboarded)
     return null;
@@ -120,16 +119,39 @@ export async function createBusinessProfile(
   payload: CreateBusinessPayload,
   token: string
 ) {
-  const res = await apiFetchFirstSuccess<ApiEnvelope<BackendBusinessProfile> | BackendBusinessProfile>(
-    BUSINESS_PATHS.create,
-    {
-      method: "POST",
-      body: toBackendPayload(payload),
-      token,
-    }
-  );
-  const data = unwrapData(res);
-  return normalizeBusinessProfile(data, payload) ?? fallbackBusinessProfile(payload);
+
+  console.log("payload ===> ", payload)
+
+  // const res = await apiFetchFirstSuccess<ApiEnvelope<BusinessProfile> | BusinessProfile>(
+  //   BUSINESS_PATHS.create,
+  //   {
+  //     method: "POST",
+  //     body: payload,
+  //     token,
+  //   }
+  // );
+
+  const res = await apiFetch<BaseResponse>(BUSINESS_PATHS.create[0], {
+    method: "POST",
+    body: payload,
+    token,
+  });
+  
+  if (res.status && res.status !== "success") {
+    throw new Error(res.message || "Failed to create business profile.");
+  }
+
+  return unwrapData(res);
+
+  // console.log("res====>", res)
+
+  // if (res.status && res.status !== "success") {
+  //   throw new Error(res.message || "Failed to create business profile.");
+  // }
+
+  // // console.log("data ===>", unwrapData(res))
+
+  // return unwrapData(res);
 }
 
 export async function updateBusinessProfile(

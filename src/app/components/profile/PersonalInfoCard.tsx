@@ -52,7 +52,7 @@ export default function PersonalInfoCard({
     reader.onload = () => {
       setDraft({
         ...draft,
-        avatar: reader.result as string,
+        profileUrl: reader.result as string,
       });
     };
     reader.readAsDataURL(file);
@@ -103,7 +103,7 @@ export default function PersonalInfoCard({
       <div className="flex items-center gap-4">
         <div className="relative h-20 w-20 rounded-full overflow-hidden border">
           <Image
-            src={draft.avatar}
+            src={draft.profileUrl}
             alt="Profile avatar"
             fill
             className="object-cover"
@@ -137,11 +137,11 @@ export default function PersonalInfoCard({
 
       <Field
         label="Phone number"
-        value={draft.phone}
+        value={draft.phoneNumber}
         icon={Phone}
         editable={editing}
         onChange={(v) =>
-          setDraft({ ...draft, phone: v })
+          setDraft({ ...draft, phoneNumber: v })
         }
       />
 

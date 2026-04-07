@@ -234,7 +234,7 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
         {/* User footer */}
         <div className="px-4 py-4 border-t border-white/10 flex items-center gap-3">
           <Image
-            src={profile.avatar}
+            src={profile.profileUrl}
             alt={profile.fullName}
             width={36}
             height={36}

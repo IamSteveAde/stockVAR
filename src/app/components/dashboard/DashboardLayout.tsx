@@ -8,100 +8,47 @@ import QuickActions from "./QuickActions";
 import VarianceChart from "./VarianceChart";
 import { Shift } from "../shifts/types";
 
-/* ================= TYPES ================= */
-
-type Product = {
-  sku: string;
-  name: string;
-  unit: string;
-};
-
-type InventoryLog = {
-  sku: string;
-  quantity: number;
-  action: "in" | "out";
-  shiftId: string;
-};
-
-type StockSnapshot = {
-  sku: string;
-  quantity: number;
-};
-
-type VarianceRow = {
-  name: string;
-  variance: number;
-};
+import { getSession } from "@/lib/api/auth";
+import { getManagerOwnerVarSummary, type VarSummaryItem } from "@/lib/api/dashboard";
 
 /* ================= COMPONENT ================= */
 
 export default function DashboardLayout() {
-  const [varianceData, setVarianceData] = useState<VarianceRow[]>([]);
+  const [varianceData, setVarianceData] = useState<VarSummaryItem[]>([]);
 
   /* ================= LOAD DASHBOARD VARIANCE ================= */
 
   useEffect(() => {
-    const products: Product[] = JSON.parse(
-      localStorage.getItem("stockvar_products") || "[]"
-    );
+    let mounted = true;
 
-    const shifts: Shift[] = JSON.parse(
-      localStorage.getItem("stockvar_shifts") || "[]"
-    );
+    async function loadVariance() {
+      const session = getSession();
+      if (!session?.token) return;
 
-    const logs: InventoryLog[] = JSON.parse(
-      localStorage.getItem("stockvar_inventory_logs") || "[]"
-    );
+      try {
+        const response = await getManagerOwnerVarSummary(session.token);
+        if (mounted && response?.data) {
+          const sorted = [...response.data]
+            .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))
+            .slice(0, 6);
+          setVarianceData(sorted);
+        }
+      } catch (err) {
+        console.error("Failed to load variance summary", err);
+      }
+    }
 
-    const endedShifts = shifts
-      .filter(
-        (s) =>
-          s.status === "ended" &&
-          s.openingSnapshot &&
-          s.closingSnapshot
-      )
-      .slice(-5);
+    loadVariance();
 
-    const result: VarianceRow[] = products.map((p) => {
-      let variance = 0;
+    const handleRefresh = () => {
+      void loadVariance();
+    };
 
-      endedShifts.forEach((shift) => {
-        const opening =
-          shift.openingSnapshot!.find(
-            (i: StockSnapshot) => i.sku === p.sku
-          )?.quantity || 0;
-
-        const closing =
-          shift.closingSnapshot!.find(
-            (i: StockSnapshot) => i.sku === p.sku
-          )?.quantity || 0;
-
-        const shiftLogs = logs.filter(
-          (l) => l.shiftId === shift.id && l.sku === p.sku
-        );
-
-        const added = shiftLogs
-          .filter((l) => l.action === "in")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const used = shiftLogs
-          .filter((l) => l.action === "out")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        variance += closing - (opening + added - used);
-      });
-
-      return { name: p.name, variance };
-    });
-
-    setVarianceData(
-      result
-        .filter((r) => r.variance !== 0)
-        .sort(
-          (a, b) => Math.abs(b.variance) - Math.abs(a.variance)
-        )
-        .slice(0, 6)
-    );
+    window.addEventListener("stockvar:updated", handleRefresh);
+    return () => {
+      mounted = false;
+      window.removeEventListener("stockvar:updated", handleRefresh);
+    };
   }, []);
 
   /* ================= UI ================= */
@@ -116,7 +63,7 @@ export default function DashboardLayout() {
 </div>
 
 
-      <RecentActivity />
+      <RecentActivity data={varianceData} />
       <QuickActions />
     </main>
   );
