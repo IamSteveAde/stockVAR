@@ -17,8 +17,8 @@ Pick<ProfileData, "fullName" | "phone" | "email" | "avatar" | "status">
 const PROFILE_PATHS = {
 me: ["api/profile/me"],
 updateMe: ["api/profile/me"],
-createProfile: ["api/profile/create-profile", "api/profile/createProfile"],
-auditTrail: ["api/profile/audit-trail", "api/profile/auditTrail"],
+createProfile: ["api/profile/me/business", "api/profile/me/business"],
+auditTrail: ["api/profile/audit-trail/list", "api/profile/auditTrail"],
 };
 
 export async function getMyProfile(token: string) {

@@ -57,6 +57,8 @@ export async function apiFetch<TResponse>(
       options.body !== undefined
         ? JSON.stringify(options.body)
         : undefined,
+    // credentials: "include",
+    // mode: "cors",
   });
 
   const contentType = response.headers.get("content-type") ?? "";

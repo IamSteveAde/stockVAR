@@ -10,11 +10,12 @@ import { getSession } from "@/lib/api/auth";
 import { getMyBusinessProfile } from "@/lib/api/business";
 
 /* =======================
-   TYPES
+  TYPES
 ======================= */
 
 export type BusinessData = {
   id: string;
+  fullName?: string;
   name: string;
   type: string;
   email?: string;
@@ -33,14 +34,38 @@ type BusinessContextType = {
 };
 
 /* =======================
-   CONTEXT
+  CONTEXT
 ======================= */
 
 const BusinessContext =
   createContext<BusinessContextType | null>(null);
 
+const BUSINESS_KEY_PREFIX = "stockvar_business";
+
+function resolveBusinessKey() {
+  const session = getSession();
+  const userId = session?.user?.id?.trim();
+  if (userId) return `${BUSINESS_KEY_PREFIX}:${userId}`;
+
+  const email = session?.user?.email?.trim().toLowerCase();
+  if (email) return `${BUSINESS_KEY_PREFIX}:${email}`;
+
+  return `${BUSINESS_KEY_PREFIX}:anonymous`;
+}
+
+function readCachedBusiness(): BusinessData | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(resolveBusinessKey());
+    return raw ? (JSON.parse(raw) as BusinessData) : null;
+  } catch {
+    return null;
+  }
+}
+
 /* =======================
-   PROVIDER
+  PROVIDER
 ======================= */
 
 export function BusinessProvider({
@@ -51,6 +76,14 @@ export function BusinessProvider({
   const [business, setBusiness] =
     useState<BusinessData | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+
+  /* 🔹 Seed business profile from local cache first for instant settings rendering */
+  useEffect(() => {
+    const cached = readCachedBusiness();
+    if (cached) {
+      setBusiness(cached);
+    }
+  }, []);
 
   /* 🔹 Load business profile from backend on mount */
   useEffect(() => {
@@ -64,15 +97,24 @@ export function BusinessProvider({
       try {
         const profile = await getMyBusinessProfile(session.token);
         if (profile) {
-          setBusiness({
+          const nextBusiness: BusinessData = {
             id: profile.id,
+            fullName: profile.fullName,
             name: profile.name,
             type: profile.type,
+            email: profile.email,
+            phone: profile.phone,
             city: profile.city,
             staffSize: profile.staffSize,
             timezone: profile.timezone,
             createdAt: profile.createdAt,
-          });
+          };
+
+          setBusiness(nextBusiness);
+          localStorage.setItem(
+            resolveBusinessKey(),
+            JSON.stringify(nextBusiness)
+          );
         }
       } catch (error) {
         // Business profile doesn't exist yet or API error
@@ -92,6 +134,7 @@ export function BusinessProvider({
     setBusiness((prev) => {
       const updated: BusinessData = {
         id: data.id ?? prev?.id ?? crypto.randomUUID(),
+        fullName: data.fullName ?? prev?.fullName,
         name: data.name ?? prev?.name ?? "",
         type: data.type ?? prev?.type ?? "",
         email: data.email ?? prev?.email,
@@ -107,11 +150,21 @@ export function BusinessProvider({
           new Date().toISOString(),
       };
 
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          resolveBusinessKey(),
+          JSON.stringify(updated)
+        );
+      }
+
       return updated;
     });
   };
 
   const clearBusiness = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(resolveBusinessKey());
+    }
     setBusiness(null);
   };
 

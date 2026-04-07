@@ -134,9 +134,9 @@ export default function StaffTable() {
           email: newStaff.email,
           phone: newStaff.phone,
           role: newStaff.role,
-          sendCredentialsEmail: true,
-          sendLoginCredentials: true,
-          notifyStaffByEmail: true,
+          // sendCredentialsEmail: true,
+          // sendLoginCredentials: true,
+          // notifyStaffByEmail: true,
         },
         token
       );
@@ -170,6 +170,13 @@ export default function StaffTable() {
         },
       });
     } catch (error) {
+      if (
+        error instanceof Error &&
+        /business\s*profile\s*uid|business\s*id/i.test(error.message)
+      ) {
+        throw new Error("Unable to send invite right now. Please try again.");
+      }
+
       // Handle token-related API errors
       if (
         error instanceof Error &&

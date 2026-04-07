@@ -9,6 +9,9 @@ export function logout(router: AppRouterInstance) {
       if (key.startsWith("stockvar_profile:")) {
         localStorage.removeItem(key);
       }
+      if (key.startsWith("stockvar_business:")) {
+        localStorage.removeItem(key);
+      }
     }
   }
   sessionStorage.clear();

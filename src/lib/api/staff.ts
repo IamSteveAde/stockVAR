@@ -20,13 +20,13 @@ export type CreateStaffPayload = {
   email: string;
   phone?: string;
   role: StaffRole;
-  sendCredentialsEmail?: boolean;
-  sendLoginCredentials?: boolean;
-  notifyStaffByEmail?: boolean;
+  // sendCredentialsEmail?: boolean;
+  // sendLoginCredentials?: boolean;
+  // notifyStaffByEmail?: boolean;
 };
 
 const STAFF_PATHS = {
-  list: ["api/staff/list", "api/staff/list-staff", "api/staff/listStaff"],
+  list: ["api/staff/list"],
   create: ["api/staff/create"],
 };
 

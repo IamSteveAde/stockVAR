@@ -5,9 +5,10 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
-import { login } from "@/lib/api/auth";
+import { login, saveSession } from "@/lib/api/auth";
 import { getMyBusinessProfile } from "@/lib/api/business";
-import { markOnboardingComplete } from "@/lib/onboarding";
+import { getMyProfile, updateMyProfile } from "@/lib/api/profile";
+import { markOnboardingComplete, readSignupName } from "@/lib/onboarding";
 
 export default function Login() {
   const router = useRouter();
@@ -30,10 +31,50 @@ export default function Login() {
 
       // Step 1: Sign in and get session
       const session = await login({ email, password });
+      const businessProfile = await getMyBusinessProfile(session.token);
+      const preferredFullName =
+        businessProfile?.fullName?.trim() ||
+        session.user?.fullName?.trim() ||
+        readSignupName().trim();
+      const preferredEmail =
+        businessProfile?.email?.trim() || session.user?.email;
+      const preferredPhone = businessProfile?.phone?.trim();
+
+      // Step 2: Sync the stored onboarding identity from /api/profile/me/business into /api/profile/me.
+      try {
+        await updateMyProfile(
+          {
+            fullName: preferredFullName || undefined,
+            email: preferredEmail,
+            phone: preferredPhone,
+            status: "active",
+          },
+          session.token
+        );
+
+        const backendProfile = await getMyProfile(session.token);
+        if (backendProfile && typeof backendProfile === "object") {
+          saveSession({
+            ...session,
+            user: {
+              ...session.user,
+              id: backendProfile.id || session.user.id,
+              fullName:
+                backendProfile.fullName ||
+                preferredFullName ||
+                session.user.fullName,
+              email: backendProfile.email || session.user.email,
+              role: backendProfile.role || session.user.role,
+            },
+          });
+        }
+      } catch {
+        // Non-blocking: fallback to the session returned from auth endpoint.
+      }
 
       setSuccess("Login successful. Redirecting...");
 
-      // Step 2: Check if user has completed onboarding by fetching business profile
+      // Step 3: Check if user has completed onboarding via business profile endpoint
       let hasCompletedOnboarding = false;
       try {
         const businessProfile = await getMyBusinessProfile(session.token);
@@ -48,7 +89,7 @@ export default function Login() {
         hasCompletedOnboarding = false;
       }
 
-      // Step 3: Route based on role and onboarding status
+      // Step 4: Route based on role and onboarding status
       setTimeout(() => {
         const role = session.user?.role;
 

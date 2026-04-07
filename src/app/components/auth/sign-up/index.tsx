@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
+import { persistSignupEmail, persistSignupName, persistSignupPhone } from "@/lib/onboarding";
 
 const COUNTRIES = [
   {
@@ -85,6 +86,11 @@ export default function Signup() {
         phoneNumber: fullPhone,
         password,
       });
+
+      // Preserve signup identity fields for profile bootstrap after login.
+      persistSignupEmail(email);
+      persistSignupName(fullName);
+      persistSignupPhone(fullPhone);
 
       setSuccess("Account created. Continue onboarding to set up your business.");
 

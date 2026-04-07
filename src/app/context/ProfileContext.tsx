@@ -34,10 +34,7 @@ function resolveProfileKey(session: AuthSession | null): string {
 function createDefaultProfile(session: AuthSession | null): ProfileData {
   const email = session?.user?.email ?? "";
   const signupName = readSignupName();
-  let fullName = session?.user?.fullName?.trim() || signupName.trim() || "";
-  if (!fullName) {
-    fullName = "Business Owner";
-  }
+  const fullName = session?.user?.fullName?.trim() || signupName.trim() || "";
 
   return {
     id: session?.user?.id || crypto.randomUUID(),

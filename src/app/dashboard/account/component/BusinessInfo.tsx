@@ -9,22 +9,32 @@ import {
   Clock,
   Pencil,
   Save,
+  Loader2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   useBusiness,
   BusinessData,
 } from "@/app/context/BusinessContext";
+import { getSession } from "@/lib/api/auth";
+import { updateBusinessProfile } from "@/lib/api/business";
 
 export default function BusinessInfo() {
-  const { business, updateBusiness } = useBusiness();
+  const { business, updateBusiness, isHydrated } = useBusiness();
 
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] =
-    useState<BusinessData | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState<BusinessData | null>(null);
 
   useEffect(() => {
     if (business) setDraft(business);
   }, [business]);
+
+  useEffect(() => {
+    if (isHydrated && business && !draft) {
+      setDraft(business);
+    }
+  }, [business, draft, isHydrated]);
 
   if (!draft) {
     return (
@@ -34,9 +44,65 @@ export default function BusinessInfo() {
     );
   }
 
-  const handleSave = () => {
-    updateBusiness(draft);
-    setEditing(false);
+  const handleSave = async () => {
+    const session = getSession();
+    if (!session?.token) {
+      toast.error("Session expired. Please log in again.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const saved = await updateBusinessProfile(
+        {
+          name: draft.name,
+          businessType: draft.type,
+          location: draft.city,
+          dailyStaffSize: draft.staffSize,
+          staffSize: draft.staffSize,
+          timezone: draft.timezone,
+        },
+        session.token
+      );
+
+      updateBusiness({
+        id: saved.id,
+        fullName: saved.fullName,
+        name: saved.name,
+        type: saved.type,
+        email: saved.email,
+        phone: saved.phone,
+        city: saved.city,
+        staffSize: saved.staffSize,
+        timezone: saved.timezone,
+        createdAt: saved.createdAt,
+      });
+
+      setDraft({
+        id: saved.id,
+        fullName: saved.fullName,
+        name: saved.name,
+        type: saved.type,
+        email: saved.email,
+        phone: saved.phone,
+        city: saved.city,
+        staffSize: saved.staffSize,
+        timezone: saved.timezone,
+        createdAt: saved.createdAt,
+      });
+
+      setEditing(false);
+      toast.success("Business settings saved.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to save business settings right now.";
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -56,10 +122,11 @@ export default function BusinessInfo() {
         {editing ? (
           <button
             onClick={handleSave}
+            disabled={saving}
             className="inline-flex items-center gap-2 bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
           >
-            <Save size={16} />
-            Save
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            {saving ? "Saving..." : "Save"}
           </button>
         ) : (
           <button

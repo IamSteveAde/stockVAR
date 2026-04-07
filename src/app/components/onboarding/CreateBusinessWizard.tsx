@@ -8,6 +8,7 @@ import { useBusiness } from "@/app/context/BusinessContext";
 import { useSubscription } from "@/app/context/SubscriptionContext";
 import { getSession } from "@/lib/api/auth";
 import { createBusinessProfile } from "@/lib/api/business";
+import { updateMyProfile } from "@/lib/api/profile";
 
 import WelcomeStep from "./steps/WelcomeStep";
 import EmailVerificationStep from "./steps/EmailVerificationStep";
@@ -19,6 +20,7 @@ import CompleteStep from "./steps/CompleteStep";
 import {
   clearSignupEmail,
   clearSignupName,
+  readSignupName,
   markOnboardingComplete,
 } from "@/lib/onboarding";
 
@@ -89,8 +91,9 @@ export default function CreateBusinessWizard() {
       const businessProfile = await createBusinessProfile(
         {
           name: form.businessName,
-          type: form.businessType,
-          city: form.city,
+          businessType: form.businessType,
+          location: form.city,
+          dailyStaffSize: form.staffSize,
           staffSize: form.staffSize,
           timezone: "Africa/Lagos",
         },
@@ -107,6 +110,20 @@ export default function CreateBusinessWizard() {
         timezone: businessProfile.timezone,
         createdAt: businessProfile.createdAt,
       });
+
+      const preferredFullName =
+        readSignupName().trim() || session.user?.fullName?.trim() || undefined;
+
+      if (preferredFullName) {
+        await updateMyProfile(
+          {
+            fullName: preferredFullName,
+            email: session.user?.email,
+            status: "active",
+          },
+          session.token
+        );
+      }
 
       // Mark onboarding complete in local storage
       // This allows users to persist state across sessions

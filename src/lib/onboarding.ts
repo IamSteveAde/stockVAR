@@ -1,5 +1,6 @@
 const SIGNUP_EMAIL_KEY = "stockvar_signup_email";
 const SIGNUP_NAME_KEY = "stockvar_signup_name";
+const SIGNUP_PHONE_KEY = "stockvar_signup_phone";
 const ONBOARDING_DONE_KEY = "stockvar_onboarding_complete";
 
 export function persistSignupEmail(email: string) {
@@ -15,6 +16,12 @@ export function persistSignupName(fullName: string) {
   if (!value) return;
   sessionStorage.setItem(SIGNUP_NAME_KEY, value);
 }
+export function persistSignupPhone(phone: string) {
+  if (typeof window === "undefined") return;
+  const value = phone.trim();
+  if (!value) return;
+  sessionStorage.setItem(SIGNUP_PHONE_KEY, value);
+}
 
 export function readSignupEmail(): string {
   if (typeof window === "undefined") return "";
@@ -24,6 +31,11 @@ export function readSignupEmail(): string {
 export function readSignupName(): string {
   if (typeof window === "undefined") return "";
   return sessionStorage.getItem(SIGNUP_NAME_KEY) ?? "";
+}
+
+export function readSignupPhone(): string {
+  if (typeof window === "undefined") return "";
+  return sessionStorage.getItem(SIGNUP_PHONE_KEY) ?? "";
 }
 
 export function clearSignupEmail() {
