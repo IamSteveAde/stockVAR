@@ -6,17 +6,6 @@ import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
 
 
-function generateSKU(name: string) {
-  
-
-  const prefix = name.slice(0, 3).toUpperCase();
-  const random = Math.random()
-    .toString(36)
-    .substring(2, 6)
-    .toUpperCase();
-  return `STK-${prefix}-${random}`;
-}
-
 export default function AddProductModal({
   onClose,
   onAdd,
@@ -24,45 +13,33 @@ export default function AddProductModal({
   onClose: () => void;
   onAdd: (product: {
     name: string;
-    sku: string;
     unit: string;
-  }) => void;
+  }) => Promise<void>;
 }) {
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("");
-const { profile } = useProfile();
-  const sku = name ? generateSKU(name) : "";
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { profile } = useProfile();
 
-  const handleSave = () => {
+  const handleSave = async () => {
   if (!name || !unit) return;
 
-  const product = {
-    name,
-    sku,
-    unit,
-  };
+  setLoading(true);
+  setError("");
 
-  onAdd(product);
-
-  writeAuditLog({
-    actor: {
-      staffId: profile.id,
-      name: profile.fullName,
-      role: profile.role,
-    },
-    action: "PRODUCT_CREATE",
-    description: "Product created",
-    entity: {
-      type: "product",
-      id: sku,
+  try {
+    const product = {
       name,
-    },
-    changes: {
-      after: product,
-    },
-  });
+      unit,
+    };
 
-  onClose();
+    await onAdd(product);
+    onClose();
+  } catch (err: any) {
+    setError(err.message || "Failed to create product");
+    setLoading(false);
+  }
 };
 
 
@@ -83,6 +60,13 @@ const { profile } = useProfile();
           </button>
         </div>
 
+        {/* Error */}
+        {error && (
+          <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+            {error}
+          </div>
+        )}
+
         {/* Product name */}
         <div className="space-y-1">
           <label className="text-xs text-gray-500">
@@ -96,16 +80,15 @@ const { profile } = useProfile();
           />
         </div>
 
-        {/* SKU */}
+        {/* SKU Preview */}
         <div className="space-y-1">
           <label className="text-xs text-gray-500">
             SKU
           </label>
           <input
-            value={sku}
+            value="Backend auto-generated"
             readOnly
-            placeholder="Auto-generated"
-            className="w-full border rounded-lg px-3 py-2.5 text-sm bg-gray-100 text-gray-600"
+            className="w-full border rounded-lg px-3 py-2.5 text-sm bg-gray-100 text-gray-600 italic"
           />
         </div>
 
@@ -137,10 +120,10 @@ const { profile } = useProfile();
           </button>
           <button
             onClick={handleSave}
-            disabled={!name || !unit}
+            disabled={!name || !unit || loading}
             className="px-4 py-2 rounded-lg text-sm bg-[#0F766E] text-white disabled:opacity-50"
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

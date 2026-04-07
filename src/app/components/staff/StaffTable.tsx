@@ -15,6 +15,7 @@ import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
 import { getSession, clearSession, isTokenExpired } from "@/lib/api/auth";
 import { createStaff, listStaff } from "@/lib/api/staff";
+import { useRouter } from "next/navigation";
 
 /* ================= TYPES ================= */
 
@@ -55,7 +56,7 @@ const saveStaff = (data: Staff[]) => {
 
 export default function StaffTable() {
   const { profile } = useProfile();
-
+  const router = useRouter();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [page, setPage] = useState(1);
   const [openAdd, setOpenAdd] = useState(false);
@@ -70,7 +71,7 @@ export default function StaffTable() {
     const hydrate = async () => {
       const token = getSession()?.token;
       if (!token) {
-        // setStaff(loadStaff());
+        router.push("/auth/login");
         return;
       }
 
@@ -185,7 +186,7 @@ export default function StaffTable() {
           s.status === "archived" ? "active" : "archived";
 
         /* ===== AUDIT ===== */
-        
+
 
 
         return {
@@ -407,10 +408,10 @@ function StatusBadge({ status }: { status: StaffStatus }) {
   return (
     <span
       className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${status === "active"
-          ? "bg-green-100 text-green-700"
-          : status === "invited"
-            ? "bg-yellow-100 text-yellow-700"
-            : "bg-gray-200 text-gray-600"
+        ? "bg-green-100 text-green-700"
+        : status === "invited"
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-gray-200 text-gray-600"
         }`}
     >
       {status}

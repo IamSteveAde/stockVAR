@@ -155,9 +155,9 @@ export default function ShiftTable() {
     } catch (error: unknown) {
       const message =
         typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as { message?: unknown }).message === "string"
+          error !== null &&
+          "message" in error &&
+          typeof (error as { message?: unknown }).message === "string"
           ? ((error as { message: string }).message)
           : "Unable to start shift right now.";
       alert(message);
@@ -168,18 +168,18 @@ export default function ShiftTable() {
       prev.map((s) =>
         s.id === shift.id
           ? {
-              ...s,
-              status: "running",
-              startedAt: now(),
-              startedBy: {
-                staffId: profile.id,
-                name: profile.fullName,
-              },
-              openingSnapshot: inventory.map((i) => ({
-                sku: i.sku,
-                quantity: i.quantity,
-              })),
-            }
+            ...s,
+            status: "running",
+            startedAt: now(),
+            startedBy: {
+              staffId: profile.id,
+              name: profile.fullName,
+            },
+            openingSnapshot: inventory.map((i) => ({
+              sku: i.sku,
+              quantity: i.quantity,
+            })),
+          }
           : s
       )
     );
@@ -243,9 +243,9 @@ export default function ShiftTable() {
     } catch (error: unknown) {
       const message =
         typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as { message?: unknown }).message === "string"
+          error !== null &&
+          "message" in error &&
+          typeof (error as { message?: unknown }).message === "string"
           ? ((error as { message: string }).message)
           : "Unable to end shift right now.";
       alert(message);
@@ -256,15 +256,15 @@ export default function ShiftTable() {
       prev.map((s) =>
         s.id === id
           ? {
-              ...s,
-              status: "ended",
-              endedAt: now(),
-              endedBy: {
-                staffId: profile.id,
-                name: profile.fullName,
-              },
-              closingSnapshot,
-            }
+            ...s,
+            status: "ended",
+            endedAt: now(),
+            endedBy: {
+              staffId: profile.id,
+              name: profile.fullName,
+            },
+            closingSnapshot,
+          }
           : s
       )
     );
@@ -315,60 +315,60 @@ export default function ShiftTable() {
 
   /* ================= SORT SHIFTS (PRIORITY ORDER) ================= */
 
-/* ================= SORT SHIFTS (OPERATIONAL ORDER) ================= */
+  /* ================= SORT SHIFTS (OPERATIONAL ORDER) ================= */
 
-const sortedShifts = [...shifts].sort((a, b) => {
-  // Status priority
-  const priority = (s: Shift) =>
-    s.status === "running"
-      ? 0
-      : s.status === "planned"
-      ? 1
-      : 2;
+  const sortedShifts = [...shifts].sort((a, b) => {
+    // Status priority
+    const priority = (s: Shift) =>
+      s.status === "running"
+        ? 0
+        : s.status === "planned"
+          ? 1
+          : 2;
 
-  const statusDiff = priority(a) - priority(b);
-  if (statusDiff !== 0) return statusDiff;
+    const statusDiff = priority(a) - priority(b);
+    if (statusDiff !== 0) return statusDiff;
 
-  // Same status sorting
-  if (a.status === "planned") {
-    // Planned: earliest upcoming first
-    const aTime = new Date(
-      `${a.startDate} ${a.startTime}`
-    ).getTime();
-    const bTime = new Date(
-      `${b.startDate} ${b.startTime}`
-    ).getTime();
+    // Same status sorting
+    if (a.status === "planned") {
+      // Planned: earliest upcoming first
+      const aTime = new Date(
+        `${a.startDate} ${a.startTime}`
+      ).getTime();
+      const bTime = new Date(
+        `${b.startDate} ${b.startTime}`
+      ).getTime();
 
-    return aTime - bTime;
-  }
+      return aTime - bTime;
+    }
 
-  if (a.status === "running") {
-    // Running: most recently started first
+    if (a.status === "running") {
+      // Running: most recently started first
+      return (
+        new Date(b.startedAt || 0).getTime() -
+        new Date(a.startedAt || 0).getTime()
+      );
+    }
+
+    // Ended: most recently ended first
     return (
-      new Date(b.startedAt || 0).getTime() -
-      new Date(a.startedAt || 0).getTime()
+      new Date(b.endedAt || 0).getTime() -
+      new Date(a.endedAt || 0).getTime()
     );
-  }
-
-  // Ended: most recently ended first
-  return (
-    new Date(b.endedAt || 0).getTime() -
-    new Date(a.endedAt || 0).getTime()
-  );
-});
+  });
 
 
   /* ================= PAGINATION ================= */
 
-const totalPages = Math.max(
-  1,
-  Math.ceil(sortedShifts.length / PAGE_SIZE)
-);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedShifts.length / PAGE_SIZE)
+  );
 
-const current = sortedShifts.slice(
-  (page - 1) * PAGE_SIZE,
-  page * PAGE_SIZE
-);
+  const current = sortedShifts.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
 
 
   /* ================= UI ================= */
@@ -422,8 +422,8 @@ const current = sortedShifts.slice(
                     {s.label}
                   </div>
                   <div className="text-xs text-gray-500">
-                  {formatDateWords(s.startDate)}
-                </div>
+                    {formatDateWords(s.startDate)}
+                  </div>
 
                 </td>
 
@@ -466,13 +466,12 @@ const current = sortedShifts.slice(
                   <div className="inline-flex items-center gap-2">
                     {/* Status */}
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        s.status === "planned"
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${s.status === "planned"
                           ? "bg-gray-100 text-gray-600"
                           : s.status === "running"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-blue-100 text-blue-700"
-                      }`}
+                            ? "bg-green-100 text-green-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}
                     >
                       {s.status}
                     </span>
@@ -552,6 +551,9 @@ const current = sortedShifts.slice(
           onCreate={async (shift) => {
             const token = getSession()?.token;
             if (!token) {
+              router.push("/auth/login");
+              return;
+            } if (!token) {
               throw new Error("Your session has expired. Please log in again.");
             }
 

@@ -23,52 +23,63 @@ export default function AdjustInventoryModal({
     sku: string;
     quantity: number;
     action: "add" | "reduce";
-  }) => void;
+  }) => Promise<void>;
 }) {
   const [sku, setSku] = useState("");
   const [quantity, setQuantity] = useState("");
   const [action, setAction] = useState<"add" | "reduce">("add");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { profile } = useProfile();
 
 
-  const submit = () => {
-  if (!sku || !quantity) return;
+  const submit = async () => {
+    if (!sku || !quantity) return;
 
-  const qty = Number(quantity);
-  if (qty <= 0) return;
+    const qty = Number(quantity);
+    if (qty <= 0) return;
 
-  const product = products.find((p) => p.sku === sku);
-  if (!product) return;
+    const product = products.find((p) => p.sku === sku);
+    if (!product) return;
 
-  onSave({
-    sku,
-    quantity: qty,
-    action,
-  });
+    setIsSubmitting(true);
+    setError(null);
 
-  writeAuditLog({
-    actor: {
-      staffId: profile.id,
-      name: profile.fullName,
-      role: profile.role,
-    },
-    action: "INVENTORY_ADJUST",
-    description:
-      action === "add"
-        ? "Inventory increased"
-        : "Inventory reduced",
-    entity: {
-      type: "inventory",
-      id: sku,
-      name: product.name,
-    },
-    changes: {
-      delta: action === "add" ? qty : -qty,
-    },
-  });
+    try {
+      await onSave({
+        sku,
+        quantity: qty,
+        action,
+      });
 
-  onClose();
-};
+      writeAuditLog({
+        actor: {
+          staffId: (profile as any).id,
+          name: profile.fullName,
+          role: profile.role,
+        },
+        action: "INVENTORY_ADJUST",
+        description:
+          action === "add"
+            ? "Inventory increased"
+            : "Inventory reduced",
+        entity: {
+          type: "inventory",
+          id: sku,
+          name: product.name,
+        },
+        changes: {
+          delta: action === "add" ? qty : -qty,
+        },
+      });
+
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Failed to adjust inventory");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
@@ -81,11 +92,18 @@ export default function AdjustInventoryModal({
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-black"
+            disabled={isSubmitting}
+            className="text-gray-500 hover:text-black disabled:opacity-50"
           >
             <X size={18} />
           </button>
         </div>
+
+        {error && (
+          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
 
         {/* Product selector */}
         <div className="space-y-1">
@@ -142,16 +160,21 @@ export default function AdjustInventoryModal({
         <div className="flex justify-end gap-3 pt-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm border"
+            disabled={isSubmitting}
+            className="px-4 py-2 rounded-lg text-sm border disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={submit}
-            disabled={!sku || !quantity}
-            className="px-4 py-2 rounded-lg text-sm bg-[#0F766E] text-white disabled:opacity-50"
+            disabled={!sku || !quantity || isSubmitting}
+            className="px-4 py-2 rounded-lg text-sm bg-[#0F766E] text-white disabled:opacity-50 flex items-center justify-center min-w-[80px]"
           >
-            Save
+            {isSubmitting ? (
+              <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              "Save"
+            )}
           </button>
         </div>
       </div>

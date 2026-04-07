@@ -3,102 +3,86 @@
 import { useEffect, useState } from "react";
 import AdjustInventoryModal from "./AdjustInventoryModal";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getSession } from "@/lib/api/auth";
+import { listInventory, adjustInventory as apiAdjustInventory } from "@/lib/api/stock";
+
 /* ================= TYPES ================= */
 
-type Product = {
-  id: number;
+type InventoryRow = {
   sku: string;
   name: string;
   unit: string;
-  status: "active" | "archived";
-};
-
-type InventoryItem = {
-  sku: string;
   quantity: number;
   updatedAt: string;
+  status: string;
 };
-
-const PRODUCTS_KEY = "stockvar_products";
-const INVENTORY_KEY = "stockvar_inventory";
 
 /* ================= HELPERS ================= */
 
 const now = () => new Date().toLocaleString();
 
-const load = <T,>(key: string): T[] => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const save = (key: string, data: any) => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
 /* ================= COMPONENT ================= */
 
 export default function InventoryTable() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const PAGE_SIZE = 10;
+  const [rows, setRows] = useState<InventoryRow[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [open, setOpen] = useState(false);
 
   /* ================= INITIAL LOAD ================= */
 
   useEffect(() => {
-    setProducts(load<Product>(PRODUCTS_KEY));
-    setInventory(load<InventoryItem>(INVENTORY_KEY));
-  }, []);
+    let mounted = true;
+    const hydrate = async () => {
+      const token = getSession()?.token;
+      if (!token) return;
 
-  /* ================= LISTEN FOR AUTHORITATIVE UPDATES ================= */
-
-  useEffect(() => {
-    const handler = (e: any) => {
-      setInventory(e.detail);
+      try {
+        const response: any = await listInventory(token, page, PAGE_SIZE);
+        if (mounted && response && response.products) {
+          const mapped = response.products.map((p: any) => ({
+            sku: p.uid || p.sku,
+            name: p.name,
+            unit: p.unit,
+            quantity: p.quantity || 0,
+            updatedAt: p.updatedAt || now(),
+            status: p.status || "active",
+          }));
+          setRows(mapped);
+          setTotalPages(response.meta?.pageCount || 1);
+          setTotalCount(response.meta?.totalCount || mapped.length);
+        }
+      } catch (err) {}
     };
 
-    window.addEventListener("inventory:updated", handler);
-
-    return () => {
-      window.removeEventListener("inventory:updated", handler);
-    };
-  }, []);
-
-  /* ================= PERSIST LOCAL CHANGES ================= */
-
-  useEffect(() => {
-    save(INVENTORY_KEY, inventory);
-  }, [inventory]);
+    hydrate();
+    return () => { mounted = false; };
+  }, [page]);
 
   /* ================= ADJUST INVENTORY ================= */
 
-  const adjustInventory = (data: {
+  const adjustInventory = async (data: {
     sku: string;
     quantity: number;
     action: "add" | "reduce";
   }) => {
-    const product = products.find((p) => p.sku === data.sku);
-    if (!product) return;
+    const token = getSession()?.token;
+    if (!token) throw new Error("Authentication required");
 
-    setInventory((prev) => {
-      const existing = prev.find((i) => i.sku === data.sku);
+    await apiAdjustInventory(
+      {
+        productUid: data.sku,
+        quantity: data.quantity,
+        action: data.action,
+      },
+      token
+    );
 
-      if (!existing) {
-        return [
-          {
-            sku: product.sku,
-            quantity:
-              data.action === "add" ? data.quantity : 0,
-            updatedAt: now(),
-          },
-          ...prev,
-        ];
-      }
-
-      return prev.map((i) =>
+    setRows((prev) =>
+      prev.map((i) =>
         i.sku === data.sku
           ? {
               ...i,
@@ -109,32 +93,9 @@ export default function InventoryTable() {
               updatedAt: now(),
             }
           : i
-      );
-    });
+      )
+    );
   };
-
-  /* ================= JOIN FOR DISPLAY ================= */
-
-  const rows = inventory
-    .map((i) => {
-      const product = products.find((p) => p.sku === i.sku);
-      if (!product) return null;
-
-      return {
-        sku: i.sku,
-        name: product.name,
-        unit: product.unit,
-        quantity: i.quantity,
-        updatedAt: i.updatedAt,
-      };
-    })
-    .filter(Boolean) as {
-    sku: string;
-    name: string;
-    unit: string;
-    quantity: number;
-    updatedAt: string;
-  }[];
 
   /* ================= UI ================= */
 
@@ -237,12 +198,56 @@ export default function InventoryTable() {
         </table>
       </div>
 
+      {/* ================= PAGINATION ================= */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-4 border-t bg-white rounded-xl shadow-sm">
+        <p className="text-sm text-gray-500">
+          Page <span className="font-medium text-gray-900">{page}</span> of{" "}
+          <span className="font-medium text-gray-900">{totalPages}</span>
+        </p>
+
+        <div className="w-full flex justify-center sm:justify-end">
+          <div className="flex items-center gap-3">
+            <button
+              aria-label="Previous page"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="
+                h-10 w-10 flex items-center justify-center rounded-full
+                bg-[#0F766E] text-white
+                hover:bg-[#0d665f]
+                focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+                disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0F766E]
+                transition
+              "
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <button
+              aria-label="Next page"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="
+                h-10 w-10 flex items-center justify-center rounded-full
+                bg-[#0F766E] text-white
+                hover:bg-[#0d665f]
+                focus:outline-none focus:ring-2 focus:ring-[#0F766E]/40
+                disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0F766E]
+                transition
+              "
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* ================= MODAL ================= */}
       {open && (
         <AdjustInventoryModal
-          products={products.filter(
-            (p) => p.status === "active"
-          )}
+          products={rows.filter(
+            (p) => p.status.toLowerCase() !== "archived"
+          ) as any}
           onClose={() => setOpen(false)}
           onSave={adjustInventory}
         />
