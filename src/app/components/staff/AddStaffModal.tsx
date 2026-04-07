@@ -10,26 +10,11 @@ export type StaffRole = "manager" | "staff";
 type Props = {
   onClose: () => void;
   onAddStaff: (staff: {
-    fullName: string;
+    name: string;
     email: string;
-    phone: string;
-    role: StaffRole;
+    phoneNo: string;
+    role: string;
   }) => Promise<void>;
-};
-
-/* ================= STORAGE ================= */
-
-const STAFF_KEY = "stockvar_staff";
-
-const loadStaffEmails = (): string[] => {
-  try {
-    const raw = localStorage.getItem(STAFF_KEY);
-    if (!raw) return [];
-    const staff = JSON.parse(raw);
-    return staff.map((s: any) => s.email.toLowerCase());
-  } catch {
-    return [];
-  }
 };
 
 /* ================= COMPONENT ================= */
@@ -44,33 +29,21 @@ export default function AddStaffModal({
   const [role, setRole] = useState<StaffRole>("staff");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [existingEmails, setExistingEmails] = useState<string[]>([]);
-
-  /* Load existing staff emails ONCE */
-  useEffect(() => {
-    setExistingEmails(loadStaffEmails());
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // ❌ DUPLICATE EMAIL BLOCK
-    if (existingEmails.includes(normalizedEmail)) {
-      setError("A staff member with this email already exists.");
-      return;
-    }
-
     setError("");
     setLoading(true);
 
     try {
       await onAddStaff({
-        fullName,
+        name: fullName,
         email: normalizedEmail,
-        phone,
-        role,
+        phoneNo: phone,
+        role: role //.charAt(0).toUpperCase() + role.slice(1),
       });
 
       setLoading(false);

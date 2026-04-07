@@ -60,61 +60,69 @@ export default function StaffTable() {
   const [page, setPage] = useState(1);
   const [openAdd, setOpenAdd] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  /* Load once */
+  /* Load when page changes */
   useEffect(() => {
+    let mounted = true;
+
     const hydrate = async () => {
       const token = getSession()?.token;
       if (!token) {
-        setStaff(loadStaff());
+        // setStaff(loadStaff());
         return;
       }
 
       try {
-        const apiStaff = await listStaff(token);
-        if (Array.isArray(apiStaff) && apiStaff.length) {
-          const normalized: Staff[] = apiStaff.map((entry) => ({
-            id: String(entry.id),
-            fullName: String(entry.fullName ?? ""),
-            email: String(entry.email ?? ""),
-            phone: String(entry.phone ?? ""),
-            role: (entry.role as StaffRole) ?? "staff",
-            status: (entry.status as StaffStatus) ?? "active",
+        const response = await listStaff(token, page, PAGE_SIZE);
+        if (mounted && response && response.staff) {
+          const normalized: Staff[] = response.staff.map((entry: any) => ({
+            id: String(entry.uid),
+            fullName: String(entry.name || entry.fullName || ""),
+            email: String(entry.email || ""),
+            phone: String(entry.phone || ""),
+            role: (entry.role?.toLowerCase() as StaffRole) || "staff",
+            status: (entry.status?.toLowerCase() as StaffStatus) || "active",
             pin: typeof entry.pin === "string" && entry.pin ? entry.pin : "Sent via email",
           }));
           setStaff(normalized);
+          setTotalPages(response.meta?.pageCount || 1);
+          setTotalCount(response.meta?.totalCount || normalized.length);
           return;
         }
       } catch {
         // Fallback to local cache when API list fails.
       }
 
-      const stored = loadStaff();
-      if (stored.length > 0) {
-        setStaff(stored);
+      if (mounted) {
+        const stored = loadStaff();
+        if (stored.length > 0) {
+          setStaff(stored);
+          setTotalCount(stored.length);
+        }
       }
     };
 
     hydrate();
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+  }, [page]);
 
   /* Persist */
   useEffect(() => {
     saveStaff(staff);
   }, [staff]);
 
-  const totalPages = Math.max(1, Math.ceil(staff.length / PAGE_SIZE));
   const startIndex = (page - 1) * PAGE_SIZE;
-
-  const currentStaff = staff.slice(
-    startIndex,
-    startIndex + PAGE_SIZE
-  );
+  const currentStaff = staff;
 
   /* ================= ACTIONS ================= */
 
   const handleAddStaff = async (
-    newStaff: Omit<Staff, "id" | "pin" | "status">
+    newStaff: { name: string; email: string; phoneNo: string; role: string }
   ) => {
     const session = getSession();
     const token = session?.token;
@@ -130,24 +138,21 @@ export default function StaffTable() {
     try {
       const created = await createStaff(
         {
-          fullName: newStaff.fullName,
+          name: newStaff.name,
           email: newStaff.email,
-          phone: newStaff.phone,
+          phoneNo: newStaff.phoneNo,
           role: newStaff.role,
-          sendCredentialsEmail: true,
-          sendLoginCredentials: true,
-          notifyStaffByEmail: true,
         },
         token
       );
 
       const staffMember: Staff = {
-        id: String(created?.id ?? crypto.randomUUID()),
-        fullName: String(created?.fullName ?? newStaff.fullName),
-        email: String(created?.email ?? newStaff.email),
-        phone: String(created?.phone ?? newStaff.phone),
-        role: ((created?.role as StaffRole) ?? newStaff.role),
-        status: ((created?.status as StaffStatus) ?? "invited"),
+        id: String((created as any)?.uid || created?.id),
+        fullName: String((created as any)?.name || created?.fullName || newStaff.name),
+        email: String(created?.email || newStaff.email),
+        phone: String((created as any)?.phoneNo || created?.phone || newStaff.phoneNo),
+        role: (newStaff.role.toLowerCase() as StaffRole),
+        status: "active",
         pin: typeof created?.pin === "string" && created.pin ? created.pin : "Sent via email",
       };
 
@@ -155,20 +160,7 @@ export default function StaffTable() {
       setPage(1);
 
       /* ===== AUDIT ===== */
-      writeAuditLog({
-        actor: {
-          staffId: profile.id,
-          name: profile.fullName,
-          role: profile.role,
-        },
-        action: "STAFF_CREATE",
-        description: "Staff account created",
-        entity: {
-          type: "staff",
-          id: staffMember.id,
-          name: staffMember.fullName,
-        },
-      });
+
     } catch (error) {
       // Handle token-related API errors
       if (
@@ -193,27 +185,7 @@ export default function StaffTable() {
           s.status === "archived" ? "active" : "archived";
 
         /* ===== AUDIT ===== */
-        writeAuditLog({
-  actor: {
-    staffId: profile.id,
-    name: profile.fullName,
-    role: profile.role,
-  },
-  action: "STAFF_ARCHIVE",
-  description:
-    newStatus === "archived"
-      ? "Staff archived"
-      : "Staff unarchived",
-  entity: {
-    type: "staff",
-    id: s.id,
-    name: s.fullName,
-  },
-  changes: {
-    before: { status: s.status },
-    after: { status: newStatus },
-  },
-});
+        
 
 
         return {
@@ -227,26 +199,6 @@ export default function StaffTable() {
   };
 
   const deleteStaff = (id: string) => {
-    const target = staff.find((s) => s.id === id);
-
-    if (target) {
-      /* ===== AUDIT ===== */
-      writeAuditLog({
-        actor: {
-          staffId: profile.id,
-          name: profile.fullName,
-          role: profile.role,
-        },
-        action: "STAFF_DELETE",
-        description: "Staff deleted",
-        entity: {
-          type: "staff",
-          id: target.id,
-          name: target.fullName,
-        },
-      });
-    }
-
     setStaff((prev) => prev.filter((s) => s.id !== id));
     setOpenMenu(null);
   };
@@ -259,8 +211,8 @@ export default function StaffTable() {
           <h3 className="text-lg font-semibold text-[#0F766E]">Staff</h3>
           <p className="text-sm text-gray-500">
             Showing {startIndex + 1}–
-            {Math.min(startIndex + PAGE_SIZE, staff.length)} of{" "}
-            {staff.length}
+            {Math.min(startIndex + staff.length, totalCount)} of{" "}
+            {totalCount}
           </p>
         </div>
 
@@ -402,12 +354,12 @@ export default function StaffTable() {
         </p>
 
         <div className="w-full flex justify-center">
-  <div className="flex items-center gap-3">
-    <button
-      aria-label="Previous page"
-      disabled={page === 1}
-      onClick={() => setPage((p) => p - 1)}
-      className="
+          <div className="flex items-center gap-3">
+            <button
+              aria-label="Previous page"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="
         h-10 w-10 flex items-center justify-center rounded-full
         bg-[#0F766E] text-white
         hover:bg-[#0d665f]
@@ -415,15 +367,15 @@ export default function StaffTable() {
         disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0F766E]
         transition
       "
-    >
-      <ChevronLeft size={18} />
-    </button>
+            >
+              <ChevronLeft size={18} />
+            </button>
 
-    <button
-      aria-label="Next page"
-      disabled={page === totalPages}
-      onClick={() => setPage((p) => p + 1)}
-      className="
+            <button
+              aria-label="Next page"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="
         h-10 w-10 flex items-center justify-center rounded-full
         bg-[#0F766E] text-white
         hover:bg-[#0d665f]
@@ -431,11 +383,11 @@ export default function StaffTable() {
         disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0F766E]
         transition
       "
-    >
-      <ChevronRight size={18} />
-    </button>
-  </div>
-</div>
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
 
       </div>
 
@@ -454,13 +406,12 @@ export default function StaffTable() {
 function StatusBadge({ status }: { status: StaffStatus }) {
   return (
     <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${
-        status === "active"
+      className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${status === "active"
           ? "bg-green-100 text-green-700"
           : status === "invited"
-          ? "bg-yellow-100 text-yellow-700"
-          : "bg-gray-200 text-gray-600"
-      }`}
+            ? "bg-yellow-100 text-yellow-700"
+            : "bg-gray-200 text-gray-600"
+        }`}
     >
       {status}
     </span>

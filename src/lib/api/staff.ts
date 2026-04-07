@@ -12,27 +12,43 @@ export type StaffRecord = {
   role: StaffRole;
   status: StaffStatus;
   pin?: string;
+  uid?: string;
+  name?: string;
   [key: string]: unknown;
 };
 
+export type PaginationMeta = {
+  isFirstPage: boolean;
+  isLastPage: boolean;
+  currentPage: number;
+  previousPage: number | null;
+  nextPage: number | null;
+  pageCount: number;
+  totalCount: number;
+};
+
+export type ListStaffResponse = {
+  staff: StaffRecord[];
+  meta: PaginationMeta;
+};
+
 export type CreateStaffPayload = {
-  fullName: string;
+  name: string;
   email: string;
-  phone?: string;
-  role: StaffRole;
-  sendCredentialsEmail?: boolean;
-  sendLoginCredentials?: boolean;
-  notifyStaffByEmail?: boolean;
+  phoneNo: string;
+  role: string;
 };
 
 const STAFF_PATHS = {
-  list: ["api/staff/list", "api/staff/list-staff", "api/staff/listStaff"],
+  list: ["api/staff/list"],
   create: ["api/staff/create"],
 };
 
-export async function listStaff(token: string) {
-  const res = await apiFetchFirstSuccess<ApiEnvelope<StaffRecord[]> | StaffRecord[]>(
-    STAFF_PATHS.list,
+export async function listStaff(token: string, page = 1, limit = 1) {
+  const paths = STAFF_PATHS.list.map(p => `${p}?page=${page}&limit=${limit}`);
+  // const paths = STAFF_PATHS.list.map(p => `${p}?page=${page}&limit=1`);
+  const res = await apiFetchFirstSuccess<ApiEnvelope<ListStaffResponse> | ListStaffResponse>(
+    paths,
     { token }
   );
   return unwrapData(res);

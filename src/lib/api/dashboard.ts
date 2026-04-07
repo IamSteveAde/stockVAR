@@ -2,7 +2,7 @@ import { apiFetchFirstSuccess } from "./client";
 import { unwrapData, type ApiEnvelope } from "./response";
 
 const DASHBOARD_PATHS = {
-staffMetrics: ["api/dashboard/staff/metrics"],
+staffMetrics: ["api/dashboard/staff/metric"],
 staffUpcomingShift: [
     "api/dashboard/staff/recent-upcoming-shift",
     "api/dashboard/staff/recentUpcomingShift",
@@ -11,14 +11,21 @@ managerOwnerMetrics: [
     "/api/dashboard/base/metric"
 ],
 managerOwnerVarSummary: [
-    "api/dashboard/manager-owner/var-summary",
-    "api/dashboard/manager-owner/varSummary",
+    "/api/dashboard/base/var-summary"
 ],
 };
 
-export async function getStaffDashboardMetrics(token: string) {
-const res = await apiFetchFirstSuccess<ApiEnvelope<unknown> | unknown>(
-    DASHBOARD_PATHS.staffMetrics,
+export type StaffMetricType = "all" | "completed" | "responsible";
+
+export type StaffMetricResponse = {
+  type: StaffMetricType;
+  count: number;
+};
+
+export async function getStaffDashboardMetrics(token: string, type: StaffMetricType = "all") {
+const paths = DASHBOARD_PATHS.staffMetrics.map(p => `${p}?type=${type}`);
+const res = await apiFetchFirstSuccess<ApiEnvelope<StaffMetricResponse> | StaffMetricResponse>(
+    paths,
     { token }
 );
 return unwrapData(res);
@@ -46,8 +53,21 @@ const res = await apiFetchFirstSuccess<ApiEnvelope<DashboardMetricsData> | Dashb
 return unwrapData(res);
 }
 
+export type VarSummaryItem = {
+  name: string;
+  unit: string;
+  expectedCount: number;
+  actualCount: number;
+  variance: number;
+};
+
+export type VarSummaryResponse = {
+  data: VarSummaryItem[];
+  meta: any;
+};
+
 export async function getManagerOwnerVarSummary(token: string) {
-const res = await apiFetchFirstSuccess<ApiEnvelope<unknown> | unknown>(
+const res = await apiFetchFirstSuccess<ApiEnvelope<VarSummaryResponse> | VarSummaryResponse>(
     DASHBOARD_PATHS.managerOwnerVarSummary,
     { token }
 );
