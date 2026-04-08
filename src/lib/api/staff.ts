@@ -1,5 +1,5 @@
 import { apiFetchFirstSuccess } from "./client";
-import { unwrapData, type ApiEnvelope } from "./response";
+import { unwrapData, PaginationMeta, type ApiEnvelope } from "./response";
 
 export type StaffRole = "owner" | "manager" | "staff";
 export type StaffStatus = "active" | "invited" | "archived";
@@ -17,15 +17,7 @@ export type StaffRecord = {
   [key: string]: unknown;
 };
 
-export type PaginationMeta = {
-  isFirstPage: boolean;
-  isLastPage: boolean;
-  currentPage: number;
-  previousPage: number | null;
-  nextPage: number | null;
-  pageCount: number;
-  totalCount: number;
-};
+
 
 export type ListStaffResponse = {
   staff: StaffRecord[];

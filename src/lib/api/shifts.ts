@@ -1,10 +1,12 @@
 import { apiFetchFirstSuccess } from "./client";
-import { unwrapData, type ApiEnvelope } from "./response";
+import { unwrapData, PaginationMeta, type ApiEnvelope } from "./response";
 
 export type ShiftSnapshot = {
   sku: string;
   quantity: number;
 };
+
+
 
 export type ShiftRecord = {
   id: string;
@@ -20,23 +22,20 @@ export type ShiftRecord = {
 };
 
 export type CreateShiftPayload = {
-  label: string;
+  staffInChargeUid: string;
   startDate: string;
+  endDate?: string;
   startTime: string;
   endTime: string;
-  responsibleStaffId: string;
-  staffIds: string[];
-  recurrence?: {
-    enabled: boolean;
-    daysOfWeek: number[];
-    until?: string;
-  };
+  name: string;
+  linkedStaffUids: string[];
+  repeatsOn?: string[];
+  isWeekly?: boolean;
 };
 
 export type StartShiftPayload = {
-  shiftId: string;
+  shiftUid: string;
   pin: string;
-  openingSnapshot?: ShiftSnapshot[];
 };
 
 export type EndShiftPayload = {
@@ -45,11 +44,16 @@ export type EndShiftPayload = {
   closingSnapshot: ShiftSnapshot[];
 };
 
+export type ListShiftsResponse = {
+  shifts: ShiftRecord[];
+  meta: PaginationMeta;
+};
+
 const SHIFT_PATHS = {
-  create: ["api/shifts/create-shift", "api/shifts/createShift"],
-  list: ["api/shifts/list", "api/shifts/list-shifts", "api/shifts/listShifts"],
-  start: ["api/shifts/start-shift", "api/shifts/startShift"],
-  end: ["api/shifts/end-shift", "api/shifts/endShift"],
+  create: ["api/shift/create"],
+  list: ["api/shift/list"],
+  start: ["/api/shift/start"],
+  end: ["/api/shift/end"],
 };
 
 export async function createShift(payload: CreateShiftPayload, token: string) {
@@ -64,9 +68,10 @@ export async function createShift(payload: CreateShiftPayload, token: string) {
   return unwrapData(res);
 }
 
-export async function listShifts(token: string) {
-  const res = await apiFetchFirstSuccess<ApiEnvelope<ShiftRecord[]> | ShiftRecord[]>(
-    SHIFT_PATHS.list,
+export async function listShifts(token: string, page = 1, limit = 10) {
+  const paths = SHIFT_PATHS.list.map(p => `${p}?page=${page}&limit=${limit}`);
+  const res = await apiFetchFirstSuccess<ApiEnvelope<ListShiftsResponse> | ListShiftsResponse>(
+    paths,
     { token }
   );
   return unwrapData(res);

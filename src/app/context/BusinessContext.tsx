@@ -16,7 +16,7 @@ import { getMyBusinessProfile } from "@/lib/api/business";
 export type BusinessData = {
   id: string;
   fullName?: string;
-  name: string;
+  name?: string;
   type: string;
   email?: string;
   phone?: string;
@@ -98,14 +98,13 @@ export function BusinessProvider({
         const profile = await getMyBusinessProfile(session.token);
         if (profile) {
           const nextBusiness: BusinessData = {
-            id: profile.id,
+            id: profile.id||"me",
             fullName: profile.fullName,
-            name: profile.name,
-            type: profile.type,
-            city: profile.location,
+            type: profile.type!,
+            city: profile.location!,
             staffSize: profile.staffSize,
-            timezone: profile.timezone,
-            createdAt: profile.createdAt,
+            timezone: profile.timezone || "Africa/Lagos",
+            createdAt: profile.createdAt || new Date() .toISOString(),
           };
 
           setBusiness(nextBusiness);

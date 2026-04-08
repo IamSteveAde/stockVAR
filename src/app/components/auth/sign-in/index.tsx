@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { login } from "@/lib/api/auth";
+import { login, saveSession } from "@/lib/api/auth";
 import { getMyBusinessProfile } from "@/lib/api/business";
 import { getMyProfile, updateMyProfile } from "@/lib/api/profile";
 import { markOnboardingComplete, readSignupName } from "@/lib/onboarding";
@@ -31,7 +31,11 @@ export default function Login() {
 
       // Step 1: Sign in and get session
       const session = await login({ email, password });
-      const businessProfile = await getMyBusinessProfile(session.token);
+
+      if(!session.token){
+        router.push("/auth/login")
+      }
+      const businessProfile = await getMyBusinessProfile(session.token!);
       const preferredFullName =
         businessProfile?.fullName?.trim() ||
         session.user?.fullName?.trim() ||
@@ -46,25 +50,25 @@ export default function Login() {
           {
             fullName: preferredFullName || undefined,
             email: preferredEmail,
-            phone: preferredPhone,
+            phoneNumber: preferredPhone,
             status: "active",
           },
-          session.token
+          session.token!
         );
 
-        const backendProfile = await getMyProfile(session.token);
+        const backendProfile = await getMyProfile(session.token!);
         if (backendProfile && typeof backendProfile === "object") {
           saveSession({
             ...session,
             user: {
               ...session.user,
-              id: backendProfile.id || session.user.id,
+              // id: backendProfile.id || session.user.id,
               fullName:
                 backendProfile.fullName ||
-                preferredFullName ||
-                session.user.fullName,
-              email: backendProfile.email || session.user.email,
-              role: backendProfile.role || session.user.role,
+                preferredFullName ,
+                
+              email: backendProfile.email ,
+              role: backendProfile.role,
             },
           });
         }
@@ -77,7 +81,7 @@ export default function Login() {
       // Step 3: Check if user has completed onboarding via business profile endpoint
       let hasCompletedOnboarding = false;
       try {
-        const businessProfile = await getMyBusinessProfile(session.token);
+        const businessProfile = await getMyBusinessProfile(session.token!);
         hasCompletedOnboarding = businessProfile !== null;
 
         // Mark onboarding complete if business profile exists

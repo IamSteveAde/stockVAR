@@ -4,6 +4,16 @@ export type ApiEnvelope<TData> = {
   data?: TData;
 };
 
+export type PaginationMeta = {
+  isFirstPage: boolean;
+  isLastPage: boolean;
+  currentPage: number;
+  previousPage: number | null;
+  nextPage: number | null;
+  pageCount: number;
+  totalCount: number;
+};
+
 export function unwrapData<TData>(payload: ApiEnvelope<TData> | TData): TData {
   if (
     payload &&

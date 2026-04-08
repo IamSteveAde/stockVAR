@@ -21,9 +21,11 @@ export default function MyUpcomingShifts() {
       shifts.filter(
         (s) =>
           s.status === "planned" &&
-          s.staff.some((st) => st.id === profile.id)
+          (s.staff.some((st) => st.fullName === profile?.fullName) ||
+            s.staffResponsibleName === profile?.fullName ||
+            s.responsibleStaffId === profile?.fullName)
       ),
-    [shifts, profile.id]
+    [shifts, profile?.fullName]
   );
 
   return (
@@ -49,7 +51,7 @@ export default function MyUpcomingShifts() {
                   {s.startDate} • {s.startTime} – {s.endTime}
                 </p>
                 <p className="text-xs">
-                  Responsible: {responsible?.fullName}
+                  Responsible: {s.staffResponsibleName || responsible?.fullName}
                 </p>
               </li>
             );

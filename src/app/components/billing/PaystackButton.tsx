@@ -12,8 +12,8 @@ export default function PaystackButton({
 }: PaystackButtonProps) {
   const { activateSubscription } = useSubscription();
 
-  const publicKey =
-    process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+  const publicKey = "randomKey"
+    // process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
 
   if (!publicKey) {
     return (

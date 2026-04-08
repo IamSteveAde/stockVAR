@@ -1,5 +1,5 @@
 import { apiFetchFirstSuccess } from "./client";
-import { unwrapData, type ApiEnvelope } from "./response";
+import { unwrapData, PaginationMeta, type ApiEnvelope } from "./response";
 
 export type ProductRecord = {
     id: string;
@@ -22,15 +22,6 @@ export type CreateProductPayload = {
     unit: string;
 };
 
-export type PaginationMeta = {
-    isFirstPage: boolean;
-    isLastPage: boolean;
-    currentPage: number;
-    previousPage: number | null;
-    nextPage: number | null;
-    pageCount: number;
-    totalCount: number;
-};
 
 export type ListProductsResponse = {
     products: ProductRecord[];

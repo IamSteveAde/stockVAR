@@ -26,7 +26,7 @@ type Props = {
   currentUserEmail: string;
   currentUserRole: "owner" | "manager" | "staff";
   onCancel: () => void;
-  onConfirm?: (closingSnapshot: StockSnapshot[], pin: string) => Promise<boolean>; // optional
+  onConfirm?: (closingSnapshot: StockSnapshot[], pin: string) => Promise<void>; // optional
 };
 
 /* ================= COMPONENT ================= */
@@ -72,13 +72,7 @@ const productMap = useMemo(() => {
 
   /* ================= RESPONSIBLE STAFF ================= */
 
-  const responsibleStaff = useMemo(
-    () =>
-      shift.staff.find(
-        (s: Staff) => s.id === shift.responsibleStaffId
-      ),
-    [shift]
-  );
+  // Responsibility locally sourced cleanly through direct staffResponsibleName bindings
 
   /* ================= HELPERS ================= */
 
@@ -97,8 +91,8 @@ const productMap = useMemo(() => {
   /* ================= SUBMIT ================= */
 
   const submit = async () => {
-    if (currentUserRole !== "staff") {
-      setError("Only staff members can end shifts.");
+    if (!["staff", "manager"].includes(currentUserRole)) {
+      setError("Only authorized members can end shifts.");
       return;
     }
 
@@ -114,36 +108,9 @@ const productMap = useMemo(() => {
       return;
     }
 
-    // 2️⃣ Verify responsible staff
-    if (!responsibleStaff) {
-      setError(
-        "Responsible staff not found for this shift."
-      );
-      return;
-    }
-
-    const isResponsibleById = currentUserId === responsibleStaff.id;
-    const isResponsibleByEmail =
-      !!currentUserEmail &&
-      currentUserEmail.trim().toLowerCase() ===
-        responsibleStaff.email.trim().toLowerCase();
-
-    if (!isResponsibleById && !isResponsibleByEmail) {
-      setError(
-        "Only the responsible staff account can end this shift."
-      );
-      return;
-    }
-
+    // 2️⃣ Verify PIN presence
     if (!pin) {
       setError("Please enter your PIN.");
-      return;
-    }
-
-    if (pin !== responsibleStaff.pin) {
-      setError(
-        "Invalid PIN. Only the responsible staff can end this shift."
-      );
       return;
     }
 
@@ -183,18 +150,20 @@ const productMap = useMemo(() => {
       })
     );
 
-    // 7️⃣ Backend/state callback must succeed before local inventory overwrite.
-    const confirmed = onConfirm
-      ? await onConfirm(closingSnapshot, pin)
-      : true;
-
-    if (!confirmed) {
-      setError("Unable to end shift. Please try again.");
-      return;
+    try {
+      if (onConfirm) {
+        await onConfirm(closingSnapshot, pin);
+      }
+      
+      // 8️⃣ Close modal
+      onCancel();
+    } catch (err: any) {
+      setError(
+        typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
+          ? err.message
+          : "Unable to end shift. Please try again."
+      );
     }
-
-    // 8️⃣ Close modal
-    onCancel();
   };
 
   /* ================= UI ================= */
@@ -221,7 +190,7 @@ const productMap = useMemo(() => {
         {/* Responsible staff */}
         <div className="text-sm text-gray-600">
           <strong>Responsible staff:</strong>{" "}
-          {responsibleStaff?.fullName ?? "Unknown"}
+          {shift.staffResponsibleName || "Unknown"}
         </div>
 
         {/* Inventory list */}

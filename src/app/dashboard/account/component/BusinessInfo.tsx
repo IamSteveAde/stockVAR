@@ -60,7 +60,7 @@ export default function BusinessInfo() {
           businessType: draft.type,
           location: draft.city,
           dailyStaffSize: draft.staffSize,
-          staffSize: draft.staffSize,
+          // staffSize: draft.staffSize,
           timezone: draft.timezone,
         },
         session.token
@@ -73,7 +73,7 @@ export default function BusinessInfo() {
         type: saved.type,
         email: saved.email,
         phone: saved.phone,
-        city: saved.city,
+        // loca: saved.city,
         staffSize: saved.staffSize,
         timezone: saved.timezone,
         createdAt: saved.createdAt,
@@ -86,7 +86,7 @@ export default function BusinessInfo() {
         type: saved.type,
         email: saved.email,
         phone: saved.phone,
-        city: saved.city,
+        city: saved.location||"dum",
         staffSize: saved.staffSize,
         timezone: saved.timezone,
         createdAt: saved.createdAt,
@@ -144,7 +144,7 @@ export default function BusinessInfo() {
         <Field
           label="Business name"
           icon={Building2}
-          value={draft.name}
+          value={draft.name ||"Ran dom name"}
           editable={editing}
           onChange={(v) =>
             setDraft({ ...draft, name: v })

@@ -87,6 +87,7 @@ export type Shift = {
    * Must authenticate with PIN to start & end shift
    */
   responsibleStaffId: string;
+  staffResponsibleName?: string;
 
   /**
    * Recurrence metadata (optional)

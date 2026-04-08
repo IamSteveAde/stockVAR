@@ -6,27 +6,19 @@ import { Staff, Shift } from "./types";
 
 /* ================= TYPES ================= */
 
-type CreateShiftPayload = Omit<
-  Shift,
-  | "status"
-  | "startedAt"
-  | "endedAt"
-  | "startedBy"
-  | "endedBy"
-  | "openingSnapshot"
-  | "closingSnapshot"
->;
+import { CreateShiftPayload } from "@/lib/api/shifts";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onCreate: (shift: CreateShiftPayload) => Promise<void>;
+  onCreate: (payload: CreateShiftPayload) => Promise<void>;
   staffList: Staff[];
   existingShifts: Shift[];
 };
 
 const SHIFT_LABELS = ["Morning", "Afternoon", "Night", "Full Day", "Custom"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const FULL_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 /* ================= HELPERS ================= */
 
@@ -97,6 +89,8 @@ export default function CreateShiftModal({
 
   /* ================= CREATE ================= */
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleCreate = async () => {
     if (!date) return alert("Select a start date");
     if (isPastDate(date)) return alert("Date cannot be in the past");
@@ -104,54 +98,23 @@ export default function CreateShiftModal({
     if (!responsibleStaffId) return alert("Select staff in charge");
     if (repeat && repeatDays.length === 0)
       return alert("Select at least one repeat day");
+    if (repeat && !repeatUntil)
+      return alert("Select an end date for recurrence");
 
-    const assignedStaff = activeStaff.filter((s) =>
-      selectedStaff.includes(s.id)
-    );
-
-    const baseShiftId = crypto.randomUUID();
-    const shiftsToCreate: CreateShiftPayload[] = [];
-
-    const start = new Date(date);
-    const end = repeatUntil ? new Date(repeatUntil) : start;
-    let cursor = new Date(start);
-
-    while (cursor <= end) {
-      if (!repeat || repeatDays.includes(cursor.getDay())) {
-        const d = cursor.toISOString().split("T")[0];
-        const range = buildTimeRange(d, startTime, endTime);
-
-        const conflict = existingShifts.some((s) => {
-          const ex = buildTimeRange(s.startDate, s.startTime, s.endTime);
-          return range.startMs < ex.endMs && ex.startMs < range.endMs;
-        });
-
-        if (conflict) {
-          alert(`Shift on ${d} overlaps`);
-          return;
-        }
-
-        shiftsToCreate.push({
-          id: crypto.randomUUID(),
-          label,
-          startDate: d,
-          startTime,
-          endTime,
-          staff: assignedStaff,
-          responsibleStaffId,
-          parentShiftId: repeat ? baseShiftId : undefined,
-          recurrence: repeat
-            ? { enabled: true, daysOfWeek: repeatDays, until: repeatUntil }
-            : undefined,
-        });
-      }
-      cursor.setDate(cursor.getDate() + 1);
-    }
+    setIsSubmitting(true);
 
     try {
-      for (const shiftPayload of shiftsToCreate) {
-        await onCreate(shiftPayload);
-      }
+      await onCreate({
+        staffInChargeUid: responsibleStaffId,
+        startDate: date,
+        endDate: repeat ? repeatUntil : date,
+        startTime,
+        endTime,
+        name: label,
+        linkedStaffUids: selectedStaff,
+        repeatsOn: repeat ? repeatDays.map(d => FULL_DAYS[d]) : [],
+        isWeekly: repeat,
+      });
       onClose();
     } catch (error: unknown) {
       const message =
@@ -162,6 +125,8 @@ export default function CreateShiftModal({
           ? ((error as { message: string }).message)
           : "Unable to create shift right now.";
       alert(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -350,14 +315,19 @@ export default function CreateShiftModal({
               Next <ChevronRight size={16} />
             </button>
           ) : (
-            <button
-              onClick={() => {
-                void handleCreate();
-              }}
-              className="flex items-center gap-1 bg-[#0F766E] text-white px-4 py-2 rounded"
-            >
-              <Check size={16} /> Create shift
-            </button>
+          <button
+            onClick={() => {
+              void handleCreate();
+            }}
+            disabled={isSubmitting}
+            className="flex items-center gap-1 bg-[#0F766E] text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <><Check size={16} /> Create shift</>
+            )}
+          </button>
           )}
         </div>
       </div>

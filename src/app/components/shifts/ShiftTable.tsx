@@ -21,7 +21,13 @@ import {
   createShift as createShiftApi,
   endShift as endShiftApi,
   startShift as startShiftApi,
+  listShifts,
 } from "@/lib/api/shifts";
+import { useRouter } from "next/navigation";
+
+
+
+
 
 /* ================= CONSTANTS ================= */
 
@@ -85,6 +91,10 @@ export default function ShiftTable() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   const [page, setPage] = useState(1);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  
   const [openCreate, setOpenCreate] = useState(false);
   const [viewStaff, setViewStaff] = useState<Staff[] | null>(null);
   const [closingShift, setClosingShift] = useState<Shift | null>(null);
@@ -94,197 +104,99 @@ export default function ShiftTable() {
   /* ================= LOAD ================= */
 
   useEffect(() => {
+    let mounted = true;
     setStaff(loadStaff());
     setInventory(loadInventory());
 
-    try {
-      const raw = localStorage.getItem(SHIFTS_KEY);
-      setShifts(raw ? JSON.parse(raw) : []);
-    } catch {
-      setShifts([]);
-    }
-  }, []);
+    const hydrate = async () => {
+      const token = getSession()?.token;
+      if (!token) return;
 
-  /* ================= SAVE ================= */
+      try {
+        const response: any = await listShifts(token, page, PAGE_SIZE);
+        if (mounted && response && response.shifts) {
+          const mapped = response.shifts.map((s: any) => ({
+            id: s.uid || s.id,
+            label: s.name || s.label,
+            startDate: s.date || s.startDate,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            staff: Array(s.staffCount || 1).fill({ id: "dummy", fullName: "Staff Member" }),
+            status: s.status?.toLowerCase() === "ended" ? "ended" : (s.clockInTime && !s.clockOutTime) ? "running" : "planned",
+            startedAt: s.clockInTime,
+            endedAt: s.clockOutTime,
+            responsibleStaffId: s.responsibleStaffId || s.id,
+            staffResponsibleName: s.staffResponsible,
+          }));
+          setShifts(mapped);
+          setTotalPages(response.meta?.pageCount || 1);
+          setTotalCount(response.meta?.totalCount || mapped.length);
+        }
+      } catch (err) {}
+    };
 
-  useEffect(() => {
-    localStorage.setItem(SHIFTS_KEY, JSON.stringify(shifts));
-  }, [shifts]);
+    hydrate();
+    return () => { mounted = false; };
+  }, [page, refreshKey]);
 
   /* ================= START SHIFT ================= */
 
-  const confirmStartShift = async (shift: Shift, pin: string): Promise<boolean> => {
-    if (profile.role !== "staff") {
-      return false;
-    }
-
-    const responsible = staff.find((s) => s.id === shift.responsibleStaffId);
-    const isResponsibleById = profile.id === shift.responsibleStaffId;
-    const isResponsibleByEmail =
-      !!profile.email &&
-      !!responsible?.email &&
-      profile.email.trim().toLowerCase() === responsible.email.trim().toLowerCase();
-
-    if (!isResponsibleById && !isResponsibleByEmail) {
-      return false;
+  const confirmStartShift = async (shift: Shift, pin: string): Promise<void> => {
+    if (!["staff", "manager"].includes(profile.role)) {
+      throw new Error("Only authorized members can start shifts.");
     }
 
     if (shifts.some((s) => s.status === "running")) {
-      alert("Another shift is already running.");
-      return false;
+      throw new Error("Another shift is already running.");
     }
 
     const token = getSession()?.token;
     if (!token) {
-      alert("Your session has expired. Please log in again.");
-      return false;
+      throw new Error("Your session has expired. Please log in again.");
     }
 
-    try {
-      await startShiftApi(
-        {
-          shiftId: shift.id,
-          pin,
-          openingSnapshot: inventory.map((i) => ({
-            sku: i.sku,
-            quantity: i.quantity,
-          })),
-        },
-        token
-      );
-    } catch (error: unknown) {
-      const message =
-        typeof error === "object" &&
-          error !== null &&
-          "message" in error &&
-          typeof (error as { message?: unknown }).message === "string"
-          ? ((error as { message: string }).message)
-          : "Unable to start shift right now.";
-      alert(message);
-      return false;
-    }
-
-    setShifts((prev) =>
-      prev.map((s) =>
-        s.id === shift.id
-          ? {
-            ...s,
-            status: "running",
-            startedAt: now(),
-            startedBy: {
-              staffId: profile.id,
-              name: profile.fullName,
-            },
-            openingSnapshot: inventory.map((i) => ({
-              sku: i.sku,
-              quantity: i.quantity,
-            })),
-          }
-          : s
-      )
+    await startShiftApi(
+      {
+        shiftUid: shift.id,
+        pin,
+      },
+      token
     );
 
-    writeAuditLog({
-      actor: {
-        staffId: profile.id,
-        name: profile.fullName,
-        role: profile.role,
-      },
-      action: "SHIFT_START",
-      description: "Shift started (PIN verified)",
-      entity: {
-        type: "shift",
-        id: shift.id,
-        name: shift.label,
-      },
-    });
-
-    return true;
+    // Trigger standard API re-fetch instead of local payload mutation
+    setRefreshKey((k) => k + 1);
   };
+
 
   /* ================= END SHIFT ================= */
 
-  const endShift = async (id: string, closingSnapshot: any[], pin: string): Promise<boolean> => {
-    if (profile.role !== "staff") {
-      return false;
+  const endShift = async (id: string, closingSnapshot: any[], pin: string): Promise<void> => {
+    if (!["staff", "manager"].includes(profile.role)) {
+      throw new Error("Only authorized members can end shifts.");
     }
 
     const targetShift = shifts.find((s) => s.id === id);
     if (!targetShift) {
-      return false;
-    }
-
-    const responsible = staff.find((s) => s.id === targetShift.responsibleStaffId);
-    const isResponsibleById = profile.id === targetShift.responsibleStaffId;
-    const isResponsibleByEmail =
-      !!profile.email &&
-      !!responsible?.email &&
-      profile.email.trim().toLowerCase() === responsible.email.trim().toLowerCase();
-
-    if (!isResponsibleById && !isResponsibleByEmail) {
-      return false;
+      throw new Error("Shift could not be found locally.");
     }
 
     const token = getSession()?.token;
     if (!token) {
-      alert("Your session has expired. Please log in again.");
-      return false;
+      throw new Error("Your session has expired. Please log in again.");
     }
 
-    try {
-      await endShiftApi(
-        {
-          shiftId: id,
-          pin,
-          closingSnapshot,
-        },
-        token
-      );
-    } catch (error: unknown) {
-      const message =
-        typeof error === "object" &&
-          error !== null &&
-          "message" in error &&
-          typeof (error as { message?: unknown }).message === "string"
-          ? ((error as { message: string }).message)
-          : "Unable to end shift right now.";
-      alert(message);
-      return false;
-    }
-
-    setShifts((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-            ...s,
-            status: "ended",
-            endedAt: now(),
-            endedBy: {
-              staffId: profile.id,
-              name: profile.fullName,
-            },
-            closingSnapshot,
-          }
-          : s
-      )
+    await endShiftApi(
+      {
+        shiftId: id,
+        pin,
+        closingSnapshot,
+      },
+      token
     );
 
-    writeAuditLog({
-      actor: {
-        staffId: profile.id,
-        name: profile.fullName,
-        role: profile.role,
-      },
-      action: "SHIFT_END",
-      description: "Shift ended (PIN verified)",
-      entity: {
-        type: "shift",
-        id,
-      },
-    });
-
-    return true;
+    setRefreshKey((k) => k + 1);
   };
+
 
   /* ================= DELETE ================= */
 
@@ -295,80 +207,29 @@ export default function ShiftTable() {
       prev.filter((s) => s.id !== deleteShift.id)
     );
 
-    writeAuditLog({
-      actor: {
-        staffId: profile.id,
-        name: profile.fullName,
-        role: profile.role,
-      },
-      action: "SHIFT_DELETE",
-      description: "Shift deleted",
-      entity: {
-        type: "shift",
-        id: deleteShift.id,
-        name: deleteShift.label,
-      },
-    });
+    // writeAuditLog({
+    //   actor: {
+    //     staffId: profile.id,
+    //     name: profile.fullName,
+    //     role: profile.role,
+    //   },
+    //   action: "SHIFT_DELETE",
+    //   description: "Shift deleted",
+    //   entity: {
+    //     type: "shift",
+    //     id: deleteShift.id,
+    //     name: deleteShift.label,
+    //   },
+    // });
 
     setDeleteShift(null);
   };
 
   /* ================= SORT SHIFTS (PRIORITY ORDER) ================= */
 
-  /* ================= SORT SHIFTS (OPERATIONAL ORDER) ================= */
-
-  const sortedShifts = [...shifts].sort((a, b) => {
-    // Status priority
-    const priority = (s: Shift) =>
-      s.status === "running"
-        ? 0
-        : s.status === "planned"
-          ? 1
-          : 2;
-
-    const statusDiff = priority(a) - priority(b);
-    if (statusDiff !== 0) return statusDiff;
-
-    // Same status sorting
-    if (a.status === "planned") {
-      // Planned: earliest upcoming first
-      const aTime = new Date(
-        `${a.startDate} ${a.startTime}`
-      ).getTime();
-      const bTime = new Date(
-        `${b.startDate} ${b.startTime}`
-      ).getTime();
-
-      return aTime - bTime;
-    }
-
-    if (a.status === "running") {
-      // Running: most recently started first
-      return (
-        new Date(b.startedAt || 0).getTime() -
-        new Date(a.startedAt || 0).getTime()
-      );
-    }
-
-    // Ended: most recently ended first
-    return (
-      new Date(b.endedAt || 0).getTime() -
-      new Date(a.endedAt || 0).getTime()
-    );
-  });
-
-
   /* ================= PAGINATION ================= */
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(sortedShifts.length / PAGE_SIZE)
-  );
-
-  const current = sortedShifts.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+  const current = shifts;
 
 
   /* ================= UI ================= */
@@ -467,10 +328,10 @@ export default function ShiftTable() {
                     {/* Status */}
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${s.status === "planned"
-                          ? "bg-gray-100 text-gray-600"
-                          : s.status === "running"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-blue-100 text-blue-700"
+                        ? "bg-gray-100 text-gray-600"
+                        : s.status === "running"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-blue-100 text-blue-700"
                         }`}
                     >
                       {s.status}
@@ -548,32 +409,16 @@ export default function ShiftTable() {
           onClose={() => setOpenCreate(false)}
           staffList={staff}
           existingShifts={shifts}
-          onCreate={async (shift) => {
+          onCreate={async (payload) => {
             const token = getSession()?.token;
             if (!token) {
-              router.push("/auth/login");
-              return;
-            } if (!token) {
               throw new Error("Your session has expired. Please log in again.");
             }
 
-            await createShiftApi(
-              {
-                label: shift.label,
-                startDate: shift.startDate,
-                startTime: shift.startTime,
-                endTime: shift.endTime,
-                responsibleStaffId: shift.responsibleStaffId,
-                staffIds: shift.staff.map((member) => member.id),
-                recurrence: shift.recurrence,
-              },
-              token
-            );
+            await createShiftApi(payload, token);
 
-            setShifts((prev) => [
-              { ...shift, status: "planned" },
-              ...prev,
-            ]);
+            // Fetch natively from the backend rather than pushing dummy maps
+            setRefreshKey((k) => k + 1);
           }}
         />
       )}
@@ -582,16 +427,14 @@ export default function ShiftTable() {
         <StartShiftModal
           shift={startingShift}
           staff={staff}
-          currentUserId={profile.id}
+          // currentUserId={profile.id}
+          currentUserId="dummy"
           currentUserEmail={profile.email}
           currentUserRole={profile.role}
           onCancel={() => setStartingShift(null)}
           onConfirm={async (pin) => {
-            const ok = await confirmStartShift(startingShift, pin);
-            if (ok) {
-              setStartingShift(null);
-            }
-            return ok;
+            await confirmStartShift(startingShift, pin);
+            setStartingShift(null);
           }}
         />
       )}
@@ -600,16 +443,14 @@ export default function ShiftTable() {
         <CloseShiftModal
           shift={closingShift}
           inventory={inventory}
-          currentUserId={profile.id}
+          // currentUserId={profile.id}
+          currentUserId="dummy"
           currentUserEmail={profile.email}
           currentUserRole={profile.role}
           onCancel={() => setClosingShift(null)}
           onConfirm={async (snapshot, pin) => {
-            const ok = await endShift(closingShift.id, snapshot, pin);
-            if (ok) {
-              setClosingShift(null);
-            }
-            return ok;
+            await endShift(closingShift.id, snapshot, pin);
+            setClosingShift(null);
           }}
         />
       )}

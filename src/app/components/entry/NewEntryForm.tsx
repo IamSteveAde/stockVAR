@@ -125,7 +125,7 @@ export default function NewEntryForm() {
           quantity: qty,
           entryType: type === "in" ? "stock-in" : "stock-out",
           note: reason || undefined,
-          actorStaffId: profile.id,
+          // actorStaffId: profile.id,
           actorEmail: profile.email,
           actorRole: "staff",
           requireStaffAuthorization: true,
@@ -208,32 +208,32 @@ export default function NewEntryForm() {
 
     /* ================= WRITE AUDIT LOG (ENTERPRISE) ================= */
 
-    writeAuditLog({
-      actor: {
-        staffId: profile.id,
-        name: profile.fullName,
-        role: profile.role,
-      },
-      action: type === "in" ? "STOCK_IN" : "STOCK_OUT",
-      description:
-        type === "in"
-          ? "Stock added"
-          : "Stock removed",
-      entity: {
-        type: "product",
-        id: product.sku,
-        name: product.name,
-      },
-      changes: {
-        before: { quantity: beforeQty },
-        after: { quantity: afterQty },
-        delta: type === "in" ? qty : -qty,
-      },
-      shift: {
-        id: activeShift.id,
-        label: activeShift.label,
-      },
-    });
+    // writeAuditLog({
+    //   actor: {
+    //     staffId: profile.id,
+    //     name: profile.fullName,
+    //     role: profile.role,
+    //   },
+    //   action: type === "in" ? "STOCK_IN" : "STOCK_OUT",
+    //   description:
+    //     type === "in"
+    //       ? "Stock added"
+    //       : "Stock removed",
+    //   entity: {
+    //     type: "product",
+    //     id: product.sku,
+    //     name: product.name,
+    //   },
+    //   changes: {
+    //     before: { quantity: beforeQty },
+    //     after: { quantity: afterQty },
+    //     delta: type === "in" ? qty : -qty,
+    //   },
+    //   shift: {
+    //     id: activeShift.id,
+    //     label: activeShift.label,
+    //   },
+    // });
 
     /* ================= RESET ================= */
 

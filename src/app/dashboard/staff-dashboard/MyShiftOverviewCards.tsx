@@ -19,9 +19,11 @@ export default function MyShiftOverviewCards() {
   const myShifts = useMemo(
     () =>
       shifts.filter((s) =>
-        s.staff.some((st) => st.id === profile.id)
+        s.staff.some((st) => st.fullName === profile?.fullName) ||
+        s.staffResponsibleName === profile?.fullName ||
+        s.responsibleStaffId === profile?.fullName
       ),
-    [shifts, profile.id]
+    [shifts, profile?.fullName]
   );
 
   const completed = myShifts.filter(
@@ -29,7 +31,7 @@ export default function MyShiftOverviewCards() {
   ).length;
 
   const responsible = myShifts.filter(
-    (s) => s.responsibleStaffId === profile.id
+    (s) => s.staffResponsibleName === profile?.fullName || s.responsibleStaffId === profile?.fullName
   ).length;
 
   const cards = [

@@ -20,10 +20,12 @@ export default function MyCurrentShift() {
     () =>
       shifts.find(
         (s) =>
-          s.status === "running" &&
-          s.staff.some((st) => st.id === profile.id)
+          s.status === "running" 
+        // &&
+        //   s.staff.some((st) => st.id === profile.id)
       ),
-    [shifts, profile.id]
+    // [shifts, profile.id]
+    [shifts, "profile.id"]
   );
 
   if (!currentShift) return null;
@@ -33,8 +35,8 @@ const responsible = currentShift.staff.find(
 );
 
 
-  const isResponsible =
-    currentShift.responsibleStaffId === profile.id;
+  // const isResponsible =
+  //   currentShift.responsibleStaffId === profile.id;
 
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm">
@@ -51,11 +53,11 @@ const responsible = currentShift.staff.find(
         Responsible: {responsible?.fullName ?? "Unknown"}
       </p>
 
-      {isResponsible && (
+      {/* {isResponsible && (
         <span className="inline-block mt-3 px-3 py-1 text-xs rounded-full bg-green-100 text-green-700">
           You are responsible
         </span>
-      )}
+      )} */}
     </div>
   );
 }

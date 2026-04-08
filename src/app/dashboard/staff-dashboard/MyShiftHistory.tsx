@@ -19,13 +19,9 @@ export default function MyShiftHistory() {
   const history = useMemo(
     () =>
       shifts
-        .filter(
-          (s) =>
-            s.status === "ended" &&
-            s.staff.some((st) => st.id === profile.id)
-        )
+        .filter((s) => s.status === "ended")
         .slice(0, 6),
-    [shifts, profile.id]
+    [shifts, profile?.fullName]
   );
 
   return (
@@ -48,7 +44,7 @@ export default function MyShiftHistory() {
               </p>
               <p className="text-xs">
                 Role:{" "}
-                {s.responsibleStaffId === profile.id
+                {s.staffResponsibleName === profile?.fullName
                   ? "Responsible"
                   : "Participant"}
               </p>

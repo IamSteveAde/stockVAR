@@ -381,7 +381,7 @@ export default function OverviewReport() {
                 radius={[6, 6, 0, 0]}
                 minPointSize={6}
                 cursor="pointer"
-                onClick={(data) => {
+                onClick={(data: any) => {
                   setSelectedVariance(data);
                   setOpenVariance(true);
                 }}
@@ -389,7 +389,7 @@ export default function OverviewReport() {
              <LabelList
   dataKey="variance"
   position="inside"
-  formatter={(value) =>
+  formatter={(value: any) =>
     typeof value === "number" ? value : ""
   }
   style={{

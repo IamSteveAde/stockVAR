@@ -31,12 +31,12 @@ export default function DebugProfileLoader() {
           setDebug({
             sessionUserId: session.user?.id,
             sessionUserEmail: session.user?.email,
-            profileId: profile?.id,
+            // profileId: profile?.id,
             profileEmail: profile?.email,
             businessId: business?.id,
             businessName: business?.name,
             businessError: businessError || "None",
-            match: session.user?.id === profile?.id,
+            // match: session.user?.id === profile?.id,
           });
         } catch (error) {
           console.error("=== DEBUG ERROR ===", error);

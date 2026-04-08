@@ -8,8 +8,6 @@ import { ProfileProvider, useProfile } from "../context/ProfileContext";
 import { BusinessProvider, useBusiness } from "../context/BusinessContext";
 import { SubscriptionProvider } from "../context/SubscriptionContext";
 import TrialBanner from "../components/billing/TrialBanner";
-import DevProfileSwitcher from "@/app/dev/DevProfileSwitcher";
-import DebugProfileLoader from "@/app/components/debug/DebugProfileLoader";
 
 /* ================= ROLE GUARD ================= */
 
@@ -75,14 +73,6 @@ export default function DashboardLayout({
                 </main>
               </div>
             </div>
-
-            {/* ✅ DEBUG COMPONENT - REMOVE AFTER TESTING */}
-            <DebugProfileLoader />
-
-            {/* ✅ DEV ONLY ROLE SWITCHER */}
-            {process.env.NODE_ENV === "development" && (
-              <DevProfileSwitcher />
-            )}
           </RoleGuard>
         </SubscriptionProvider>
       </BusinessProvider>

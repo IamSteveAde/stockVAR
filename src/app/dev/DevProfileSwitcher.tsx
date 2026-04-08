@@ -14,12 +14,11 @@ export default function DevProfileSwitcher() {
       <button
         onClick={() =>
           setProfile({
-            id: "staff-1",
             fullName: "John Staff",
-            phone: "0801 000 0000",
+            phoneNumber: "0801 000 0000",
             email: "staff@restaurant.com",
             role: "staff",
-            avatar: "/images/avatar.png",
+            profileUrl: "/images/avatar.png",
             status: "active",
           })
         }
@@ -31,12 +30,11 @@ export default function DevProfileSwitcher() {
       <button
         onClick={() =>
           setProfile({
-            id: "manager-1",
             fullName: "Jane Manager",
-            phone: "0802 000 0000",
+            phoneNumber: "0802 000 0000",
             email: "manager@restaurant.com",
             role: "manager",
-            avatar: "/images/avatar.png",
+            profileUrl: "/images/avatar.png",
             status: "active",
           })
         }
@@ -48,12 +46,11 @@ export default function DevProfileSwitcher() {
       <button
         onClick={() =>
           setProfile({
-            id: "owner-1",
             fullName: "Ade Johnson",
-            phone: "0803 123 4567",
+            phoneNumber: "0803 123 4567",
             email: "ade@restaurant.com",
             role: "owner",
-            avatar: "/images/avatar.png",
+            profileUrl: "/images/avatar.png",
             status: "active",
           })
         }

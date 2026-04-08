@@ -11,7 +11,7 @@ type Props = {
   currentUserEmail: string;
   currentUserRole: "owner" | "manager" | "staff";
   onCancel: () => void;
-  onConfirm: (pin: string) => Promise<boolean>;
+  onConfirm: (pin: string) => Promise<void>;
 };
 
 export default function StartShiftModal({
@@ -29,37 +29,11 @@ export default function StartShiftModal({
   /**
    * Resolve the responsible staff member
    */
-  const responsibleStaff = useMemo(
-    () =>
-      staff.find(
-        (s) => s.id === shift.responsibleStaffId
-      ),
-    [staff, shift.responsibleStaffId]
-  );
+  // Lookup block removed natively relying on backend name mapping string payload
 
   const submit = async () => {
-    if (currentUserRole !== "staff") {
-      setError("Only staff members can start shifts.");
-      return;
-    }
-
-    if (!responsibleStaff) {
-      setError(
-        "Responsible staff not found for this shift."
-      );
-      return;
-    }
-
-    const isResponsibleById = currentUserId === responsibleStaff.id;
-    const isResponsibleByEmail =
-      !!currentUserEmail &&
-      currentUserEmail.trim().toLowerCase() ===
-        responsibleStaff.email.trim().toLowerCase();
-
-    if (!isResponsibleById && !isResponsibleByEmail) {
-      setError(
-        "Only the responsible staff account can start this shift."
-      );
+    if (!["staff", "manager"].includes(currentUserRole)) {
+      setError("Only authorized members can start shifts.");
       return;
     }
 
@@ -68,17 +42,14 @@ export default function StartShiftModal({
       return;
     }
 
-    if (pin !== responsibleStaff.pin) {
+    try {
+      await onConfirm(pin);
+    } catch (err: any) {
       setError(
-        "Invalid PIN. Only the responsible staff can start this shift."
+        typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
+          ? err.message
+          : "Unable to start shift. Please try again."
       );
-      return;
-    }
-
-    const ok = await onConfirm(pin);
-    if (!ok) {
-      setError("Unable to start shift. Please try again.");
-      return;
     }
   };
 
@@ -102,8 +73,7 @@ export default function StartShiftModal({
           </p>
           <p>
             <strong>Responsible:</strong>{" "}
-            {responsibleStaff?.fullName ??
-              "Unknown"}
+            {shift.staffResponsibleName || "Unknown"}
           </p>
         </div>
 
