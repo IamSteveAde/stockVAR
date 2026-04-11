@@ -32,80 +32,57 @@ export default function Login() {
       // Step 1: Sign in and get session
       const session = await login({ email, password });
 
-      if(!session.token){
-        router.push("/auth/login")
+      if (!session.token) {
+        router.push("/auth/login");
+        return;
       }
-      const businessProfile = await getMyBusinessProfile(session.token!);
-      const preferredFullName =
-        businessProfile?.fullName?.trim() ||
-        session.user?.fullName?.trim() ||
-        readSignupName().trim();
-      const preferredEmail =
-        businessProfile?.email?.trim() || session.user?.email;
-      const preferredPhone = businessProfile?.phone?.trim();
 
-      // Step 2: Sync the stored onboarding identity from /api/profile/me/business into /api/profile/me.
+      // Step 2: Sync profile identities securely based on explicit Role limitations
+      let profileData: any = null;
+
       try {
-        await updateMyProfile(
-          {
-            fullName: preferredFullName || undefined,
-            email: preferredEmail,
-            phoneNumber: preferredPhone,
-            status: "active",
-          },
-          session.token!
-        );
-
-        const backendProfile = await getMyProfile(session.token!);
-        if (backendProfile && typeof backendProfile === "object") {
-          saveSession({
-            ...session,
-            user: {
-              ...session.user,
-              // id: backendProfile.id || session.user.id,
-              fullName:
-                backendProfile.fullName ||
-                preferredFullName ,
-                
-              email: backendProfile.email ,
-              role: backendProfile.role,
-            },
-          });
+        if (session.user?.role === "owner") {
+          profileData = await getMyBusinessProfile(session.token);
+          if (profileData) markOnboardingComplete();
+        } else {
+          profileData = await getMyProfile(session.token);
         }
+
+        const preferredFullName =
+          profileData?.fullName?.trim() ||
+          session.user?.fullName?.trim() ||
+          readSignupName().trim();
+        const preferredEmail =
+          profileData?.email?.trim() || session.user?.email;
+
+        saveSession({
+          ...session,
+          user: {
+            ...session.user,
+            fullName: preferredFullName || session.user?.fullName,
+            email: preferredEmail,
+          },
+        });
       } catch {
         // Non-blocking: fallback to the session returned from auth endpoint.
       }
 
       setSuccess("Login successful. Redirecting...");
 
-      // Step 3: Check if user has completed onboarding via business profile endpoint
-      let hasCompletedOnboarding = false;
-      try {
-        const businessProfile = await getMyBusinessProfile(session.token!);
-        hasCompletedOnboarding = businessProfile !== null;
-
-        // Mark onboarding complete if business profile exists
-        if (hasCompletedOnboarding) {
-          markOnboardingComplete();
-        }
-      } catch {
-        // Business profile fetch failed - assume not onboarded
-        hasCompletedOnboarding = false;
-      }
-
-      // Step 4: Route based on role and onboarding status
+      // Step 3: Route securely leveraging exact Auth metadata
       setTimeout(() => {
         const role = session.user?.role;
+        const hasCompletedOnboarding = session.proceedToProfileCreation === false;
 
-        // Staff always goes to shift dashboard
+        // Staff always goes to shift terminal
         if (role === "staff") {
           router.push("/dashboard/shift");
         }
-        // Owner/Manager: check if onboarded
-        else if (!hasCompletedOnboarding) {
+        // Owner checks for onboarding explicitly natively provided inside token payload
+        else if (role === "owner" && !hasCompletedOnboarding) {
           router.push("/onboarding/create-business");
         }
-        // Already onboarded → go to dashboard
+        // Everyone else (successfully onboarded Owners + Managers) hits the Main Dashboard
         else {
           router.push("/dashboard");
         }

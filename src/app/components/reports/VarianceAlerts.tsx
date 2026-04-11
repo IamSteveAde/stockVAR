@@ -1,227 +1,100 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { Shift } from "../shifts/types";
-
-/* ================= STORAGE KEYS ================= */
-
-const PRODUCTS_KEY = "stockvar_products";
-const SHIFTS_KEY = "stockvar_shifts";
-const LOGS_KEY = "stockvar_inventory_logs";
+import { useEffect, useState, useCallback } from "react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { getVarianceAlerts, VarianceAlertRow } from "@/lib/api/reports";
+import { getSession } from "@/lib/api/auth";
 
 /* ================= TYPES ================= */
 
-type Product = {
-  sku: string;
-  name: string;
-  unit: string;
-};
-
-type InventoryLog = {
-  sku: string;
-  quantity: number;
-  action: "in" | "out";
-  shiftId: string;
-};
-
-type StockSnapshot = {
-  sku: string;
-  quantity: number;
-};
-
 type Severity = "High" | "Medium" | "Low";
 type DateRange = "today" | "7d" | "1m" | "2m" | "custom";
-
-
-type AlertRow = {
-  sku: string;
-  product: string;
-  unit: string;
-  shiftLabel: string;
-  date: string;
-  variance: number;
-  severity: Severity;
-};
 
 /* ================= CONSTANTS ================= */
 
 const PAGE_SIZE = 10;
 
-/* ================= HELPERS ================= */
-
-const severityFromVariance = (v: number): Severity => {
-  const abs = Math.abs(v);
-  if (abs >= 10) return "High";
-  if (abs >= 5) return "Medium";
-  return "Low";
-};
-
-const withinDateRange = (
-  date: string,
-  range: DateRange,
-  from?: string,
-  to?: string
-) => {
-  const ts = new Date(date).getTime();
-  if (Number.isNaN(ts)) return false;
-
-  const now = new Date();
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  if (range === "today") {
-    return ts >= todayStart.getTime();
-  }
-
-  if (range === "7d") {
-    return ts >= now.getTime() - 7 * 86400000;
-  }
-
-  if (range === "1m") {
-    return ts >= now.getTime() - 30 * 86400000;
-  }
-
-  if (range === "2m") {
-    return ts >= now.getTime() - 60 * 86400000;
-  }
-
-  if (range === "custom" && from && to) {
-    return (
-      ts >= new Date(from + "T00:00:00").getTime() &&
-      ts <= new Date(to + "T23:59:59").getTime()
-    );
-  }
-
-  return true;
-};
-
-
 /* ================= COMPONENT ================= */
 
 export default function VarianceAlerts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [logs, setLogs] = useState<InventoryLog[]>([]);
-
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [serverRows, setServerRows] = useState<VarianceAlertRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   /* ---------- Filters ---------- */
   const [dateRange, setDateRange] = useState<DateRange>("7d");
-
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [severity, setSeverity] = useState<Severity | "all">("all");
   const [search, setSearch] = useState("");
 
-  /* ================= LOAD DATA ================= */
+  const getDateParams = useCallback(() => {
+    if (dateRange === "custom") return { startDate: fromDate, endDate: toDate };
+
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (dateRange === "today") {
+      return { 
+        startDate: today.toISOString().split("T")[0], 
+        endDate: today.toISOString().split("T")[0] 
+      };
+    }
+
+    const d = new Date();
+    if (dateRange === "7d") d.setDate(d.getDate() - 7);
+    else if (dateRange === "1m") d.setDate(d.getDate() - 30);
+    else if (dateRange === "2m") d.setDate(d.getDate() - 60);
+
+    return {
+      startDate: d.toISOString().split("T")[0],
+      endDate: now.toISOString().split("T")[0],
+    };
+  }, [dateRange, fromDate, toDate]);
+
+  /* ================= FETCH SERVER DATA ================= */
 
   useEffect(() => {
-    setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
-    setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
-    setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
-  }, []);
+    let isMounted = true;
+    const fetchAlerts = async () => {
+      try {
+        setIsLoading(true);
+        const token = getSession()?.token;
+        if (!token) {
+          if (isMounted) setIsLoading(false);
+          return;
+        }
 
-  /* ================= BUILD ALERTS ================= */
+        const { startDate, endDate } = getDateParams();
+        const res = await getVarianceAlerts(
+          startDate, 
+          endDate, 
+          search, 
+          severity, 
+          page, 
+          PAGE_SIZE, 
+          token
+        );
 
-  const alerts: AlertRow[] = useMemo(() => {
-    const rows: AlertRow[] = [];
+        if (isMounted) {
+          setServerRows(res.alert || []);
+          setTotalPages(res.meta.pageCount || 1);
+        }
+      } catch (err) {
+        console.error("Failed to fetch variance alerts", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
 
-    shifts
-      .filter(
-        (s) =>
-          s.status === "ended" &&
-          s.openingSnapshot &&
-          s.closingSnapshot &&
-          s.endedAt
-      )
-      .forEach((shift) => {
-        products.forEach((product) => {
-          const opening =
-            shift.openingSnapshot!.find(
-              (i: StockSnapshot) => i.sku === product.sku
-            )?.quantity || 0;
-
-          const closing =
-            shift.closingSnapshot!.find(
-              (i: StockSnapshot) => i.sku === product.sku
-            )?.quantity || 0;
-
-          const shiftLogs = logs.filter(
-            (l) => l.shiftId === shift.id && l.sku === product.sku
-          );
-
-          const added = shiftLogs
-            .filter((l) => l.action === "in")
-            .reduce((s, l) => s + l.quantity, 0);
-
-          const used = shiftLogs
-            .filter((l) => l.action === "out")
-            .reduce((s, l) => s + l.quantity, 0);
-
-          const expected = opening + added - used;
-          const variance = closing - expected;
-
-          if (variance === 0) return;
-
-          const sev = severityFromVariance(variance);
-
-          if (
-            !withinDateRange(
-              shift.endedAt!,
-              dateRange,
-              fromDate,
-              toDate
-            )
-          )
-            return;
-
-          if (severity !== "all" && sev !== severity) return;
-
-          if (
-            search &&
-            !product.name.toLowerCase().includes(search.toLowerCase()) &&
-            !product.sku.toLowerCase().includes(search.toLowerCase())
-          )
-            return;
-
-          rows.push({
-            sku: product.sku,
-            product: product.name,
-            unit: product.unit,
-            shiftLabel: shift.label,
-            date: shift.endedAt!,
-            variance,
-            severity: sev,
-          });
-        });
-      });
-
-    return rows.sort(
-      (a, b) => Math.abs(b.variance) - Math.abs(a.variance)
-    );
-  }, [
-    shifts,
-    products,
-    logs,
-    dateRange,
-    fromDate,
-    toDate,
-    severity,
-    search,
-  ]);
-
-  /* ================= PAGINATION ================= */
-
-  const totalPages = Math.max(1, Math.ceil(alerts.length / PAGE_SIZE));
-  const pageData = alerts.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+    const debounceHandle = setTimeout(fetchAlerts, 300); // Optional debounce for search
+    return () => {
+      isMounted = false;
+      clearTimeout(debounceHandle);
+    };
+  }, [dateRange, fromDate, toDate, severity, search, page, getDateParams]);
 
   /* ================= UI ================= */
 
@@ -303,38 +176,53 @@ export default function VarianceAlerts() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="px-4 py-3 text-left">Date</th>
-              <th className="px-4 py-3 text-left">Item</th>
-              <th className="px-4 py-3 text-right">Variance</th>
-              <th className="px-4 py-3">Unit</th>
-              <th className="px-4 py-3">Shift</th>
-              <th className="px-4 py-3">Severity</th>
+              <th className="px-4 py-3 text-center">Date</th>
+              <th className="px-4 py-3 text-center">Item</th>
+              <th className="px-4 py-3 text-center">Variance</th>
+              <th className="px-4 py-3 text-center">Unit</th>
+              <th className="px-4 py-3 text-center">Shift</th>
+              <th className="px-4 py-3 text-center">Severity</th>
             </tr>
           </thead>
 
           <tbody>
-            {pageData.length === 0 && (
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="py-12 text-center text-[#0F766E]">
+                  <div className="flex justify-center items-center gap-2">
+                    <Loader2 className="animate-spin" size={20} />
+                    <span>Loading alerts...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : serverRows.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-gray-400">
                   No variance alerts found
                 </td>
               </tr>
+            ) : (
+              serverRows.map((v, i) => (
+                <tr key={i} className="border-t">
+                  <td className="px-4 py-3 text-center">
+                    {new Date(v.date).toLocaleDateString(undefined, {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-center">{v.name}</td>
+                  <td className="px-4 py-3 text-center text-red-600 font-semibold">
+                    {v.variance}
+                  </td>
+                  <td className="px-4 py-3 text-center">{v.unit}</td>
+                  <td className="px-4 py-3 text-center">{v.shift}</td>
+                  <td className="px-4 py-3 text-center">
+                    <SeverityBadge severity={v.severity as Severity} />
+                  </td>
+                </tr>
+              ))
             )}
-
-            {pageData.map((v, i) => (
-              <tr key={i} className="border-t">
-                <td className="px-4 py-3">{v.date}</td>
-                <td className="px-4 py-3 font-medium">{v.product}</td>
-                <td className="px-4 py-3 text-right text-red-600 font-semibold">
-                  {v.variance}
-                </td>
-                <td className="px-4 py-3">{v.unit}</td>
-                <td className="px-4 py-3">{v.shiftLabel}</td>
-                <td className="px-4 py-3">
-                  <SeverityBadge severity={v.severity} />
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>
@@ -366,18 +254,22 @@ export default function VarianceAlerts() {
 
 /* ================= UI HELPERS ================= */
 
-function SeverityBadge({ severity }: { severity: Severity }) {
-  const map = {
-    High: "bg-red-100 text-red-700",
-    Medium: "bg-yellow-100 text-yellow-700",
-    Low: "bg-green-100 text-green-700",
+function SeverityBadge({ severity }: { severity: Severity | string }) {
+  const sevKey = (severity || "").toLowerCase();
+  
+  const map: Record<string, string> = {
+    high: "bg-red-100 text-red-700",
+    medium: "bg-yellow-100 text-yellow-700",
+    low: "bg-green-100 text-green-700",
   };
+
+  const badgeClass = map[sevKey] || "bg-gray-100 text-gray-700";
 
   return (
     <span
-      className={`px-2 py-1 text-xs rounded-full font-medium ${map[severity]}`}
+      className={`px-2 py-1 text-xs rounded-full font-medium capitalize ${badgeClass}`}
     >
-      {severity}
+      {severity || "Unknown"}
     </span>
   );
 }

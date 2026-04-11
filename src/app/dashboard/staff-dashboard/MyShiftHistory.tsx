@@ -1,28 +1,30 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { History } from "lucide-react";
-import { useProfile } from "@/app/context/ProfileContext";
-import { Shift } from "../../components/shifts/types";
-
-const SHIFTS_KEY = "stockvar_shifts";
+import { useEffect, useState } from "react";
+import { History, Loader2 } from "lucide-react";
+import { type ShiftRecord } from "@/lib/api/shifts";
+import { getStaffShiftsByType } from "@/lib/api/dashboard";
+import { getSession } from "@/lib/api/auth";
 
 export default function MyShiftHistory() {
-  const { profile } = useProfile();
-  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [shifts, setShifts] = useState<ShiftRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const raw = localStorage.getItem(SHIFTS_KEY);
-    setShifts(raw ? JSON.parse(raw) : []);
+    const fetchRecent = async () => {
+      const token = getSession()?.token;
+      if (!token) return;
+      try {
+        const res = await getStaffShiftsByType(token, "recent", 1);
+        setShifts(res.shifts || []);
+      } catch (err) {
+        console.error("Failed to load recent shifts", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecent();
   }, []);
-
-  const history = useMemo(
-    () =>
-      shifts
-        .filter((s) => s.status === "ended")
-        .slice(0, 6),
-    [shifts, profile?.fullName]
-  );
 
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm">
@@ -30,23 +32,24 @@ export default function MyShiftHistory() {
         <History size={16} /> Recent Shifts
       </h3>
 
-      {history.length === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center p-4">
+          <Loader2 className="animate-spin text-[#0F766E]" size={20} />
+        </div>
+      ) : shifts.length === 0 ? (
         <p className="text-sm text-gray-400">
           No completed shifts yet
         </p>
       ) : (
         <ul className="space-y-3 text-sm">
-          {history.map((s) => (
-            <li key={s.id} className="border rounded-lg p-3">
-              <p className="font-medium">{s.label}</p>
+          {shifts.map((s) => (
+            <li key={s.uid} className="border rounded-lg p-3">
+              <p className="font-medium">{s.name}</p>
               <p className="text-xs text-gray-500">
-                {s.startDate} • {s.startTime} – {s.endTime}
+                {new Date(s.date).toLocaleDateString()} • {s.startTime} – {s.endTime}
               </p>
               <p className="text-xs">
-                Role:{" "}
-                {s.staffResponsibleName === profile?.fullName
-                  ? "Responsible"
-                  : "Participant"}
+                Responsible: {s.staffResponsible || "Unknown"}
               </p>
             </li>
           ))}

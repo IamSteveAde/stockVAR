@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { X } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { X, Loader2 } from "lucide-react";
 import { Shift, StockSnapshot, Staff } from "./types";
+import { getSession } from "@/lib/api/auth";
+import { apiFetchFirstSuccess } from "@/lib/api/client";
+import { unwrapData, ApiEnvelope } from "@/lib/api/response";
+import type { ListProductsResponse } from "@/lib/api/stock";
 
 /* ================= TYPES ================= */
 
@@ -26,7 +30,10 @@ type Props = {
   currentUserEmail: string;
   currentUserRole: "owner" | "manager" | "staff";
   onCancel: () => void;
-  onConfirm?: (closingSnapshot: StockSnapshot[], pin: string) => Promise<void>; // optional
+  onConfirm?: (
+    products: { inventoryUid: string; count: number }[],
+    pin: string
+  ) => Promise<void>;
 };
 
 /* ================= COMPONENT ================= */
@@ -46,28 +53,63 @@ export default function CloseShiftModal({
    * - Physical count is the source of truth
    */
 
-  const [counts, setCounts] = useState<
-    { sku: string; quantity: number | null }[]
-  >(inventory.map((i) => ({ sku: i.sku, quantity: null })));
-
+  const [counts, setCounts] = useState<{ sku: string; inventoryUid: string; quantity: number | null }[]>([]);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
-useState(() => {
-  try {
-    const raw = localStorage.getItem(PRODUCTS_KEY);
-    setProducts(raw ? JSON.parse(raw) : []);
-  } catch {
-    setProducts([]);
-  }
-});
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAllProducts = async () => {
+      try {
+        const token = getSession()?.token;
+        if (!token) {
+          if (isMounted) setIsLoadingProducts(false);
+          return;
+        }
 
-const productMap = useMemo(() => {
-  return Object.fromEntries(
-    products.map((p) => [p.sku, p.name])
-  );
-}, [products]);
+        let allProducts: any[] = [];
+        let currentPage = 1;
+        let hasNextPage = true;
+
+        while (hasNextPage) {
+          const res = await apiFetchFirstSuccess<ApiEnvelope<ListProductsResponse> | ListProductsResponse>(
+            [`api/stock/product/list?page=${currentPage}&type=active`],
+            { token }
+          );
+          const data = unwrapData(res);
+          allProducts = [...allProducts, ...(data.products || [])];
+          
+          if (data.meta.isLastPage) {
+            hasNextPage = false;
+          } else {
+            currentPage++;
+          }
+        }
+        
+        if (isMounted) {
+          setProducts(allProducts.map(p => ({ sku: p.uid, name: p.name })));
+          setCounts(allProducts.map(p => ({ sku: p.uid, inventoryUid: p.inventoryUid, quantity: null })));
+          setIsLoadingProducts(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError("Failed to load active products for inventory count.");
+          setIsLoadingProducts(false);
+        }
+      }
+    };
+    
+    fetchAllProducts();
+    return () => { isMounted = false; };
+  }, []);
+
+  const productMap = useMemo(() => {
+    return Object.fromEntries(
+      products.map((p) => [p.sku, p.name])
+    );
+  }, [products]);
 
 
   /* ================= RESPONSIBLE STAFF ================= */
@@ -122,37 +164,18 @@ const productMap = useMemo(() => {
     if (!ok) return;
 
     // 4️⃣ Build authoritative inventory snapshot
-    const closingSnapshot: StockSnapshot[] = counts.map(
+    const productsPayload = counts.map(
       (c) => ({
-        sku: c.sku,
-        quantity: c.quantity as number,
+        inventoryUid: c.inventoryUid,
+        count: c.quantity as number,
       })
     );
 
-    const updatedInventory = closingSnapshot.map(
-      (item) => ({
-        sku: item.sku,
-        quantity: item.quantity,
-        updatedAt: now(),
-      })
-    );
 
-    // 5️⃣ Overwrite inventory (SOURCE OF TRUTH)
-    localStorage.setItem(
-      "stockvar_inventory",
-      JSON.stringify(updatedInventory)
-    );
-
-    // 6️⃣ Broadcast update to InventoryTable
-    window.dispatchEvent(
-      new CustomEvent("inventory:updated", {
-        detail: updatedInventory,
-      })
-    );
 
     try {
       if (onConfirm) {
-        await onConfirm(closingSnapshot, pin);
+        await onConfirm(productsPayload, pin);
       }
       
       // 8️⃣ Close modal
@@ -195,7 +218,15 @@ const productMap = useMemo(() => {
 
         {/* Inventory list */}
         <div className="max-h-80 overflow-y-auto border rounded-lg p-3 space-y-3">
-          {counts.map((c) => (
+          {isLoadingProducts ? (
+            <div className="flex items-center justify-center p-6 text-[#0F766E]">
+              <Loader2 className="animate-spin mr-2" size={20} />
+              Loading active inventory...
+            </div>
+          ) : counts.length === 0 ? (
+            <p className="text-gray-500 text-sm italic py-4 text-center">No active products found to audit.</p>
+          ) : (
+            counts.map((c) => (
             <div
               key={c.sku}
               className="flex items-center justify-between gap-3"
@@ -227,7 +258,7 @@ const productMap = useMemo(() => {
                 "
               />
             </div>
-          ))}
+          )))}
         </div>
 
         {/* PIN input */}

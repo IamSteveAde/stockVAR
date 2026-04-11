@@ -1,68 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  X,
-  Package,
-  Users,
-} from "lucide-react";
-import { Shift } from "../shifts/types";
+import { useEffect, useState, useCallback } from "react";
+import { AlertTriangle, Calendar, ChevronLeft, ChevronRight, Filter, X, Package, Users, Loader2 } from "lucide-react";
+import { getShiftContext, ShiftContextRow } from "@/lib/api/reports";
+import { getSession } from "@/lib/api/auth";
 
-/* ================= STORAGE KEYS ================= */
-
-const PRODUCTS_KEY = "stockvar_products";
-const SHIFTS_KEY = "stockvar_shifts";
-const LOGS_KEY = "stockvar_inventory_logs";
-
-/* ================= TYPES ================= */
-
-type Product = {
-  sku: string;
-  name: string;
-  unit: string;
-};
-
-type InventoryLog = {
-  sku: string;
-  quantity: number;
-  action: "in" | "out";
-  shiftId: string;
-};
-
-type Snapshot = {
-  sku: string;
-  quantity: number;
-};
-
-type ReconciliationItem = {
-  product: string;
-  unit: string;
-  opening: number;
-  added: number;
-  used: number;
-  expected: number;
-  actual: number;
-  variance: number;
-};
-
-type ShiftContextRow = {
-  id: string;
-  label: string;
-  endedAt: string;
-  staff: string[];
-  items: ReconciliationItem[];
-};
-
-/* ================= CONSTANTS ================= */
-
-const PAGE_SIZE = 5;
-
-/* ================= HELPERS ================= */
+type DateRange = "today" | "7d" | "1m" | "2m" | "custom";
 
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString("en-GB", {
@@ -72,151 +15,71 @@ const formatDate = (d: string) =>
     year: "numeric",
   });
 
-/* ================= COMPONENT ================= */
-
 export default function ShiftContext() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [logs, setLogs] = useState<InventoryLog[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [serverRows, setServerRows] = useState<ShiftContextRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [range, setRange] = useState("7d");
+  const [range, setRange] = useState<DateRange>("7d");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  const [page, setPage] = useState(1);
-  const [active, setActive] =
-    useState<ShiftContextRow | null>(null);
+  const [active, setActive] = useState<ShiftContextRow | null>(null);
 
-  /* ================= LOAD ================= */
+  const getDateParams = useCallback(() => {
+    if (range === "custom") return { startDate: fromDate, endDate: toDate };
 
-  useEffect(() => {
-    setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
-    setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
-    setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
-  }, []);
-
-  /* ================= DATE FILTER ================= */
-
-  const bounds = useMemo(() => {
-    const ended = shifts
-      .filter((s) => s.status === "ended" && s.endedAt)
-      .map((s) => new Date(s.endedAt!).getTime());
-
-    if (!ended.length) return null;
-
-    const latest = Math.max(...ended);
-    let from = 0;
-    let to = latest;
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     if (range === "today") {
-      const d = new Date(latest);
-      d.setHours(0, 0, 0, 0);
-      from = d.getTime();
+      return { 
+        startDate: today.toISOString().split("T")[0], 
+        endDate: today.toISOString().split("T")[0] 
+      };
     }
 
-    if (range === "7d") from = latest - 7 * 86400000;
-    if (range === "1m") from = latest - 30 * 86400000;
-    if (range === "2m") from = latest - 60 * 86400000;
+    const d = new Date();
+    if (range === "7d") d.setDate(d.getDate() - 7);
+    else if (range === "1m") d.setDate(d.getDate() - 30);
+    else if (range === "2m") d.setDate(d.getDate() - 60);
 
-    if (range === "custom" && fromDate && toDate) {
-      from = new Date(fromDate + "T00:00:00").getTime();
-      to = new Date(toDate + "T23:59:59").getTime();
-    }
+    return {
+      startDate: d.toISOString().split("T")[0],
+      endDate: now.toISOString().split("T")[0],
+    };
+  }, [range, fromDate, toDate]);
 
-    return { from, to };
-  }, [range, fromDate, toDate, shifts]);
-
-  /* ================= BUILD CONTEXT ================= */
-
-  const rows = useMemo<ShiftContextRow[]>(() => {
-    const out: ShiftContextRow[] = [];
-
-    shifts.forEach((shift) => {
-      if (
-        shift.status !== "ended" ||
-        !shift.openingSnapshot ||
-        !shift.closingSnapshot ||
-        !shift.endedAt
-      )
-        return;
-
-      const endedTs = new Date(shift.endedAt).getTime();
-      if (bounds) {
-        if (endedTs < bounds.from) return;
-        if (endedTs > bounds.to) return;
-      }
-
-      const items: ReconciliationItem[] = [];
-
-      products.forEach((p) => {
-        const opening =
-          shift.openingSnapshot!.find(
-            (i: Snapshot) => i.sku === p.sku
-          )?.quantity || 0;
-
-        const actual =
-          shift.closingSnapshot!.find(
-            (i: Snapshot) => i.sku === p.sku
-          )?.quantity || 0;
-
-        const shiftLogs = logs.filter(
-          (l) => l.shiftId === shift.id && l.sku === p.sku
-        );
-
-        const added = shiftLogs
-          .filter((l) => l.action === "in")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const used = shiftLogs
-          .filter((l) => l.action === "out")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const expected = opening + added - used;
-        const variance = actual - expected;
-
-        if (variance !== 0) {
-          items.push({
-            product: p.name,
-            unit: p.unit,
-            opening,
-            added,
-            used,
-            expected,
-            actual,
-            variance,
-          });
+  useEffect(() => {
+    let isMounted = true;
+    const fetchContext = async () => {
+      try {
+        setIsLoading(true);
+        const token = getSession()?.token;
+        if (!token) {
+          if (isMounted) setIsLoading(false);
+          return;
         }
-      });
 
-      if (items.length) {
-        out.push({
-          id: shift.id,
-          label: shift.label,
-          endedAt: shift.endedAt,
-          staff: shift.staff.map((s) => s.fullName),
-          items,
-        });
+        const { startDate, endDate } = getDateParams();
+        const res = await getShiftContext(startDate, endDate, page, token);
+
+        if (isMounted) {
+          setServerRows(res.context || []);
+          setTotalPages(res.meta?.pageCount || 1);
+        }
+      } catch (err) {
+        console.error("Failed to fetch shift context", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-    });
+    };
 
-    return out.sort(
-      (a, b) =>
-        new Date(b.endedAt).getTime() -
-        new Date(a.endedAt).getTime()
-    );
-  }, [shifts, products, logs, bounds]);
-
-  /* ================= PAGINATION ================= */
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(rows.length / PAGE_SIZE)
-  );
-
-  const pageData = rows.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+    fetchContext();
+    return () => { isMounted = false; };
+  }, [range, fromDate, toDate, page, getDateParams]);
 
   /* ================= UI ================= */
 
@@ -243,7 +106,7 @@ export default function ShiftContext() {
             <select
               value={range}
               onChange={(e) => {
-                setRange(e.target.value);
+                setRange(e.target.value as DateRange);
                 setPage(1);
               }}
               className="border rounded-lg px-3 py-2 text-sm"
@@ -275,39 +138,40 @@ export default function ShiftContext() {
         </div>
 
         {/* List */}
-        <div className="divide-y">
-          {pageData.map((s) => (
+        <div className="divide-y relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+              <Loader2 className="animate-spin text-[#0F766E]" size={24} />
+            </div>
+          )}
+
+          {!isLoading && serverRows.length === 0 && (
+            <div className="p-6 text-center text-sm text-gray-500">
+              No discrepancies for selected period
+            </div>
+          )}
+
+          {serverRows.map((s, idx) => (
             <button
-              key={s.id}
+              key={idx}
               onClick={() => setActive(s)}
               className="w-full p-4 text-left hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
             >
               <div>
                 <p className="font-medium">
-                  {s.label} Shift
+                  {s.name} Shift
                 </p>
                 <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <Calendar size={12} /> {formatDate(s.endedAt)}
+                  <Calendar size={12} /> {formatDate(s.date)}
                 </p>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-gray-600">
-                <Users size={14} />
-                {s.staff.join(", ")}
               </div>
 
               <div className="flex items-center gap-2 text-red-600 font-semibold text-sm">
                 <AlertTriangle size={14} />
-                {s.items.length} items affected
+                {s.itemsAffected || s.items.length} items affected
               </div>
             </button>
           ))}
-
-          {pageData.length === 0 && (
-            <div className="p-6 text-center text-sm text-gray-500">
-              No discrepancies for selected period
-            </div>
-          )}
         </div>
 
         {/* Pagination */}
@@ -338,7 +202,7 @@ export default function ShiftContext() {
           <div className="bg-white rounded-xl w-full max-w-xl">
             <div className="p-4 border-b flex justify-between">
               <h4 className="font-semibold">
-                {active.label} – {formatDate(active.endedAt)}
+                {active.name} – {formatDate(active.date)}
               </h4>
               <button onClick={() => setActive(null)}>
                 <X size={16} />
@@ -346,63 +210,55 @@ export default function ShiftContext() {
             </div>
 
             <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-              {active.items.map((i, idx) => (
-                <div
-                  key={idx}
-                  className="border rounded-lg p-3 space-y-2"
-                >
-                  <div className="flex justify-between">
-                    <div className="flex items-center gap-2">
-                      <Package size={14} />
-                      <span className="font-medium">
-                        {i.product}
+              {active.items.map((i, idx) => {
+                const variance = i.actual - i.expected;
+                return (
+                  <div
+                    key={idx}
+                    className="border rounded-lg p-3 space-y-2"
+                  >
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2">
+                        <Package size={14} />
+                        <span className="font-medium">
+                          {i.name}
+                        </span>
+                      </div>
+
+                      <span
+                        className={`font-semibold ${
+                          variance < 0
+                            ? "text-red-600"
+                            : "text-green-600"
+                        }`}
+                      >
+                        {variance > 0 ? "+" : ""}
+                        {variance}
+                        {i.unit}
                       </span>
                     </div>
 
-                    <span
-                      className={`font-semibold ${
-                        i.variance < 0
-                          ? "text-red-600"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {i.variance > 0 ? "+" : ""}
-                      {i.variance}
-                      {i.unit}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-5 gap-2 text-xs text-gray-600">
-                    <div>
-                      <p className="text-gray-400">Opening</p>
-                      <p>{i.opening}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Added</p>
-                      <p>{i.added}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Used</p>
-                      <p>{i.used}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Expected</p>
-                      <p>{i.expected}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Actual</p>
-                      <p>{i.actual}</p>
+                    <div className="grid grid-cols-4 gap-2 text-xs text-gray-600">
+                      <div>
+                        <p className="text-gray-400">Opening</p>
+                        <p>{i.opening}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Used</p>
+                        <p>{i.used}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Expected</p>
+                        <p>{i.expected}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Actual</p>
+                        <p>{i.actual}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-
-              <p className="text-xs text-gray-500 pt-2">
-                Staff on duty:{" "}
-                <span className="text-gray-700">
-                  {active.staff.join(", ")}
-                </span>
-              </p>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -68,6 +68,11 @@ export async function apiFetch<TResponse>(
   const data = isJson ? await response.json() : null;
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("stockvar_session");
+      window.location.href = "/auth/login";
+    }
+
     throw new ApiError(
       response.status,
       data,

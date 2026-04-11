@@ -40,16 +40,11 @@ const STAFF_KEY = "stockvar_staff";
 /* ================= HELPERS ================= */
 
 const loadStaff = (): Staff[] => {
-  try {
-    const raw = localStorage.getItem(STAFF_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return [];
 };
 
 const saveStaff = (data: Staff[]) => {
-  localStorage.setItem(STAFF_KEY, JSON.stringify(data));
+  // Purged: Natively bounds to backend
 };
 
 /* ================= MAIN ================= */

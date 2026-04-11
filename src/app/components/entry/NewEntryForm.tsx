@@ -2,79 +2,53 @@
 
 import { useEffect, useState } from "react";
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
-import { Shift } from "../shifts/types";
 import { useProfile } from "@/app/context/ProfileContext";
-import { writeAuditLog } from "../../../lib/audit";
-import { addEntry } from "@/lib/api/stock";
+import { addEntry, listProducts, type ProductRecord } from "@/lib/api/stock";
+import { listShifts, type ShiftRecord } from "@/lib/api/shifts";
 import { getSession } from "@/lib/api/auth";
-
-/* ================= STORAGE KEYS ================= */
-
-const PRODUCTS_KEY = "stockvar_products";
-const INVENTORY_KEY = "stockvar_inventory";
-const LOGS_KEY = "stockvar_inventory_logs";
-const SHIFTS_KEY = "stockvar_shifts";
-
-/* ================= TYPES ================= */
-
-type Product = {
-  sku: string;
-  name: string;
-  unit: string;
-};
-
-type InventoryItem = {
-  sku: string;
-  quantity: number;
-  updatedAt: string;
-};
-
-/* ================= HELPERS ================= */
-
-const now = () => new Date().toLocaleString();
-
-/* ================= COMPONENT ================= */
 
 export default function NewEntryForm() {
   const { profile } = useProfile();
 
   const [type, setType] = useState<"in" | "out">("out");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [activeShift, setActiveShift] = useState<Shift | null>(null);
+  const [products, setProducts] = useState<ProductRecord[]>([]);
+  const [activeShift, setActiveShift] = useState<ShiftRecord | null>(null);
 
-  const [sku, setSku] = useState("");
+  const [inventoryUid, setInventoryUid] = useState("");
   const [quantity, setQuantity] = useState("");
   const [reason, setReason] = useState("");
 
   /* ================= LOAD DATA ================= */
 
-  const loadData = () => {
-    setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
-    setInventory(JSON.parse(localStorage.getItem(INVENTORY_KEY) || "[]"));
+  const loadData = async () => {
+    const token = getSession()?.token;
+    if (!token) return;
 
-    const shifts: Shift[] = JSON.parse(
-      localStorage.getItem(SHIFTS_KEY) || "[]"
-    );
+    try {
+      const [prodRes, shiftRes] = await Promise.all([
+        listProducts(token, 1, 100),
+        listShifts(token, 1, 1, "Running")
+      ]);
 
-    /**
-     * INDUSTRY RULE:
-     * Exactly ONE running shift can exist.
-     */
-    const runningShift =
-      shifts.find((s) => s.status === "running") || null;
-
-    setActiveShift(runningShift);
+      if (prodRes?.products) {
+        setProducts(prodRes.products);
+      }
+      
+      if (shiftRes?.shifts?.length > 0) {
+        setActiveShift(shiftRes.shifts[0]);
+      } else {
+        setActiveShift(null);
+      }
+    } catch (err) {
+      console.error("Failed to load active shift and products", err);
+    }
   };
 
   useEffect(() => {
     loadData();
 
-    window.addEventListener("inventory:updated", loadData);
     window.addEventListener("shifts:updated", loadData);
-
     return () => {
-      window.removeEventListener("inventory:updated", loadData);
       window.removeEventListener("shifts:updated", loadData);
     };
   }, []);
@@ -82,10 +56,10 @@ export default function NewEntryForm() {
   /* ================= SAVE ENTRY ================= */
 
   const handleSave = async () => {
-    if (profile.role !== "staff") {
-      alert("Only staff members can update stock entries.");
-      return;
-    }
+    // if (profile.role !== "staff") {
+    //   alert("Only staff members can update stock entries.");
+    //   return;
+    // }
 
     const token = getSession()?.token;
     if (!token) {
@@ -98,41 +72,29 @@ export default function NewEntryForm() {
       return;
     }
 
-    if (!sku || !quantity) return;
+    if (!inventoryUid || !quantity) return;
 
     const qty = Number(quantity);
     if (Number.isNaN(qty) || qty <= 0) return;
 
-    const product = products.find((p) => p.sku === sku);
-    if (!product) return;
-
-    const existing = inventory.find((i) => i.sku === sku);
-
-    if (type === "out" && (!existing || qty > existing.quantity)) {
-      alert("Invalid stock out quantity");
-      return;
-    }
-
-    const beforeQty = existing?.quantity ?? 0;
-    const afterQty =
-      type === "in" ? beforeQty + qty : beforeQty - qty;
-
     try {
       await addEntry(
         {
-          shiftId: activeShift.id,
-          sku,
           quantity: qty,
-          entryType: type === "in" ? "stock-in" : "stock-out",
-          note: reason || undefined,
-          // actorStaffId: profile.id,
-          actorEmail: profile.email,
-          actorRole: "staff",
-          requireStaffAuthorization: true,
-          authorizedRole: "staff",
+          inventoryUid,
+          action: type === "in" ? "Stock In" : "Stock Out",
+          shiftUid: activeShift.uid,
         },
         token
       );
+
+      /* ================= RESET ================= */
+
+      setInventoryUid("");
+      setQuantity("");
+      setReason("");
+
+      alert("Stock entry saved");
     } catch (error: unknown) {
       const message =
         typeof error === "object" &&
@@ -143,105 +105,7 @@ export default function NewEntryForm() {
           : "Stock entry rejected by authorization checks.";
 
       alert(message);
-      return;
     }
-
-    /* ================= UPDATE INVENTORY ================= */
-
-    const updatedInventory: InventoryItem[] = existing
-      ? inventory.map((i) =>
-          i.sku === sku
-            ? {
-                ...i,
-                quantity: afterQty,
-                updatedAt: now(),
-              }
-            : i
-        )
-      : [
-          {
-            sku,
-            quantity: afterQty,
-            updatedAt: now(),
-          },
-          ...inventory,
-        ];
-
-    localStorage.setItem(
-      INVENTORY_KEY,
-      JSON.stringify(updatedInventory)
-    );
-    setInventory(updatedInventory);
-
-    window.dispatchEvent(
-      new CustomEvent("inventory:updated", {
-        detail: updatedInventory,
-      })
-    );
-
-    /* ================= WRITE INVENTORY LOG ================= */
-
-    const logs = JSON.parse(
-      localStorage.getItem(LOGS_KEY) || "[]"
-    );
-
-    logs.unshift({
-      id: crypto.randomUUID(),
-      sku,
-      product: product.name,
-      unit: product.unit,
-      quantity: qty,
-      action: type,
-      shiftId: activeShift.id,
-      shiftLabel: activeShift.label,
-      reason,
-      createdAt: now(),
-    });
-
-    localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
-
-    window.dispatchEvent(
-      new CustomEvent("logs:updated", {
-        detail: logs,
-      })
-    );
-
-    /* ================= WRITE AUDIT LOG (ENTERPRISE) ================= */
-
-    // writeAuditLog({
-    //   actor: {
-    //     staffId: profile.id,
-    //     name: profile.fullName,
-    //     role: profile.role,
-    //   },
-    //   action: type === "in" ? "STOCK_IN" : "STOCK_OUT",
-    //   description:
-    //     type === "in"
-    //       ? "Stock added"
-    //       : "Stock removed",
-    //   entity: {
-    //     type: "product",
-    //     id: product.sku,
-    //     name: product.name,
-    //   },
-    //   changes: {
-    //     before: { quantity: beforeQty },
-    //     after: { quantity: afterQty },
-    //     delta: type === "in" ? qty : -qty,
-    //   },
-    //   shift: {
-    //     id: activeShift.id,
-    //     label: activeShift.label,
-    //   },
-    // });
-
-    /* ================= RESET ================= */
-
-    setSku("");
-    setQuantity("");
-    setReason("");
-
-    alert("Stock entry saved");
   };
 
   /* ================= UI ================= */
@@ -263,7 +127,7 @@ export default function NewEntryForm() {
       <div className="bg-gray-50 border rounded-xl p-4 text-sm">
         <p className="text-gray-500">Active shift</p>
         <p className="font-medium">
-          {activeShift.label} ({activeShift.startTime} –{" "}
+          {activeShift.name} ({activeShift.startTime} –{" "}
           {activeShift.endTime})
         </p>
       </div>
@@ -293,13 +157,13 @@ export default function NewEntryForm() {
       </div>
 
       <select
-        value={sku}
-        onChange={(e) => setSku(e.target.value)}
+        value={inventoryUid}
+        onChange={(e) => setInventoryUid(e.target.value)}
         className="w-full border rounded-lg px-4 py-3"
       >
         <option value="">Select product</option>
         {products.map((p) => (
-          <option key={p.sku} value={p.sku}>
+          <option key={p.uid} value={p.inventoryUid || p.uid}>
             {p.name}
           </option>
         ))}
@@ -325,7 +189,7 @@ export default function NewEntryForm() {
         onClick={() => {
           void handleSave();
         }}
-        disabled={!sku || !quantity}
+        disabled={!inventoryUid || !quantity}
         className="bg-[#0F766E] text-white px-6 py-3 rounded-lg"
       >
         Save Entry

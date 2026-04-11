@@ -61,31 +61,19 @@ export const AUDIT_KEY = "stockvar_audit_logs";
 /* ================= HELPERS ================= */
 
 export function readAuditLogs(): AuditLog[] {
-  try {
-    const raw = localStorage.getItem(AUDIT_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return []; // Fall back removed
 }
 
 export function writeAuditLog(
   log: Omit<AuditLog, "id" | "createdAt">
 ) {
-  const existing = readAuditLogs();
+  // localStorage fallback completely removed in favor of strict backend boundaries
 
   const entry: AuditLog = {
     ...log,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   };
-
-  existing.unshift(entry);
-
-  localStorage.setItem(
-    AUDIT_KEY,
-    JSON.stringify(existing)
-  );
 
   if (typeof window !== "undefined") {
     window.dispatchEvent(

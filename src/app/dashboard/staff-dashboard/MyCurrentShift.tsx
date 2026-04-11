@@ -1,42 +1,41 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Clock } from "lucide-react";
-import { useProfile } from "@/app/context/ProfileContext";
-import { Shift } from "../../components/shifts/types";
-
-const SHIFTS_KEY = "stockvar_shifts";
+import { useEffect, useState } from "react";
+import { Clock, Loader2 } from "lucide-react";
+import { getSession } from "@/lib/api/auth";
+import { type ShiftRecord, listShifts } from "@/lib/api/shifts";
 
 export default function MyCurrentShift() {
-  const { profile } = useProfile();
-  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [currentShift, setCurrentShift] = useState<ShiftRecord | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const raw = localStorage.getItem(SHIFTS_KEY);
-    setShifts(raw ? JSON.parse(raw) : []);
+    const fetchCurrent = async () => {
+      const token = getSession()?.token;
+      if (!token) return;
+      try {
+        const res = await listShifts(token, 1, 1, "Running");
+        if (res.shifts && res.shifts.length > 0) {
+          setCurrentShift(res.shifts[0]);
+        }
+      } catch (err) {
+        console.error("Failed to load current shift", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCurrent();
   }, []);
 
-  const currentShift = useMemo(
-    () =>
-      shifts.find(
-        (s) =>
-          s.status === "running" 
-        // &&
-        //   s.staff.some((st) => st.id === profile.id)
-      ),
-    // [shifts, profile.id]
-    [shifts, "profile.id"]
-  );
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl p-5 shadow-sm flex items-center justify-center min-h-[100px]">
+        <Loader2 className="animate-spin text-[#0F766E]" size={20} />
+      </div>
+    );
+  }
 
   if (!currentShift) return null;
-
-const responsible = currentShift.staff.find(
-  (s) => s.id === currentShift.responsibleStaffId
-);
-
-
-  // const isResponsible =
-  //   currentShift.responsibleStaffId === profile.id;
 
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm">
@@ -44,20 +43,14 @@ const responsible = currentShift.staff.find(
         <Clock size={16} /> Current Shift
       </h3>
 
-      <p className="font-medium">{currentShift.label}</p>
+      <p className="font-medium">{currentShift.name}</p>
       <p className="text-sm text-gray-600">
         {currentShift.startTime} – {currentShift.endTime}
       </p>
 
       <p className="text-sm mt-1">
-        Responsible: {responsible?.fullName ?? "Unknown"}
+        Responsible: {currentShift.staffResponsible || "Unknown"}
       </p>
-
-      {/* {isResponsible && (
-        <span className="inline-block mt-3 px-3 py-1 text-xs rounded-full bg-green-100 text-green-700">
-          You are responsible
-        </span>
-      )} */}
     </div>
   );
 }

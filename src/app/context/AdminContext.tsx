@@ -47,9 +47,7 @@ type AdminContextType = {
 
 /* ================= CONSTANTS ================= */
 
-const STORAGE_KEY = "stockvar_admin_restaurants";
 
-/* ================= CONTEXT ================= */
 
 const AdminContext =
   createContext<AdminContextType | null>(null);
@@ -69,22 +67,12 @@ export function AdminProvider({
   /* ================= LOAD ================= */
 
   const load = useCallback(() => {
-    const loadFromStorage = () => {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        setRestaurants(parsed);
-      } catch {
-        setRestaurants([]);
-      }
-    };
-
     const loadFromApi = async () => {
       const session = getSession();
       const token = session?.token;
 
       if (!token) {
-        loadFromStorage();
+        setRestaurants(mockAdminRestaurants);
         return;
       }
 
@@ -92,14 +80,13 @@ export function AdminProvider({
         const data = await listAdminRestaurants(token);
 
         if (Array.isArray(data)) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
           setRestaurants(data as AdminRestaurant[]);
           return;
         }
 
-        loadFromStorage();
+        setRestaurants(mockAdminRestaurants);
       } catch {
-        loadFromStorage();
+        setRestaurants(mockAdminRestaurants);
       }
     };
 
@@ -111,15 +98,6 @@ export function AdminProvider({
   /* ================= SEED MOCK DATA (DEV SAFE) ================= */
 
   useEffect(() => {
-    const existing = localStorage.getItem(STORAGE_KEY);
-
-    if (!existing) {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(mockAdminRestaurants)
-      );
-    }
-
     load();
   }, [load]);
 
@@ -137,11 +115,6 @@ export function AdminProvider({
               subscriptionStatus: status,
             }
           : r
-      );
-
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updated)
       );
 
       return updated;

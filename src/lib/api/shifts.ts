@@ -9,16 +9,17 @@ export type ShiftSnapshot = {
 
 
 export type ShiftRecord = {
-  id: string;
-  label: string;
-  startDate: string;
+  uid: string;
+  name: string;
+  staffCount: number;
+  date: string;
   startTime: string;
   endTime: string;
-  status: "planned" | "running" | "ended";
-  responsibleStaffId: string;
-  openingSnapshot?: ShiftSnapshot[];
-  closingSnapshot?: ShiftSnapshot[];
-  [key: string]: unknown;
+  clockInTime?: string | null;
+  clockOutTime?: string | null;
+  status: string;
+  staffResponsible: string;
+  baseShiftUid: string;
 };
 
 export type CreateShiftPayload = {
@@ -39,13 +40,26 @@ export type StartShiftPayload = {
 };
 
 export type EndShiftPayload = {
-  shiftId: string;
+  shiftUid: string;
   pin: string;
-  closingSnapshot: ShiftSnapshot[];
+  products: {
+    inventoryUid: string;
+    count: number;
+  }[];
 };
 
 export type ListShiftsResponse = {
   shifts: ShiftRecord[];
+  meta: PaginationMeta;
+};
+
+export type LinkedStaffRecord = {
+  uid: string;
+  name: string;
+};
+
+export type ListLinkedStaffResponse = {
+  linkedStaff: LinkedStaffRecord[];
   meta: PaginationMeta;
 };
 
@@ -54,6 +68,7 @@ const SHIFT_PATHS = {
   list: ["api/shift/list"],
   start: ["/api/shift/start"],
   end: ["/api/shift/end"],
+  linkedStaff: ["api/shift/linked-staff"],
 };
 
 export async function createShift(payload: CreateShiftPayload, token: string) {
@@ -68,8 +83,8 @@ export async function createShift(payload: CreateShiftPayload, token: string) {
   return unwrapData(res);
 }
 
-export async function listShifts(token: string, page = 1, limit = 10) {
-  const paths = SHIFT_PATHS.list.map(p => `${p}?page=${page}&limit=${limit}`);
+export async function listShifts(token: string, page = 1, limit = 10, type?: string) {
+  const paths = SHIFT_PATHS.list.map(p => `${p}?page=${page}&limit=${limit}${type ? `&type=${type}` : ""}`);
   const res = await apiFetchFirstSuccess<ApiEnvelope<ListShiftsResponse> | ListShiftsResponse>(
     paths,
     { token }
@@ -98,5 +113,11 @@ export async function endShift(payload: EndShiftPayload, token: string) {
       token,
     }
   );
+  return unwrapData(res);
+}
+
+export async function listLinkedStaff(shiftUid: string, page: number, token: string) {
+  const paths = SHIFT_PATHS.linkedStaff.map((p) => `${p}?shiftUid=${shiftUid}&page=${page}`);
+  const res = await apiFetchFirstSuccess<ApiEnvelope<ListLinkedStaffResponse> | ListLinkedStaffResponse>(paths, { token });
   return unwrapData(res);
 }

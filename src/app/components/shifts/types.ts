@@ -58,6 +58,8 @@ export type ShiftRecurrence = {
  * Shift (single scheduled instance)
  */
 export type Shift = {
+  date: any;
+  name: any;
   /* ===== PLANNING ===== */
 
   id: string;
@@ -99,6 +101,7 @@ export type Shift = {
    * recurring definition
    */
   parentShiftId?: string;
+  baseShiftUid?: string;
 
   /* ===== LIFECYCLE ===== */
 

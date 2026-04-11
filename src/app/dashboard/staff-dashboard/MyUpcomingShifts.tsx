@@ -1,32 +1,30 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Calendar } from "lucide-react";
-import { useProfile } from "@/app/context/ProfileContext";
-import { Shift } from "../../components/shifts/types";
-
-const SHIFTS_KEY = "stockvar_shifts";
+import { useEffect, useState } from "react";
+import { Calendar, Loader2 } from "lucide-react";
+import { type ShiftRecord } from "@/lib/api/shifts";
+import { getStaffShiftsByType } from "@/lib/api/dashboard";
+import { getSession } from "@/lib/api/auth";
 
 export default function MyUpcomingShifts() {
-  const { profile } = useProfile();
-  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [shifts, setShifts] = useState<ShiftRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const raw = localStorage.getItem(SHIFTS_KEY);
-    setShifts(raw ? JSON.parse(raw) : []);
+    const fetchUpcoming = async () => {
+      const token = getSession()?.token;
+      if (!token) return;
+      try {
+        const res = await getStaffShiftsByType(token, "upcoming", 1);
+        setShifts(res.shifts || []);
+      } catch (err) {
+        console.error("Failed to load upcoming shifts", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUpcoming();
   }, []);
-
-  const upcoming = useMemo(
-    () =>
-      shifts.filter(
-        (s) =>
-          s.status === "planned" &&
-          (s.staff.some((st) => st.fullName === profile?.fullName) ||
-            s.staffResponsibleName === profile?.fullName ||
-            s.responsibleStaffId === profile?.fullName)
-      ),
-    [shifts, profile?.fullName]
-  );
 
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm">
@@ -34,28 +32,25 @@ export default function MyUpcomingShifts() {
         <Calendar size={16} /> Upcoming Shifts
       </h3>
 
-      {upcoming.length === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center p-4">
+          <Loader2 className="animate-spin text-[#0F766E]" size={20} />
+        </div>
+      ) : shifts.length === 0 ? (
         <p className="text-sm text-gray-400">No upcoming shifts</p>
       ) : (
         <ul className="space-y-3 text-sm">
-          {upcoming.map((s) => {
-            const responsible = s.staff.find(
-  (st) => st.id === s.responsibleStaffId
-);
-
-
-            return (
-              <li key={s.id} className="border rounded-lg p-3">
-                <p className="font-medium">{s.label}</p>
-                <p className="text-xs text-gray-500">
-                  {s.startDate} • {s.startTime} – {s.endTime}
-                </p>
-                <p className="text-xs">
-                  Responsible: {s.staffResponsibleName || responsible?.fullName}
-                </p>
-              </li>
-            );
-          })}
+          {shifts.map((s) => (
+            <li key={s.uid} className="border rounded-lg p-3">
+              <p className="font-medium">{s.name}</p>
+              <p className="text-xs text-gray-500">
+                {new Date(s.date).toLocaleDateString()} • {s.startTime} – {s.endTime}
+              </p>
+              <p className="text-xs">
+                Responsible: {s.staffResponsible || "Unknown"}
+              </p>
+            </li>
+          ))}
         </ul>
       )}
     </div>

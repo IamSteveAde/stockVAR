@@ -36,17 +36,11 @@ const STORAGE_KEY = "stockvar_products";
 /* ================= HELPERS ================= */
 
 const loadProducts = (): Product[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return []; // Fall back removed globally
 };
 
 const saveProducts = (products: Product[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  // Purged: Products are natively fetched natively off API and persist only backend securely.
 };
 
 const now = () => new Date().toLocaleString();

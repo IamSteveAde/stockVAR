@@ -22,6 +22,8 @@ import {
   endShift as endShiftApi,
   startShift as startShiftApi,
   listShifts,
+  listLinkedStaff,
+  type LinkedStaffRecord,
 } from "@/lib/api/shifts";
 import { useRouter } from "next/navigation";
 
@@ -96,7 +98,13 @@ export default function ShiftTable() {
   const [totalCount, setTotalCount] = useState(0);
   
   const [openCreate, setOpenCreate] = useState(false);
-  const [viewStaff, setViewStaff] = useState<Staff[] | null>(null);
+  const [viewStaffData, setViewStaffData] = useState<{
+    shiftUid: string;
+    staff: LinkedStaffRecord[];
+    page: number;
+    totalPages: number;
+  } | null>(null);
+  const [loadingStaffId, setLoadingStaffId] = useState<string | null>(null);
   const [closingShift, setClosingShift] = useState<Shift | null>(null);
   const [startingShift, setStartingShift] = useState<Shift | null>(null);
   const [deleteShift, setDeleteShift] = useState<Shift | null>(null);
@@ -127,6 +135,7 @@ export default function ShiftTable() {
             endedAt: s.clockOutTime,
             responsibleStaffId: s.responsibleStaffId || s.id,
             staffResponsibleName: s.staffResponsible,
+            baseShiftUid: s.baseShiftUid,
           }));
           setShifts(mapped);
           setTotalPages(response.meta?.pageCount || 1);
@@ -138,6 +147,32 @@ export default function ShiftTable() {
     hydrate();
     return () => { mounted = false; };
   }, [page, refreshKey]);
+
+  /* ================= FETCH STAFF ================= */
+
+  const fetchLinkedStaff = async (baseShiftUid: string, shiftId: string, targetPage: number = 1) => {
+    if (!baseShiftUid) {
+      alert("No baseShiftUid attached to this shift.");
+      return;
+    }
+    const token = getSession()?.token;
+    if (!token) return;
+
+    try {
+      setLoadingStaffId(shiftId);
+      const data = await listLinkedStaff(baseShiftUid, targetPage, token);
+      setViewStaffData({
+        shiftUid: baseShiftUid,
+        staff: data.linkedStaff || [],
+        page: data.meta.currentPage || targetPage,
+        totalPages: data.meta.pageCount || 1,
+      });
+    } catch (err: unknown) {
+      alert("Unable to fetch linked staff.");
+    } finally {
+      setLoadingStaffId(null);
+    }
+  };
 
   /* ================= START SHIFT ================= */
 
@@ -187,9 +222,9 @@ export default function ShiftTable() {
 
     await endShiftApi(
       {
-        shiftId: id,
+        shiftUid: id,
         pin,
-        closingSnapshot,
+        products: closingSnapshot,
       },
       token
     );
@@ -315,10 +350,11 @@ export default function ShiftTable() {
                 {/* Staff */}
                 <td className="px-6 py-4">
                   <button
-                    onClick={() => setViewStaff(s.staff)}
-                    className="text-sm text-[#0F766E] hover:underline"
+                    disabled={loadingStaffId === s.id}
+                    onClick={() => fetchLinkedStaff(s.baseShiftUid!, s.id, 1)}
+                    className="text-sm text-[#0F766E] hover:underline disabled:opacity-50"
                   >
-                    {s.staff.length} staff
+                    {loadingStaffId === s.id ? "Loading..." : `${s.staff.length} staff`}
                   </button>
                 </td>
 
@@ -476,15 +512,47 @@ export default function ShiftTable() {
         </div>
       )}
 
-      {viewStaff && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl">
-            {viewStaff.map((s) => (
-              <p key={s.id}>{s.fullName}</p>
-            ))}
+      {viewStaffData && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl w-72">
+            <h3 className="font-semibold mb-4 text-[#0F766E]">Linked Staff</h3>
+            
+            {viewStaffData.staff.length === 0 ? (
+              <p className="text-gray-500 text-sm">No linked staff found.</p>
+            ) : (
+              <ul className="space-y-2">
+                {viewStaffData.staff.map((s, idx) => (
+                  <li key={s.uid || idx} className="text-sm border-b pb-1 last:border-0">{s.name}</li>
+                ))}
+              </ul>
+            )}
+
+            {/* Pagination Controls */}
+            {viewStaffData.totalPages > 1 && (
+              <div className="flex justify-between items-center mt-4 text-sm text-gray-500 border-t pt-2">
+                <button
+                  disabled={viewStaffData.page <= 1 || loadingStaffId !== null}
+                  onClick={() => fetchLinkedStaff(viewStaffData.shiftUid, "modal", viewStaffData.page - 1)}
+                  className="hover:text-black disabled:opacity-30 p-1"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span>
+                  {viewStaffData.page} / {viewStaffData.totalPages}
+                </span>
+                <button
+                  disabled={viewStaffData.page >= viewStaffData.totalPages || loadingStaffId !== null}
+                  onClick={() => fetchLinkedStaff(viewStaffData.shiftUid, "modal", viewStaffData.page + 1)}
+                  className="hover:text-black disabled:opacity-30 p-1"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+
             <button
-              onClick={() => setViewStaff(null)}
-              className="mt-4 border px-4 py-2 rounded-lg text-sm"
+              onClick={() => setViewStaffData(null)}
+              className="mt-6 border px-4 py-2 w-full rounded-lg text-sm bg-gray-50 hover:bg-gray-100"
             >
               Close
             </button>

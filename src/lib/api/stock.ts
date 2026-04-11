@@ -2,11 +2,12 @@ import { apiFetchFirstSuccess } from "./client";
 import { unwrapData, PaginationMeta, type ApiEnvelope } from "./response";
 
 export type ProductRecord = {
-    id: string;
+    uid: string;
     sku: string;
     name: string;
     unit: string;
     status?: "active" | "archived";
+    inventoryUid?: string;
     [key: string]: unknown;
 };
 
@@ -36,16 +37,10 @@ export type AdjustInventoryPayload = {
 };
 
 export type AddEntryPayload = {
-    shiftId?: string;
-    sku: string;
     quantity: number;
-    entryType: "stock-in" | "stock-out" | "waste" | "adjustment";
-    note?: string;
-    actorStaffId?: string;
-    actorEmail?: string;
-    actorRole?: "owner" | "manager" | "staff";
-    requireStaffAuthorization?: boolean;
-    authorizedRole?: "staff";
+    inventoryUid: string;
+    action: string;
+    shiftUid: string;
 };
 
 const STOCK_PATHS = {

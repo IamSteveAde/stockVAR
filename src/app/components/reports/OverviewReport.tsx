@@ -9,8 +9,8 @@ import {
   Check,
   X,
   Info,
+  Loader2,
 } from "lucide-react";
-import { Shift } from "../shifts/types";
 import {
   ResponsiveContainer,
   BarChart,
@@ -22,12 +22,12 @@ import {
   Cell,
   LabelList,
 } from "recharts";
-
-/* ================= STORAGE KEYS ================= */
-
-const PRODUCTS_KEY = "stockvar_products";
-const SHIFTS_KEY = "stockvar_shifts";
-const LOGS_KEY = "stockvar_inventory_logs";
+import { getSession } from "@/lib/api/auth";
+import { apiFetchFirstSuccess } from "@/lib/api/client";
+import { unwrapData, ApiEnvelope, PaginationMeta } from "@/lib/api/response";
+import { getReportsOverview, ReportRow } from "@/lib/api/reports";
+import { listShifts, ShiftRecord } from "@/lib/api/shifts";
+import type { ListProductsResponse } from "@/lib/api/stock";
 
 /* ================= TYPES ================= */
 
@@ -37,28 +37,7 @@ type Product = {
   unit: string;
 };
 
-type Log = {
-  sku: string;
-  quantity: number;
-  action: "in" | "out";
-  shiftId: string;
-};
-
-type Row = {
-  sku: string;
-  name: string;
-  unit: string;
-  opening: number;
-  added: number;
-  used: number;
-  expectedLeft: number;
-  actualLeft: number;
-  variance: number;
-};
-
 type VarianceStatus = "negative" | "positive" | "perfect";
-
-const PAGE_SIZE = 8;
 
 const VARIANCE_COLORS: Record<VarianceStatus, string> = {
   negative: "#DC2626",
@@ -66,37 +45,26 @@ const VARIANCE_COLORS: Record<VarianceStatus, string> = {
   perfect: "#16A34A",
 };
 
-
-
 /* ================= HELPERS ================= */
 
-function formatShiftLabel(shift: Shift) {
-  const date = shift.endedAt
-    ? new Date(shift.endedAt).toLocaleDateString(undefined, {
+function formatShiftLabel(shift: ShiftRecord) {
+  const date = shift.date
+    ? new Date(shift.date).toLocaleDateString(undefined, {
         day: "2-digit",
         month: "short",
         year: "numeric",
       })
     : "";
-
-  const staff =
-    shift.staff?.length > 0
-      ? shift.staff.map((s) => s.fullName).join(", ")
-      : "No staff";
-
-  return `${shift.label} • ${date}\nStaff: ${staff}`;
+  return `${shift.name} • ${date}\nStaff: ${shift.staffResponsible || "Unknown"}`;
 }
-
 
 /* ================= COMPONENT ================= */
 
 export default function OverviewReport() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [logs, setLogs] = useState<Log[]>([]);
+  const [shifts, setShifts] = useState<ShiftRecord[]>([]);
   const [selectedVariance, setSelectedVariance] = useState<any>(null);
   const [openVariance, setOpenVariance] = useState(false);
-
 
   /* Filters */
   const [selectedShiftIds, setSelectedShiftIds] = useState<string[]>([]);
@@ -108,34 +76,97 @@ export default function OverviewReport() {
   const [openFilter, setOpenFilter] =
     useState<"shift" | "product" | null>(null);
 
+  /* Pagination & Server Data */
   const [page, setPage] = useState(1);
+  const [shiftPage, setShiftPage] = useState(1);
+  const [hasMoreShifts, setHasMoreShifts] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [serverRows, setServerRows] = useState<ReportRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  /* ================= LOAD DATA ================= */
+  /* ================= LOAD FILTER OPTIONS ================= */
 
   useEffect(() => {
-    const p = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]");
-    const s: Shift[] = JSON.parse(
-      localStorage.getItem(SHIFTS_KEY) || "[]"
-    );
-    const l = JSON.parse(localStorage.getItem(LOGS_KEY) || "[]");
+    let isMounted = true;
+    const fetchFilters = async () => {
+      try {
+        const token = getSession()?.token;
+        if (!token) return;
 
-    setProducts(p);
-    setShifts(s);
-    setLogs(l);
+        const shiftsRes = await listShifts(token, 1, 10, "Ended");
+        
+        let allProducts: any[] = [];
+        let pPage = 1;
+        let pHasNext = true;
+        while (pHasNext) {
+          const res = await apiFetchFirstSuccess<ApiEnvelope<ListProductsResponse> | ListProductsResponse>(
+            [`api/stock/product/list?page=${pPage}&type=active`],
+            { token }
+          );
+          const data = unwrapData(res);
+          allProducts = [...allProducts, ...(data.products || [])];
+          if (data.meta.isLastPage) pHasNext = false;
+          else pPage++;
+        }
 
-    // Default → most recent ended shift
-    const latestEnded = s
-      .filter((x) => x.status === "ended" && x.endedAt)
-      .sort(
-        (a, b) =>
-          new Date(b.endedAt!).getTime() -
-          new Date(a.endedAt!).getTime()
-      )[0];
-
-    if (latestEnded) {
-      setSelectedShiftIds([latestEnded.id]);
-    }
+        if (isMounted) {
+          const endedShifts = (shiftsRes.shifts || []).filter(s => s.status?.toLowerCase() === "ended");
+          setShifts(endedShifts);
+          setHasMoreShifts(!shiftsRes.meta?.isLastPage);
+          setProducts(allProducts.map(p => ({ sku: p.uid, name: p.name, unit: p.unit })));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchFilters();
+    return () => { isMounted = false; };
   }, []);
+
+  const loadMoreShifts = async () => {
+    if (!hasMoreShifts) return;
+    try {
+      const token = getSession()?.token;
+      if (!token) return;
+      const nextPage = shiftPage + 1;
+      const res = await listShifts(token, nextPage, 50, "Ended");
+      const ended = (res.shifts || []).filter(s => s.status?.toLowerCase() === "ended");
+      setShifts(prev => [...prev, ...ended]);
+      setHasMoreShifts(!res.meta?.isLastPage);
+      setShiftPage(nextPage);
+    } catch {}
+  };
+
+  /* ================= FETCH SERVER DATA ================= */
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadOverview = async () => {
+      try {
+        setIsLoading(true);
+        const token = getSession()?.token;
+        if (!token) {
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        const res = await getReportsOverview(selectedSkus, selectedShiftIds, page, token);
+        if (isMounted) {
+          setServerRows(res.data || []);
+          setTotalPages(res.meta?.pageCount || 1);
+          setTotalCount(res.meta?.totalCount || 0);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    
+    loadOverview();
+    return () => { isMounted = false; };
+  }, [selectedSkus, selectedShiftIds, page]);
 
   /* ================= APPLY FILTERS ================= */
 
@@ -151,79 +182,14 @@ export default function OverviewReport() {
     setOpenFilter(null);
   };
 
-  /* ================= BUILD REPORT ================= */
+  /* ================= BUILD GRAPH ================= */
 
-  const rows: Row[] = useMemo(() => {
-    const endedShifts = shifts.filter(
-      (s) =>
-        selectedShiftIds.includes(s.id) &&
-        s.status === "ended" &&
-        s.openingSnapshot &&
-        s.closingSnapshot
-    );
-
-    if (!endedShifts.length) return [];
-
-    const visibleProducts =
-      selectedSkus.length === 0
-        ? products
-        : products.filter((p) =>
-            selectedSkus.includes(p.sku)
-          );
-
-    return visibleProducts.map((p) => {
-      let opening = 0;
-      let added = 0;
-      let used = 0;
-      let actualLeft = 0;
-
-      endedShifts.forEach((shift) => {
-        opening +=
-          shift.openingSnapshot!.find(
-            (i) => i.sku === p.sku
-          )?.quantity || 0;
-
-        actualLeft +=
-          shift.closingSnapshot!.find(
-            (i) => i.sku === p.sku
-          )?.quantity || 0;
-
-        const shiftLogs = logs.filter(
-          (l) => l.shiftId === shift.id && l.sku === p.sku
-        );
-
-        added += shiftLogs
-          .filter((l) => l.action === "in")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        used += shiftLogs
-          .filter((l) => l.action === "out")
-          .reduce((s, l) => s + l.quantity, 0);
-      });
-
-      const expectedLeft = opening + added - used;
-
-      return {
-        sku: p.sku,
-        name: p.name,
-        unit: p.unit,
-        opening,
-        added,
-        used,
-        expectedLeft,
-        actualLeft,
-        variance: actualLeft - expectedLeft,
-      };
-    });
-  }, [selectedShiftIds, selectedSkus, shifts, logs, products]);
-
-  const varianceChartData = useMemo(
-  () =>
-    rows.map((r) => ({
+  const varianceChartData = useMemo(() =>
+    serverRows.map((r) => ({
       name: r.name,
       variance: r.variance,
-      expected: r.expectedLeft,
-      actual: r.actualLeft,
+      expected: r.expectedCount,
+      actual: r.actualCount,
       unit: r.unit,
       status:
         r.variance === 0
@@ -232,22 +198,9 @@ export default function OverviewReport() {
           ? ("negative" as VarianceStatus)
           : ("positive" as VarianceStatus),
     })),
-  [rows]
-);
+  [serverRows]);
 
 
-
-  /* ================= PAGINATION ================= */
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(rows.length / PAGE_SIZE)
-  );
-
-  const slice = rows.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
 
   /* ================= UI ================= */
 
@@ -277,10 +230,36 @@ export default function OverviewReport() {
             Products
             <ChevronDown size={16} />
           </button>
+
+          {selectedShiftIds.length > 0 && (
+            <button
+              onClick={() => {
+                setSelectedShiftIds([]);
+                setPage(1);
+              }}
+              className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-[#0F766E]/20"
+            >
+              {selectedShiftIds.length} Shift{selectedShiftIds.length > 1 ? "s" : ""}
+              <X size={14} className="ml-1 opacity-60" />
+            </button>
+          )}
+
+          {selectedSkus.length > 0 && (
+            <button
+              onClick={() => {
+                setSelectedSkus([]);
+                setPage(1);
+              }}
+              className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-[#0F766E]/20"
+            >
+              {selectedSkus.length} Product{selectedSkus.length > 1 ? "s" : ""}
+              <X size={14} className="ml-1 opacity-60" />
+            </button>
+          )}
         </div>
 
         <span className="text-sm text-gray-500">
-          {rows.length} item(s)
+          {totalCount} item(s)
         </span>
       </div>
 
@@ -288,27 +267,29 @@ export default function OverviewReport() {
       {openFilter === "shift" && (
   <FilterModal
     title="Select shifts"
-    items={shifts.filter((s) => s.status === "ended")}
+    items={shifts.filter((s) => s.status?.toLowerCase() === "ended")}
     getLabel={(s) => formatShiftLabel(s)}
-    getId={(s) => s.id}
-    isActive={(s) => draftShiftIds.includes(s.id)}
+    getId={(s) => s.uid}
+    isActive={(s) => draftShiftIds.includes(s.uid)}
     onToggle={(s) =>
       setDraftShiftIds((p) =>
-        p.includes(s.id)
-          ? p.filter((x) => x !== s.id)
-          : [...p, s.id]
+        p.includes(s.uid)
+          ? p.filter((x) => x !== s.uid)
+          : [...p, s.uid]
       )
     }
     onSelectAll={() =>
       setDraftShiftIds(
         shifts
-          .filter((s) => s.status === "ended")
-          .map((s) => s.id)
+          .filter((s) => s.status?.toLowerCase() === "ended")
+          .map((s) => s.uid)
       )
     }
     onClear={() => setDraftShiftIds([])}
     onApply={applyShiftFilter}
     onClose={() => setOpenFilter(null)}
+    onLoadMore={loadMoreShifts}
+    externalHasMore={hasMoreShifts}
   />
 )}
 
@@ -464,63 +445,75 @@ export default function OverviewReport() {
           </h3>
         </div>
 
-        {/* ===== MOBILE VIEW (NO LOGIC CHANGE) ===== */}
-        <div className="md:hidden divide-y">
-          {slice.map((r) => (
-            <div key={r.sku} className="p-4 space-y-3">
-              <div className="flex justify-between">
-                <p className="font-medium">{r.name}</p>
-                <span className="text-xs text-gray-500">{r.unit}</span>
-              </div>
+        {/* ===== TABLES ===== */}
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12 text-[#0F766E]">
+            <Loader2 className="animate-spin mr-2" size={24} />
+            Loading overview...
+          </div>
+        ) : serverRows.length === 0 ? (
+          <div className="p-12 text-center text-gray-500 italic">No variance records found.</div>
+        ) : (
+          <>
+            {/* ===== MOBILE VIEW ===== */}
+            <div className="md:hidden divide-y">
+              {serverRows.map((r, idx) => (
+                <div key={r.name + idx} className="p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <p className="font-medium">{r.name}</p>
+                    <span className="text-xs text-gray-500">{r.unit}</span>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-gray-500">Expected</p>
-                  <p className="font-medium">{r.expectedLeft}</p>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Expected</p>
+                      <p className="font-medium">{r.expectedCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Actual</p>
+                      <p className="font-medium">{r.actualCount}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Variance</span>
+                    <span className={`font-semibold ${r.variance < 0 ? "text-red-600" : r.variance > 0 ? "text-yellow-600" : "text-green-600"}`}>
+                      {r.variance}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-gray-500">Actual</p>
-                  <p className="font-medium">{r.actualLeft}</p>
-                </div>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Variance</span>
-                <span className="font-semibold text-red-600">
-                  {r.variance}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ===== ORIGINAL TABLE (UNCHANGED) ===== */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead className="bg-gray-50 text-gray-500">
-              <tr>
-                <th className="px-6 py-3 text-left">Item</th>
-                <th className="px-6 py-3 text-right">Expected</th>
-                <th className="px-6 py-3 text-right">Actual</th>
-                <th className="px-6 py-3 text-right">Variance</th>
-                <th className="px-6 py-3 text-left">Unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {slice.map((r) => (
-                <tr key={r.sku} className="border-t">
-                  <td className="px-6 py-4 font-medium">{r.name}</td>
-                  <td className="px-6 py-4 text-right">{r.expectedLeft}</td>
-                  <td className="px-6 py-4 text-right">{r.actualLeft}</td>
-                  <td className="px-6 py-4 text-right font-semibold text-red-600">
-                    {r.variance}
-                  </td>
-                  <td className="px-6 py-4">{r.unit}</td>
-                </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            {/* ===== ORIGINAL TABLE ===== */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead className="bg-gray-50 text-gray-500">
+                  <tr>
+                    <th className="px-6 py-3 text-left">Item</th>
+                    <th className="px-6 py-3 text-right">Expected</th>
+                    <th className="px-6 py-3 text-right">Actual</th>
+                    <th className="px-6 py-3 text-right">Variance</th>
+                    <th className="px-6 py-3 text-left">Unit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serverRows.map((r, idx) => (
+                    <tr key={r.name + idx} className="border-t">
+                      <td className="px-6 py-4 font-medium">{r.name}</td>
+                      <td className="px-6 py-4 text-right">{r.expectedCount}</td>
+                      <td className="px-6 py-4 text-right">{r.actualCount}</td>
+                      <td className={`px-6 py-4 text-right font-semibold ${r.variance < 0 ? "text-red-600" : r.variance > 0 ? "text-yellow-600" : "text-green-600"}`}>
+                        {r.variance}
+                      </td>
+                      <td className="px-6 py-4">{r.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         <div className="flex justify-between items-center px-6 py-4 border-t text-sm">
           <span>
@@ -559,6 +552,8 @@ function FilterModal<T>({
   onClear,
   onSelectAll,
   onClose,
+  onLoadMore,
+  externalHasMore,
 }: {
   title: string;
   items: T[];
@@ -570,6 +565,8 @@ function FilterModal<T>({
   onClear: () => void;
   onSelectAll: () => void;
   onClose: () => void;
+  onLoadMore?: () => void;
+  externalHasMore?: boolean;
 })
 
 
@@ -584,7 +581,7 @@ function FilterModal<T>({
     [items, visibleCount]
   );
 
-  const hasMore = visibleCount < items.length;
+  const hasMore = visibleCount < items.length || !!externalHasMore;
 
   useEffect(() => {
     setVisibleCount(LIST_CHUNK_SIZE);
@@ -601,9 +598,13 @@ function FilterModal<T>({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          setVisibleCount((prev) =>
-            Math.min(prev + LIST_CHUNK_SIZE, items.length)
-          );
+          if (visibleCount < items.length) {
+            setVisibleCount((prev) =>
+              Math.min(prev + LIST_CHUNK_SIZE, items.length)
+            );
+          } else if (onLoadMore && externalHasMore) {
+            onLoadMore();
+          }
         }
       },
       {

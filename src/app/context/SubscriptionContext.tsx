@@ -25,7 +25,7 @@ type SubscriptionContextType = {
 const SubscriptionContext =
   createContext<SubscriptionContextType | null>(null);
 
-const STORAGE_KEY = "stockvar_subscription";
+
 
 /* ================= PROVIDER ================= */
 
@@ -39,21 +39,12 @@ export function SubscriptionProvider({
 
   /* ================= LOAD ================= */
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setSubscription(JSON.parse(raw));
-      }
-    } catch {
-      setSubscription(null);
-    }
-  }, []);
+  // Trial / subscription must be fetched natively from backend APIs in the future.
+  // For now, it initializes as null per strict boundaries.
 
   /* ================= SAVE ================= */
 
   const persist = (data: SubscriptionData) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setSubscription(data);
   };
 

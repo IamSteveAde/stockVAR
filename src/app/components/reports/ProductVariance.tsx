@@ -1,56 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  X,
-} from "lucide-react";
-import { Shift } from "../shifts/types";
-
-/* ================= STORAGE KEYS ================= */
-
-const PRODUCTS_KEY = "stockvar_products";
-const SHIFTS_KEY = "stockvar_shifts";
-const LOGS_KEY = "stockvar_inventory_logs";
+import { useEffect, useState, useCallback } from "react";
+import { ChevronLeft, ChevronRight, Filter, X, Loader2 } from "lucide-react";
+import { getProductVariance, ProductVarianceRow } from "@/lib/api/reports";
+import { getSession } from "@/lib/api/auth";
 
 /* ================= TYPES ================= */
 
-type Product = {
-  sku: string;
-  name: string;
-  unit: string;
-};
-
-type InventoryLog = {
-  sku: string;
-  quantity: number;
-  action: "in" | "out";
-  shiftId: string;
-};
-
-type StockSnapshot = {
-  sku: string;
-  quantity: number;
-};
-
-type Incident = {
-  date: string;
-  shiftLabel: string;
-  variance: number;
-  unit: string;
-  staff: string[];
-};
-
-type AggregatedProduct = {
-  sku: string;
-  product: string;
-  unit: string;
-  totalVariance: number;
-  incidents: Incident[];
-  dates: number[];
-};
+type DateRange = "today" | "7d" | "1m" | "2m" | "custom";
 
 /* ================= CONSTANTS ================= */
 
@@ -58,174 +15,87 @@ const PAGE_SIZE = 10;
 
 /* ================= SAFE DATE ================= */
 
-function safeDate(ts?: number) {
-  if (!ts || Number.isNaN(ts)) return "—";
+function safeDate(ts?: number | string) {
+  if (!ts) return "—";
   const d = new Date(ts);
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toISOString().split("T")[0];
+  return Number.isNaN(d.getTime()) ? "—" : d.toISOString().split("T")[0];
 }
 
 /* ================= MAIN ================= */
 
 export default function ProductVariance() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [logs, setLogs] = useState<InventoryLog[]>([]);
-
   const [page, setPage] = useState(1);
-  const [activeProduct, setActiveProduct] =
-    useState<AggregatedProduct | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [serverRows, setServerRows] = useState<ProductVarianceRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [dateRange, setDateRange] = useState("7d");
+  const [activeProduct, setActiveProduct] = useState<ProductVarianceRow | null>(null);
+
+  const [dateRange, setDateRange] = useState<DateRange>("7d");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  /* ================= LOAD DATA ================= */
+  const getDateParams = useCallback(() => {
+    if (dateRange === "custom") return { startDate: fromDate, endDate: toDate };
 
-  useEffect(() => {
-    try {
-      setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
-      setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
-      setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
-    } catch {
-      setProducts([]);
-      setShifts([]);
-      setLogs([]);
-    }
-  }, []);
-
-  /* ================= LATEST ENDED SHIFT ================= */
-
-  const latestEndedTs = useMemo(() => {
-    const ended = shifts
-      .filter((s) => s.status === "ended" && s.endedAt)
-      .map((s) => new Date(s.endedAt!).getTime())
-      .filter((t) => !Number.isNaN(t));
-
-    return ended.length ? Math.max(...ended) : null;
-  }, [shifts]);
-
-  /* ================= DATE BOUNDS ================= */
-
-  const dateBounds = useMemo(() => {
-    if (!latestEndedTs) return null;
-
-    let fromTs = 0;
-    let toTs = latestEndedTs;
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     if (dateRange === "today") {
-      const d = new Date(latestEndedTs);
-      d.setHours(0, 0, 0, 0);
-      fromTs = d.getTime();
+      return { 
+        startDate: today.toISOString().split("T")[0], 
+        endDate: today.toISOString().split("T")[0] 
+      };
     }
 
-    if (dateRange === "7d") {
-      fromTs = latestEndedTs - 7 * 24 * 60 * 60 * 1000;
-    }
+    const d = new Date();
+    if (dateRange === "7d") d.setDate(d.getDate() - 7);
+    else if (dateRange === "1m") d.setDate(d.getDate() - 30);
+    else if (dateRange === "2m") d.setDate(d.getDate() - 60);
 
-    if (dateRange === "1m") {
-      fromTs = latestEndedTs - 30 * 24 * 60 * 60 * 1000;
-    }
+    return {
+      startDate: d.toISOString().split("T")[0],
+      endDate: now.toISOString().split("T")[0],
+    };
+  }, [dateRange, fromDate, toDate]);
 
-    if (dateRange === "2m") {
-      fromTs = latestEndedTs - 60 * 24 * 60 * 60 * 1000;
-    }
+  /* ================= FETCH SERVER DATA ================= */
 
-    if (dateRange === "custom") {
-      if (!fromDate || !toDate) return null;
-      fromTs = new Date(fromDate + "T00:00:00").getTime();
-      toTs = new Date(toDate + "T23:59:59").getTime();
-    }
-
-    return { fromTs, toTs };
-  }, [dateRange, fromDate, toDate, latestEndedTs]);
-
-  /* ================= AGGREGATE ================= */
-
-  const aggregated: AggregatedProduct[] = useMemo(() => {
-    const acc: Record<string, AggregatedProduct> = {};
-
-    shifts
-      .filter(
-        (s) =>
-          s.status === "ended" &&
-          s.openingSnapshot &&
-          s.closingSnapshot &&
-          s.endedAt
-      )
-      .forEach((shift) => {
-        const endedTs = new Date(shift.endedAt!).getTime();
-        if (Number.isNaN(endedTs)) return;
-
-        if (dateBounds) {
-          if (endedTs < dateBounds.fromTs) return;
-          if (endedTs > dateBounds.toTs) return;
+  useEffect(() => {
+    let isMounted = true;
+    const fetchVariance = async () => {
+      try {
+        setIsLoading(true);
+        const token = getSession()?.token;
+        if (!token) {
+          if (isMounted) setIsLoading(false);
+          return;
         }
 
-        products.forEach((product) => {
-          const opening =
-            shift.openingSnapshot!.find(
-              (i: StockSnapshot) => i.sku === product.sku
-            )?.quantity || 0;
+        const { startDate, endDate } = getDateParams();
+        const res = await getProductVariance(
+          startDate, 
+          endDate, 
+          page, 
+          PAGE_SIZE, 
+          token
+        );
 
-          const closing =
-            shift.closingSnapshot!.find(
-              (i: StockSnapshot) => i.sku === product.sku
-            )?.quantity || 0;
+        if (isMounted) {
+          setServerRows(res.pv || []);
+          setTotalPages(res.meta?.pageCount || 1);
+        }
+      } catch (err) {
+        console.error("Failed to fetch product variance", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
 
-          const shiftLogs = logs.filter(
-            (l) => l.shiftId === shift.id && l.sku === product.sku
-          );
-
-          const added = shiftLogs
-            .filter((l) => l.action === "in")
-            .reduce((s, l) => s + l.quantity, 0);
-
-          const used = shiftLogs
-            .filter((l) => l.action === "out")
-            .reduce((s, l) => s + l.quantity, 0);
-
-          const variance = closing - (opening + added - used);
-          if (variance >= 0) return;
-
-          if (!acc[product.sku]) {
-            acc[product.sku] = {
-              sku: product.sku,
-              product: product.name,
-              unit: product.unit,
-              totalVariance: 0,
-              incidents: [],
-              dates: [],
-            };
-          }
-
-          acc[product.sku].totalVariance += Math.abs(variance);
-          acc[product.sku].dates.push(endedTs);
-          acc[product.sku].incidents.push({
-            date: shift.endedAt!,
-            shiftLabel: shift.label,
-            variance: Math.abs(variance),
-            unit: product.unit,
-            staff: shift.staff?.map((s) => s.fullName) || [],
-          });
-        });
-      });
-
-    return Object.values(acc);
-  }, [shifts, products, logs, dateBounds]);
-
-  /* ================= PAGINATION ================= */
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(aggregated.length / PAGE_SIZE)
-  );
-
-  const pageData = aggregated.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+    fetchVariance();
+    return () => { isMounted = false; };
+  }, [dateRange, fromDate, toDate, page, getDateParams]);
 
   /* ================= UI ================= */
 
@@ -253,7 +123,7 @@ export default function ProductVariance() {
               value={dateRange}
               onChange={(e) => {
                 setPage(1);
-                setDateRange(e.target.value);
+                setDateRange(e.target.value as DateRange);
               }}
               className="border rounded-lg px-3 py-2 text-sm"
             >
@@ -284,33 +154,42 @@ export default function ProductVariance() {
         </div>
 
         {/* List */}
-        <div className="divide-y">
-          {pageData.length === 0 && (
+        <div className="divide-y relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+              <Loader2 className="animate-spin text-[#0F766E]" size={24} />
+            </div>
+          )}
+
+          {!isLoading && serverRows.length === 0 && (
             <p className="p-6 text-sm text-gray-400 text-center">
               No product variance found
             </p>
           )}
 
-          {pageData.map((p) => (
-            <button
-              key={p.sku}
-              onClick={() => setActiveProduct(p)}
-              className="w-full text-left p-4 flex justify-between hover:bg-gray-50"
-            >
-              <div>
-                <p className="font-medium">{p.product}</p>
-                <p className="text-xs text-gray-500">
-                  {p.incidents.length} incidents •{" "}
-                  {safeDate(Math.min(...p.dates))} →{" "}
-                  {safeDate(Math.max(...p.dates))}
+          {serverRows.map((p) => {
+            const dates = p.variance.map((v) => new Date(v.createdAt).getTime()).filter((t) => !Number.isNaN(t));
+            const totalVariance = p.variance.reduce((sum, v) => sum + Math.abs(v.variance), 0);
+
+            return (
+              <button
+                key={p.name}
+                onClick={() => setActiveProduct(p)}
+                className="w-full text-left p-4 flex justify-between hover:bg-gray-50"
+              >
+                <div>
+                  <p className="font-medium">{p.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {p.variance.length} incidents{dates.length > 0 ? " • " : ""}
+                    {dates.length > 0 && `${safeDate(Math.min(...dates))} → ${safeDate(Math.max(...dates))}`}
+                  </p>
+                </div>
+                <p className="font-semibold text-red-600">
+                  -{totalVariance}
                 </p>
-              </div>
-              <p className="font-semibold text-red-600">
-                -{p.totalVariance}
-                {p.unit}
-              </p>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
 
         {/* Pagination */}
@@ -370,7 +249,7 @@ export default function ProductVariance() {
           <div className="bg-white rounded-xl w-full max-w-lg">
             <div className="flex justify-between p-4 border-b">
               <h4 className="font-semibold">
-                {activeProduct.product} – Variance Details
+                {activeProduct.name} – Variance Details
               </h4>
               <button onClick={() => setActiveProduct(null)}>
                 <X size={16} />
@@ -378,22 +257,30 @@ export default function ProductVariance() {
             </div>
 
             <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
-              {activeProduct.incidents.map((i, idx) => (
+              {activeProduct.variance.map((i, idx) => (
                 <div key={idx} className="border rounded-lg p-3">
                   <div className="flex justify-between">
-                    <span className="font-medium text-sm">
-                      {i.shiftLabel}
+                    <span className="font-medium text-sm text-gray-600" title={i.shiftUid}>
+                      Shift Record #{i.id}
                     </span>
                     <span className="font-semibold text-red-600">
-                      -{i.variance}
-                      {i.unit}
+                      -{Math.abs(i.variance)}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Date: {i.date}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Expected: {i.expectedCount} | Actual: {i.actualCount}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Date: {new Date(i.createdAt).toLocaleString(undefined, {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Staff: {i.staff.join(", ") || "—"}
+                    Linked Staff: {i.linkedStaffCount}
                   </p>
                 </div>
               ))}

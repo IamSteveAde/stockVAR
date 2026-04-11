@@ -1,53 +1,56 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ClipboardList, CalendarCheck, UserCheck } from "lucide-react";
-import { useProfile } from "@/app/context/ProfileContext";
-import { Shift } from "../../components/shifts/types";
-
-const SHIFTS_KEY = "stockvar_shifts";
+import { getStaffDashboardMetrics } from "@/lib/api/dashboard";
+import { getSession } from "@/lib/api/auth";
 
 export default function MyShiftOverviewCards() {
-  const { profile } = useProfile();
-  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [metrics, setMetrics] = useState({
+    all: 0,
+    completed: 0,
+    responsible: 0,
+  });
 
   useEffect(() => {
-    const raw = localStorage.getItem(SHIFTS_KEY);
-    setShifts(raw ? JSON.parse(raw) : []);
+    const fetchMetrics = async () => {
+      const token = getSession()?.token;
+      if (!token) return;
+
+      try {
+        const [allRes, compRes, respRes] = await Promise.all([
+          getStaffDashboardMetrics(token, "all"),
+          getStaffDashboardMetrics(token, "completed"),
+          getStaffDashboardMetrics(token, "responsible"),
+        ]);
+        
+        setMetrics({
+          all: allRes?.count || 0,
+          completed: compRes?.count || 0,
+          responsible: respRes?.count || 0,
+        });
+      } catch (err) {
+        console.error("Failed to load staff metrics", err);
+      }
+    };
+
+    fetchMetrics();
   }, []);
-
-  const myShifts = useMemo(
-    () =>
-      shifts.filter((s) =>
-        s.staff.some((st) => st.fullName === profile?.fullName) ||
-        s.staffResponsibleName === profile?.fullName ||
-        s.responsibleStaffId === profile?.fullName
-      ),
-    [shifts, profile?.fullName]
-  );
-
-  const completed = myShifts.filter(
-    (s) => s.status === "ended"
-  ).length;
-
-  const responsible = myShifts.filter(
-    (s) => s.staffResponsibleName === profile?.fullName || s.responsibleStaffId === profile?.fullName
-  ).length;
 
   const cards = [
     {
       label: "Assigned shifts",
-      value: myShifts.length,
+      value: metrics.all,
       icon: ClipboardList,
     },
     {
       label: "Completed shifts",
-      value: completed,
+      value: metrics.completed,
       icon: CalendarCheck,
     },
     {
       label: "Responsible shifts",
-      value: responsible,
+      value: metrics.responsible,
       icon: UserCheck,
     },
   ];

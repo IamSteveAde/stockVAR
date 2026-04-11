@@ -11,6 +11,8 @@ export type AuthUser = {
 export type AuthSession = {
   token?: string;
   user?: AuthUser;
+  proceedToProfileCreation?: boolean;
+  isFirstLogin?: boolean;
 };
 
 type LoginResponse = {
@@ -27,6 +29,8 @@ type LoginResponse = {
       verified?: boolean;
     };
     accessType?: string;
+    proceedToProfileCreation?: boolean;
+    isFirstLogin?: boolean;
     emailVerified?: boolean;
     email_verified?: boolean;
     isEmailVerified?: boolean;
@@ -159,6 +163,8 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
     throw new Error(res.message || "Invalid email or password.");
   }
 
+  console.log("SignupData here ===> ", res.data)
+
   const token = res.token ?? res.data?.token;
   if (!token) {
     clearSession()
@@ -200,7 +206,12 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
     role,
   };
 
-  const session: AuthSession = { token, user };
+  const session: AuthSession = { 
+    token, 
+    user,
+    proceedToProfileCreation: res.data?.proceedToProfileCreation,
+    isFirstLogin: res.data?.isFirstLogin,
+  };
   saveSession(session);
   return session;
 }
@@ -244,7 +255,16 @@ export async function resendVerificationEmail(
 
 export function saveSession(session: AuthSession) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  
+  // STRICLY enforce only Token and Email limits as requested
+  const minimalSession = {
+    token: session.token,
+    user: {
+      email: session.user?.email
+    }
+  };
+  
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(minimalSession));
 }
 
 export function getSession(): AuthSession | null {
@@ -252,7 +272,20 @@ export function getSession(): AuthSession | null {
   const raw = localStorage.getItem(SESSION_STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as AuthSession;
+    const parsed = JSON.parse(raw) as AuthSession;
+    
+    // Natively hydrate role/id directly out of Token securely omitting local storage
+    if (parsed.token) {
+      const jwtPayload = decodeJwt(parsed.token);
+      parsed.user = {
+        email: parsed.user?.email,
+        role: normalizeRole(jwtPayload.accessType as string | undefined),
+        id: readStringClaim(jwtPayload, "sub", "userId", "id", "uid") || "",
+        fullName: readStringClaim(jwtPayload, "name", "fullName", "given_name") || "",
+      };
+    }
+    
+    return parsed;
   } catch {
     return null;
   }

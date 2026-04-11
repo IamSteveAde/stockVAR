@@ -15,21 +15,7 @@ type ProfileContextType = {
   clearProfile: () => void;
 };
 
-/* ================= CONSTANTS ================= */
 
-const PROFILE_KEY_PREFIX = "stockvar_profile";
-
-/* ================= HELPERS ================= */
-
-function resolveProfileKey(session: AuthSession | null): string {
-  const userId = session?.user?.id?.trim();
-  if (userId) return `${PROFILE_KEY_PREFIX}:${userId}`;
-
-  const email = session?.user?.email?.trim().toLowerCase();
-  if (email) return `${PROFILE_KEY_PREFIX}:${email}`;
-
-  return `${PROFILE_KEY_PREFIX}:anonymous`;
-}
 
 function createDefaultProfile(session: AuthSession | null): ProfileData {
   const email = session?.user?.email ?? "";
@@ -60,21 +46,9 @@ export function ProfileProvider({
   children: React.ReactNode;
 }) {
   const session = getSession();
-  const profileKey = resolveProfileKey(session);
-
-  const [profile, setProfileState] = useState<ProfileData>(() => {
-    try {
-      const raw = localStorage.getItem(profileKey);
-      return raw ? JSON.parse(raw) : createDefaultProfile(session);
-    } catch {
-      return createDefaultProfile(session);
-    }
-  });
-
-  /* Persist profile */
-  useEffect(() => {
-    localStorage.setItem(profileKey, JSON.stringify(profile));
-  }, [profile, profileKey]);
+  const [profile, setProfileState] = useState<ProfileData>(() =>
+    createDefaultProfile(session)
+  );
 
   useEffect(() => {
     const token = session?.token;
@@ -127,7 +101,6 @@ export function ProfileProvider({
   };
 
   const clearProfile = () => {
-    localStorage.removeItem(profileKey);
     setProfileState(createDefaultProfile(getSession()));
   };
 

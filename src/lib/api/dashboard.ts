@@ -1,5 +1,6 @@
 import { apiFetchFirstSuccess } from "./client";
 import { unwrapData, type ApiEnvelope } from "./response";
+import type { ListShiftsResponse } from "./shifts";
 
 const DASHBOARD_PATHS = {
 staffMetrics: ["api/dashboard/staff/metric"],
@@ -31,12 +32,14 @@ const res = await apiFetchFirstSuccess<ApiEnvelope<StaffMetricResponse> | StaffM
 return unwrapData(res);
 }
 
-export async function getStaffRecentUpcomingShift(token: string) {
-const res = await apiFetchFirstSuccess<ApiEnvelope<unknown> | unknown>(
-    DASHBOARD_PATHS.staffUpcomingShift,
+export async function getStaffShiftsByType(token: string, type: "recent" | "upcoming", page = 1) {
+  // Pass timezone parameter as explicitly required by API spec
+  const timezone = encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/London");
+  const res = await apiFetchFirstSuccess<ApiEnvelope<ListShiftsResponse> | ListShiftsResponse>(
+    [`api/shift/list/${type}?page=${page}&timezone=${timezone}`],
     { token }
-);
-return unwrapData(res);
+  );
+  return unwrapData(res);
 }
 
 export type DashboardMetricsData = {
