@@ -40,10 +40,7 @@ const INVENTORY_KEY = "stockvar_inventory";
 
 /* ================= TYPES ================= */
 
-type InventoryItem = {
-  sku: string;
-  quantity: number;
-};
+
 
 /* ================= HELPERS ================= */
 
@@ -54,31 +51,11 @@ const formatDateWords = (dateStr: string) => {
   const date = new Date(dateStr);
 
   return date.toLocaleDateString("en-GB", {
-    weekday: "short", // Tue
-    day: "2-digit",   // 02
-    month: "short",   // Feb
-    year: "numeric",  // 2026
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   }).replace(/,/g, "");
-};
-
-
-
-const loadStaff = (): Staff[] => {
-  try {
-    const raw = localStorage.getItem(STAFF_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const loadInventory = (): InventoryItem[] => {
-  try {
-    const raw = localStorage.getItem(INVENTORY_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
 };
 
 /* ================= COMPONENT ================= */
@@ -89,8 +66,6 @@ export default function ShiftTable() {
     profile.role === "owner" || profile.role === "manager";
 
   const [shifts, setShifts] = useState<Shift[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   const [page, setPage] = useState(1);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -113,8 +88,6 @@ export default function ShiftTable() {
 
   useEffect(() => {
     let mounted = true;
-    setStaff(loadStaff());
-    setInventory(loadInventory());
 
     const hydrate = async () => {
       const token = getSession()?.token;
@@ -129,7 +102,7 @@ export default function ShiftTable() {
             startDate: s.date || s.startDate,
             startTime: s.startTime,
             endTime: s.endTime,
-            staff: Array(s.staffCount || 1).fill({ id: "dummy", fullName: "Staff Member" }),
+            staff: Array(s.staffCount || 1).fill({ id: "dummy", fullName: "Staff Member" } as Staff),
             status: s.status?.toLowerCase() === "ended" ? "ended" : (s.clockInTime && !s.clockOutTime) ? "running" : "planned",
             startedAt: s.clockInTime,
             endedAt: s.clockOutTime,
@@ -137,7 +110,7 @@ export default function ShiftTable() {
             staffResponsibleName: s.staffResponsible,
             baseShiftUid: s.baseShiftUid,
           }));
-          setShifts(mapped);
+          setShifts(mapped as unknown as Shift[]);
           setTotalPages(response.meta?.pageCount || 1);
           setTotalCount(response.meta?.totalCount || mapped.length);
         }
@@ -265,6 +238,7 @@ export default function ShiftTable() {
   /* ================= PAGINATION ================= */
 
   const current = shifts;
+
 
 
   /* ================= UI ================= */
@@ -443,7 +417,6 @@ export default function ShiftTable() {
         <CreateShiftModal
           open={openCreate}
           onClose={() => setOpenCreate(false)}
-          staffList={staff}
           existingShifts={shifts}
           onCreate={async (payload) => {
             const token = getSession()?.token;
@@ -462,7 +435,6 @@ export default function ShiftTable() {
       {startingShift && (
         <StartShiftModal
           shift={startingShift}
-          staff={staff}
           // currentUserId={profile.id}
           currentUserId="dummy"
           currentUserEmail={profile.email}
@@ -478,7 +450,6 @@ export default function ShiftTable() {
       {closingShift && (
         <CloseShiftModal
           shift={closingShift}
-          inventory={inventory}
           // currentUserId={profile.id}
           currentUserId="dummy"
           currentUserEmail={profile.email}

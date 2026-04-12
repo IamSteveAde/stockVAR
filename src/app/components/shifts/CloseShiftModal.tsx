@@ -25,7 +25,6 @@ const PRODUCTS_KEY = "stockvar_products";
 
 type Props = {
   shift: Shift;
-  inventory: InventoryItem[];
   currentUserId: string;
   currentUserEmail: string;
   currentUserRole: "owner" | "manager" | "staff";
@@ -40,7 +39,6 @@ type Props = {
 
 export default function CloseShiftModal({
   shift,
-  inventory,
   currentUserId,
   currentUserEmail,
   currentUserRole,

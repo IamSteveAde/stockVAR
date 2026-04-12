@@ -36,9 +36,8 @@ const STAFF_PATHS = {
   create: ["api/staff/create"],
 };
 
-export async function listStaff(token: string, page = 1, limit = 1) {
-  const paths = STAFF_PATHS.list.map(p => `${p}?page=${page}&limit=${limit}`);
-  // const paths = STAFF_PATHS.list.map(p => `${p}?page=${page}&limit=1`);
+export async function listStaff(token: string, page = 1, limit = 10, filter?: string) {
+  const paths = STAFF_PATHS.list.map(p => `${p}?page=${page}&limit=${limit}${filter ? `&filter=${encodeURIComponent(filter)}` : ""}`);
   const res = await apiFetchFirstSuccess<ApiEnvelope<ListStaffResponse> | ListStaffResponse>(
     paths,
     { token }

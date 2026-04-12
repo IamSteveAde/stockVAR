@@ -6,7 +6,6 @@ import { Shift, Staff } from "./types";
 
 type Props = {
   shift: Shift;
-  staff: Staff[];
   currentUserId: string;
   currentUserEmail: string;
   currentUserRole: "owner" | "manager" | "staff";
@@ -16,7 +15,6 @@ type Props = {
 
 export default function StartShiftModal({
   shift,
-  staff,
   currentUserId,
   currentUserEmail,
   currentUserRole,

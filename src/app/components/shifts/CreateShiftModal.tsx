@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { Staff, Shift } from "./types";
+import { useMemo, useState, useEffect } from "react";
+import { X, ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
+import { Shift } from "./types";
+import { getSession } from "@/lib/api/auth";
+import { listStaff, type StaffRecord } from "@/lib/api/staff";
+import toast from "react-hot-toast";
 
 /* ================= TYPES ================= */
 
@@ -12,7 +15,6 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onCreate: (payload: CreateShiftPayload) => Promise<void>;
-  staffList: Staff[];
   existingShifts: Shift[];
 };
 
@@ -53,7 +55,6 @@ export default function CreateShiftModal({
   open,
   onClose,
   onCreate,
-  staffList,
   existingShifts,
 }: Props) {
   const [step, setStep] = useState(0);
@@ -70,10 +71,43 @@ export default function CreateShiftModal({
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [responsibleStaffId, setResponsibleStaffId] = useState("");
 
-  const activeStaff = useMemo(
-    () => staffList.filter((s) => s.status === "active"),
-    [staffList]
-  );
+  const [activeStaff, setActiveStaff] = useState<StaffRecord[]>([]);
+  const [staffPage, setStaffPage] = useState(1);
+  const [hasMoreStaff, setHasMoreStaff] = useState(true);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    
+    // reset cleanly on reopen
+    if (staffPage === 1) {
+      setActiveStaff([]);
+    }
+
+    const fetchStaff = async () => {
+      const token = getSession()?.token;
+      if (!token) return;
+
+      setIsLoadingStaff(true);
+      try {
+        const res = await listStaff(token, staffPage, 10, "Active");
+        if (res.staff) {
+           setActiveStaff(prev => {
+             const merged = [...prev, ...res.staff];
+             const unique = merged.filter((obj, index, self) => index === self.findIndex((el) => el.uid === obj.uid));
+             return unique;
+           });
+        }
+        setHasMoreStaff(!res.meta.isLastPage);
+      } catch (err) {
+        console.error("Failed loading staff", err);
+      } finally {
+        setIsLoadingStaff(false);
+      }
+    };
+
+    fetchStaff();
+  }, [open, staffPage]);
 
   if (!open) return null;
 
@@ -84,7 +118,7 @@ export default function CreateShiftModal({
     setSelectedStaff((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-    if (responsibleStaffId === id) setResponsibleStaffId("");
+    // if (responsibleStaffId === id) setResponsibleStaffId("");
   };
 
   /* ================= CREATE ================= */
@@ -115,6 +149,7 @@ export default function CreateShiftModal({
         repeatsOn: repeat ? repeatDays.map(d => FULL_DAYS[d]) : [],
         isWeekly: repeat,
       });
+      toast.success("Shift created successfully!");
       onClose();
     } catch (error: unknown) {
       const message =
@@ -246,32 +281,53 @@ export default function CreateShiftModal({
 
           {step === 2 && (
             <>
-              <div className="space-y-2">
-                {activeStaff.map((s) => (
-                  <label key={s.id} className="flex gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStaff.includes(s.id)}
-                      onChange={() => toggleStaff(s.id)}
-                    />
-                    {s.fullName}
-                  </label>
-                ))}
+              <div className="space-y-2 max-h-60 overflow-y-auto border p-3 rounded-lg">
+                {activeStaff.map((s) => {
+                  const staffId = s.id || s.uid || "unknown";
+                  return (
+                    <label key={staffId} className="flex gap-2 items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedStaff.includes(staffId)}
+                        onChange={() => toggleStaff(staffId)}
+                        className="w-4 h-4"
+                      />
+                      <span>{s.fullName || s.name || "Unknown Staff"}</span>
+                    </label>
+                  );
+                })}
+
+                {activeStaff.length === 0 && !isLoadingStaff && (
+                  <p className="text-gray-500 text-sm text-center py-4">No active staff members found.</p>
+                )}
+
+                {hasMoreStaff && (
+                  <button 
+                    onClick={() => setStaffPage(p => p + 1)}
+                    disabled={isLoadingStaff}
+                    className="w-full text-center py-2 text-[#0F766E] text-sm hover:bg-[#0F766E]/5 rounded-lg flex justify-center"
+                  >
+                    {isLoadingStaff ? <Loader2 size={16} className="animate-spin" /> : "Load more..."}
+                  </button>
+                )}
               </div>
 
               <select
                 value={responsibleStaffId}
                 onChange={(e) => setResponsibleStaffId(e.target.value)}
-                className="border rounded px-3 py-2 w-full"
+                className="border rounded px-3 py-2 w-full mt-4"
               >
                 <option value="">Select staff in charge</option>
                 {activeStaff
-                  .filter((s) => selectedStaff.includes(s.id))
-                  .map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.fullName}
-                    </option>
-                  ))}
+                  .filter((s) => selectedStaff.includes(s.id || s.uid || ""))
+                  .map((s) => {
+                    const staffId = s.id || s.uid || "unknown";
+                    return (
+                      <option key={staffId} value={staffId}>
+                         {s.fullName || s.name || "Unknown Staff"}
+                      </option>
+                    );
+                  })}
               </select>
             </>
           )}
@@ -286,10 +342,16 @@ export default function CreateShiftModal({
                 Time: {startTime} → {endTime}
               </p>
               <p>
-                Staff:{" "}
+                Staff in Charge:{" "}
+                {activeStaff.find((s) => (s.id || s.uid) === responsibleStaffId)?.fullName || 
+                 activeStaff.find((s) => (s.id || s.uid) === responsibleStaffId)?.name || 
+                 "Unknown"}
+              </p>
+              <p>
+                Linked Staff:{" "}
                 {activeStaff
-                  .filter((s) => selectedStaff.includes(s.id))
-                  .map((s) => s.fullName)
+                  .filter((s) => selectedStaff.includes(s.id || s.uid || ""))
+                  .map((s) => s.fullName || s.name || "Unknown")
                   .join(", ")}
               </p>
               {repeat && <p>Repeats weekly</p>}
