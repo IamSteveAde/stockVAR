@@ -74,6 +74,7 @@ const SESSION_STORAGE_KEY = "stockvar_session";
 function normalizeRole(accessType: string | undefined): UserRole {
   if (!accessType) return "owner";
   const normalized = accessType.toLowerCase();
+  if (normalized.includes("admin")) return "admin";
   if (normalized.includes("staff")) return "staff";
   if (normalized.includes("manager")) return "manager";
   return "owner";

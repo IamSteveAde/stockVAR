@@ -1,36 +1,89 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAdmin } from "@/app/context/AdminContext";
 import StatusBadge from "@/app/components/admin/StatusBadge";
+import { getSession } from "@/lib/api/auth";
+import { getAdminSubscriptionMetric, listAdminSubscriptions } from "@/lib/api/admin";
+import { useRouter } from "next/navigation";
 
 export default function AdminSubscriptionsPage() {
-  const { restaurants, loading } = useAdmin();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState({
+    active: 0,
+    trial: 0,
+    expired: 0,
+  });
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState<any>(null);
 
-  if (loading) {
+  useEffect(() => {
+    async function hydrateMetrics() {
+      const token = getSession()?.token;
+      if (!token) return;
+      try {
+        const [activeM, trialM, expiredM] = await Promise.all([
+          getAdminSubscriptionMetric(token, "active"),
+          getAdminSubscriptionMetric(token, "trial"),
+          getAdminSubscriptionMetric(token, "expired"),
+        ]);
+        setMetrics({
+          active: activeM?.count || 0,
+          trial: trialM?.count || 0,
+          expired: expiredM?.count || 0,
+        });
+      } catch (err) {
+        console.error("Failed loading subscription metrics", err);
+      }
+    }
+    hydrateMetrics();
+  }, []);
+
+  useEffect(() => {
+    async function hydrateList() {
+      const token = getSession()?.token;
+      if (!token) {
+        router.push("/auth/login");
+        return;
+      }
+      setLoading(true);
+      try {
+        const list: any = await listAdminSubscriptions(token, page);
+        if (list && Array.isArray(list.businesses)) {
+            setSubscriptions(list.businesses);
+            setMeta(list.meta);
+        }
+
+      } catch (err: any) {
+        if (err.message?.includes("401") || err.message?.includes("expired")) {
+             router.push("/auth/login");
+        }
+        console.error("Failed loading subscription metrics", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    hydrateList();
+  }, [page]);
+
+  // We gracefully handle loading to not block the metrics overview but wait for list.
+  if (loading && subscriptions.length === 0) {
     return (
       <div className="bg-white rounded-xl p-6 text-sm text-gray-500">
-        Loading subscriptions…
+        Loading subscriptions overview…
       </div>
     );
   }
 
-  if (!restaurants.length) {
+  if (!subscriptions.length) {
     return (
       <div className="bg-white rounded-xl p-6 text-sm text-gray-500">
         No subscriptions found.
       </div>
     );
   }
-
-  const totals = restaurants.reduce(
-    (acc, r) => {
-      acc[r.subscriptionStatus] =
-        (acc[r.subscriptionStatus] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
 
   return (
     <div className="space-y-6">
@@ -46,11 +99,11 @@ export default function AdminSubscriptionsPage() {
 
       {/* Summary */}
       <div className="grid md:grid-cols-3 gap-4">
-        <SummaryCard label="Active" value={totals.active || 0} />
-        <SummaryCard label="Trial" value={totals.trial || 0} />
+        <SummaryCard label="Active" value={metrics.active} />
+        <SummaryCard label="Trial" value={metrics.trial} />
         <SummaryCard
           label="Expired"
-          value={totals.expired || 0}
+          value={metrics.expired}
           danger
         />
       </div>
@@ -69,14 +122,14 @@ export default function AdminSubscriptionsPage() {
           </thead>
 
           <tbody>
-            {restaurants.map((r) => (
+            {subscriptions.map((r) => (
               <tr
-                key={r.id}
+                key={r.uid}
                 className="border-t hover:bg-gray-50 transition"
               >
                 <td className="p-4 font-medium">
                   <Link
-                    href={`/admin/restaurants/${r.id}`}
+                    href={`/admin/restaurants/${r.uid}`}
                     className="text-teal-700 hover:underline"
                   >
                     {r.name}
@@ -85,15 +138,15 @@ export default function AdminSubscriptionsPage() {
 
                 <td className="p-4">
                   <div className="flex flex-col">
-                    <span>{r.owner}</span>
+                    <span>{r.owner?.name || "Unknown"}</span>
                     <span className="text-xs text-gray-400">
-                      {r.ownerEmail}
+                      {r.owner?.email || ""}
                     </span>
                   </div>
                 </td>
 
                 <td className="p-4">
-                  <StatusBadge status={r.subscriptionStatus} />
+                  <StatusBadge status={r.subscriptionStatus?.toLowerCase()} />
                 </td>
 
                 <td className="p-4 text-gray-500">
@@ -102,7 +155,7 @@ export default function AdminSubscriptionsPage() {
 
                 <td className="p-4 text-right">
                   <Link
-                    href={`/admin/restaurants/${r.id}`}
+                    href={`/admin/restaurants/${r.uid}`}
                     className="text-sm text-teal-700 hover:underline"
                   >
                     Manage →
@@ -112,6 +165,31 @@ export default function AdminSubscriptionsPage() {
             ))}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {meta && (
+          <div className="p-4 border-t flex items-center justify-between text-sm text-gray-500">
+            <span>
+              Showing Page {meta.currentPage} of {meta.pageCount} ({meta.totalCount} total)
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={meta.isFirstPage}
+                className="px-3 py-1 border rounded disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={meta.isLastPage}
+                className="px-3 py-1 border rounded disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -74,8 +74,12 @@ export default function Login() {
         const role = session.user?.role;
         const hasCompletedOnboarding = session.proceedToProfileCreation === false;
 
+        // Admin bypass natively targets custom admin interface
+        if (role === "admin") {
+          router.push("/admin");
+        }
         // Staff always goes to shift terminal
-        if (role === "staff") {
+        else if (role === "staff") {
           router.push("/dashboard/shift");
         }
         // Owner checks for onboarding explicitly natively provided inside token payload

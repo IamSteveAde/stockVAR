@@ -11,6 +11,7 @@ import {
 import { mockAdminRestaurants } from "../../app/mocks/mockAdminRestaurants";
 import { listAdminRestaurants } from "@/lib/api/admin";
 import { getSession } from "@/lib/api/auth";
+import { useRouter } from "next/navigation";
 
 /* ================= TYPES ================= */
 
@@ -63,6 +64,7 @@ export function AdminProvider({
     AdminRestaurant[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   /* ================= LOAD ================= */
 
@@ -72,21 +74,36 @@ export function AdminProvider({
       const token = session?.token;
 
       if (!token) {
-        setRestaurants(mockAdminRestaurants);
+        router.push("/auth/login");
         return;
       }
 
       try {
-        const data = await listAdminRestaurants(token);
+        const res: any = await listAdminRestaurants(token);
 
-        if (Array.isArray(data)) {
-          setRestaurants(data as AdminRestaurant[]);
+        if (res && Array.isArray(res.businesses)) {
+          const mapped = res.businesses.map((b: any) => ({
+            id: b.uid || b.id,
+            name: b.name,
+            city: b.city || "Unknown",
+            owner: b.owner?.name || "Unknown",
+            ownerEmail: b.owner?.email || "No email",
+            phone: b.phone || "",
+            staffCount: b.staffSize || 0,
+            subscriptionStatus: b.subscriptionStatus?.toLowerCase() || "expired",
+            createdAt: b.createdAt || new Date().toISOString(),
+          }));
+          setRestaurants(mapped as AdminRestaurant[]);
           return;
         }
 
-        setRestaurants(mockAdminRestaurants);
-      } catch {
-        setRestaurants(mockAdminRestaurants);
+        setRestaurants([]);
+      } catch (err: any) {
+        if (err.message?.includes("401") || err.message?.includes("expired")) {
+            router.push("/auth/login");
+        } else {
+            console.error("Admin hydrate error: ", err);
+        }
       }
     };
 

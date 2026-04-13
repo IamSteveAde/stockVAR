@@ -1,11 +1,54 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAdmin } from "@/app/context/AdminContext";
 import StatusBadge from "@/app/components/admin/StatusBadge";
+import { getSession } from "@/lib/api/auth";
+import { listAdminRestaurants } from "@/lib/api/admin";
+import { useRouter } from "next/navigation";
 
 export default function AdminRestaurants() {
-  const { restaurants, loading } = useAdmin();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState<any>(null);
+
+  useEffect(() => {
+    async function hydrateList() {
+      const token = getSession()?.token;
+      if (!token) {
+        router.push("/auth/login");
+        return;
+      }
+      setLoading(true);
+      try {
+        const list: any = await listAdminRestaurants(token, page);
+        if (list && Array.isArray(list.businesses)) {
+            // Re-map into UI friendly shape natively
+            const mapped = list.businesses.map((b: any) => ({
+              id: b.uid || b.id,
+              name: b.name,
+              city: b.city || "Unknown",
+              owner: b.owner?.name || "Unknown",
+              ownerEmail: b.owner?.email || "No email",
+              staffCount: b.staffSize || 0,
+              subscriptionStatus: b.subscriptionStatus?.toLowerCase() || "expired",
+            }));
+            setRestaurants(mapped);
+            setMeta(list.meta);
+        }
+      } catch (err: any) {
+        if (err.message?.includes("401") || err.message?.includes("expired")) {
+             router.push("/auth/login");
+        }
+        console.error("Failed loading restaurants", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    hydrateList();
+  }, [page]);
 
   if (loading) {
     return (
@@ -27,9 +70,11 @@ export default function AdminRestaurants() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Restaurants</h1>
-        <span className="text-sm text-gray-500">
-          {restaurants.length} total
-        </span>
+        {meta && (
+          <span className="text-sm text-gray-500">
+            {meta.totalCount} total
+          </span>
+        )}
       </div>
 
       <div className="bg-white rounded-xl overflow-x-auto shadow-sm">
@@ -91,6 +136,31 @@ export default function AdminRestaurants() {
             ))}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {meta && (
+          <div className="p-4 border-t flex items-center justify-between text-sm text-gray-500">
+            <span>
+              Showing Page {meta.currentPage} of {meta.pageCount} ({meta.totalCount} total)
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={meta.isFirstPage}
+                className="px-3 py-1 border rounded disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={meta.isLastPage}
+                className="px-3 py-1 border rounded disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,66 +1,67 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAdmin } from "@/app/context/AdminContext";
-
-/* ================= TYPES ================= */
-
-type Staff = {
-  id: string;
-  fullName: string;
-  role: "owner" | "manager" | "staff";
-  status: "active" | "invited" | "archived";
-  restaurantId: string;
-};
-
-/* ================= STORAGE ================= */
-
-const STAFF_KEY = "stockvar_staff";
-
-/* ================= COMPONENT ================= */
+import { getSession } from "@/lib/api/auth";
+import { getAdminUserMetric } from "@/lib/api/admin";
+import { useRouter } from "next/navigation";
 
 export default function AdminUsersPage() {
-  const { restaurants } = useAdmin();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<Staff[]>([]);
+  const [metrics, setMetrics] = useState({
+    total: 0,
+    owners: 0,
+    managers: 0,
+    staff: 0,
+    inactive: 0,
+  });
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STAFF_KEY);
-      setUsers(raw ? JSON.parse(raw) : []);
-    } catch {
-      setUsers([]);
-    } finally {
-      setLoading(false);
+    async function hydrate() {
+      const token = getSession()?.token;
+      if (!token) {
+        router.push("/auth/login");
+        return;
+      }
+
+      try {
+        const [totalM, ownerM, managerM, staffM, inactiveM] = await Promise.all([
+          getAdminUserMetric(token, "total"),
+          getAdminUserMetric(token, "owner"),
+          getAdminUserMetric(token, "manager"),
+          getAdminUserMetric(token, "staff"),
+          getAdminUserMetric(token, "inactive"),
+        ]);
+
+        setMetrics({
+          total: totalM?.count || 0,
+          owners: ownerM?.count || 0,
+          managers: managerM?.count || 0,
+          staff: staffM?.count || 0,
+          inactive: inactiveM?.count || 0,
+        });
+
+      } catch (err: any) {
+        if (err.message?.includes("401") || err.message?.includes("expired")) {
+             router.push("/auth/login");
+        }
+        console.error("Failed loading user metrics", err);
+      } finally {
+        setLoading(false);
+      }
     }
+    
+    hydrate();
   }, []);
 
   if (loading) {
     return (
       <div className="bg-white rounded-xl p-6 text-sm text-gray-500">
-        Loading users…
+        Loading user analytics…
       </div>
     );
   }
-
-  if (!users.length) {
-    return (
-      <div className="bg-white rounded-xl p-6 text-sm text-gray-500">
-        No users found.
-      </div>
-    );
-  }
-
-  /* ================= DERIVED STATS ================= */
-
-  const total = users.length;
-  const owners = users.filter((u) => u.role === "owner").length;
-  const managers = users.filter((u) => u.role === "manager").length;
-  const staff = users.filter((u) => u.role === "staff").length;
-  const inactive = users.filter(
-    (u) => u.status !== "active"
-  ).length;
 
   return (
     <div className="space-y-6">
@@ -74,13 +75,13 @@ export default function AdminUsersPage() {
 
       {/* Summary */}
       <div className="grid md:grid-cols-5 gap-4">
-        <SummaryCard label="Total users" value={total} />
-        <SummaryCard label="Owners" value={owners} />
-        <SummaryCard label="Managers" value={managers} />
-        <SummaryCard label="Staff" value={staff} />
+        <SummaryCard label="Total users" value={metrics.total} />
+        <SummaryCard label="Owners" value={metrics.owners} />
+        <SummaryCard label="Managers" value={metrics.managers} />
+        <SummaryCard label="Staff" value={metrics.staff} />
         <SummaryCard
           label="Inactive"
-          value={inactive}
+          value={metrics.inactive}
           danger
         />
       </div>
