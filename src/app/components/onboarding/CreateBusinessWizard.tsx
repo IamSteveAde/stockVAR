@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 
 import { useBusiness } from "@/app/context/BusinessContext";
 import { useSubscription } from "@/app/context/SubscriptionContext";
-import { clearSession, getSession } from "@/lib/api/auth";
+import { clearSession, getSession, saveSession } from "@/lib/api/auth";
 import { createBusinessProfile } from "@/lib/api/business";
 import { updateMyProfile } from "@/lib/api/profile";
 import { ApiError } from "@/lib/api/client";
@@ -94,7 +94,7 @@ export default function CreateBusinessWizard() {
 
       // Call backend to create/update business profile
 
-      const businessProfile = await createBusinessProfile(
+      const businessProfile: any = await createBusinessProfile(
         {
           name: form.businessName,
           businessType: form.businessType,
@@ -114,15 +114,21 @@ export default function CreateBusinessWizard() {
       clearSignupEmail();
       clearSignupName();
 
-      // Start trial period
-      // startTrial();
+      // Clear the legacy onboarding auth session explicitly
+      clearSession();
+      
+      // Upgrade gracefully into active business owner JWT bypass
+      if (businessProfile?.token) {
+        saveSession({ token: businessProfile.token, user: session.user, proceedToProfileCreation: false });
+      } else {
+        // Defensive fallback
+        saveSession({ ...session, proceedToProfileCreation: false });
+      }
 
       toast.success("Business profile created successfully!");
-      clearSession()
 
-      // Redirect to signin
       setTimeout(() => {
-        router.push("/auth/login");
+        router.push("/dashboard");
       }, 5000);
     } catch (error) {
       let message = "Failed to create business profile";
