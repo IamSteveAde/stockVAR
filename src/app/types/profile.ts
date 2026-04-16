@@ -1,4 +1,6 @@
-export type UserRole = "owner" | "manager" | "staff";
+import type { UserRole } from "@/types/auth";
+
+export type { UserRole };
 export type UserStatus = "active" | "suspended";
 export type ProfileData = {
   // id: string;                 // ✅ ADD THIS

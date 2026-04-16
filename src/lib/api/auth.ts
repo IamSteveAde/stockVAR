@@ -1,5 +1,6 @@
 import { apiFetch, apiFetchFirstSuccess } from "./client";
 import type { UserRole } from "@/types/auth";
+import type { SubscriptionData } from "@/app/types/subscription";
 
 export type AuthUser = {
   id?: string;
@@ -13,6 +14,7 @@ export type AuthSession = {
   user?: AuthUser;
   proceedToProfileCreation?: boolean;
   isFirstLogin?: boolean;
+  subscription?: SubscriptionData;
 };
 
 type LoginResponse = {
@@ -35,6 +37,13 @@ type LoginResponse = {
     email_verified?: boolean;
     isEmailVerified?: boolean;
     verified?: boolean;
+    subscription?: {
+      subscriptionRef?: string;
+      startAt?: string;
+      endAt?: string;
+      isTrial?: boolean;
+      isActive?: boolean;
+    };
   };
 };
 
@@ -207,11 +216,22 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
     role,
   };
 
+  const sub = res.data?.subscription;
+  const subscriptionRaw: SubscriptionData | undefined = sub ? {
+     status: sub.isActive ? (sub.isTrial ? "trial" : "active") : "expired",
+     trialStartedAt: sub.startAt,
+     trialEndsAt: sub.endAt,
+     nextBillingAt: sub.endAt,
+     createdAt: sub.startAt || new Date().toISOString(),
+     invoices: [],
+  } : undefined;
+
   const session: AuthSession = { 
     token, 
     user,
     proceedToProfileCreation: res.data?.proceedToProfileCreation,
     isFirstLogin: res.data?.isFirstLogin,
+    subscription: subscriptionRaw,
   };
   saveSession(session);
   return session;
@@ -257,12 +277,13 @@ export async function resendVerificationEmail(
 export function saveSession(session: AuthSession) {
   if (typeof window === "undefined") return;
   
-  // STRICLY enforce only Token and Email limits as requested
+  // STRICLY enforce only selective limits as requested securely
   const minimalSession = {
     token: session.token,
     user: {
       email: session.user?.email
-    }
+    },
+    subscription: session.subscription
   };
   
   localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(minimalSession));

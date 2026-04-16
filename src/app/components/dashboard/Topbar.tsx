@@ -13,6 +13,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useProfile } from "../../context/ProfileContext";
+import { useSubscription } from "../../context/SubscriptionContext";
 import { Shift } from "../shifts/types";
 
 /* ================= STORAGE KEYS ================= */
@@ -55,6 +56,7 @@ type TopbarProps = {
 
 export default function Topbar({ toggleSidebar }: TopbarProps) {
   const { profile } = useProfile();
+  const { subscription, trialDaysLeft } = useSubscription();
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -249,6 +251,18 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
 
       {/* RIGHT */}
       <div className="flex items-center gap-4">
+        
+        {/* TRIAL PILL */}
+        {subscription?.status === "trial" && trialDaysLeft !== null && (
+          <Link 
+             href="/dashboard/billing" 
+             className="hidden md:flex items-center text-xs font-semibold px-3 py-1.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 hover:bg-yellow-500/30 transition shadow-sm"
+          >
+            Trial: {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} left
+          </Link>
+        )}
+
+        {/* NOTIFICATIONS */}
         <div className="relative">
           <button
             onClick={() => {

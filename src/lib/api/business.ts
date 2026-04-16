@@ -47,6 +47,8 @@ const BUSINESS_PATHS = {
   me: ["api/profile/me"],
   create: ["api/business/profile/create"],
   update: ["api/profile/me/business"],
+  subscriptionInit: ["api/subscription/initialize"],
+  subscriptionFind: ["api/subscription/find"],
 };
 
 function toBackendPayload(payload: CreateBusinessPayload | UpdateBusinessPayload) {
@@ -168,4 +170,26 @@ export async function updateBusinessProfile(
   );
   const data = unwrapData(res);
   return normalizeBusinessProfile(data, payload) ?? fallbackBusinessProfile(payload);
+}
+
+export async function initializeSubscription(token: string) {
+  const res = await apiFetchFirstSuccess<ApiEnvelope<{ paymentUrl: string }> | { paymentUrl: string }>(
+    BUSINESS_PATHS.subscriptionInit,
+    {
+      method: "GET",
+      token,
+    }
+  );
+  return unwrapData(res);
+}
+
+export async function findSubscription(token: string) {
+  const res = await apiFetchFirstSuccess<ApiEnvelope<any> | any>(
+    BUSINESS_PATHS.subscriptionFind,
+    {
+      method: "GET",
+      token,
+    }
+  );
+  return unwrapData(res);
 }

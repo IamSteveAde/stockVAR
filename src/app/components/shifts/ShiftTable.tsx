@@ -34,9 +34,6 @@ import { useRouter } from "next/navigation";
 /* ================= CONSTANTS ================= */
 
 const PAGE_SIZE = 10;
-const SHIFTS_KEY = "stockvar_shifts";
-const STAFF_KEY = "stockvar_staff";
-const INVENTORY_KEY = "stockvar_inventory";
 
 /* ================= TYPES ================= */
 

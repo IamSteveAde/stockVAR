@@ -177,6 +177,15 @@ export default function Sidebar({ open, toggleSidebar }: SidebarProps) {
 
                   {role === "owner" && (
                     <SubItem
+                      icon={FileText}
+                      label="Billing & Plan"
+                      href="/dashboard/billing"
+                      onClick={toggleSidebar}
+                    />
+                  )}
+
+                  {role === "owner" && (
+                    <SubItem
                       icon={Settings}
                       label="Audit"
                       href="/dashboard/audit"

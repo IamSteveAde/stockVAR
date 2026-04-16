@@ -11,6 +11,8 @@ import type {
   SubscriptionData,
   Invoice,
 } from "@/app/types/subscription";
+import { getSession, saveSession } from "@/lib/api/auth";
+import { findSubscription } from "@/lib/api/business";
 
 /* ================= CONTEXT ================= */
 
@@ -34,18 +36,68 @@ export function SubscriptionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [subscription, setSubscription] =
-    useState<SubscriptionData | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getSession()?.subscription || null;
+    } catch {
+      return null;
+    }
+  });
 
   /* ================= LOAD ================= */
 
-  // Trial / subscription must be fetched natively from backend APIs in the future.
-  // For now, it initializes as null per strict boundaries.
+  useEffect(() => {
+    // 1. Instantly hydrate whatever explicit local cache session we had
+    try {
+      const session = getSession();
+      if (session?.subscription) {
+        setSubscription(session.subscription);
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2. Silently fetch the master latest status from backend ensuring UI perfectly aligns
+    const hydrateSourceOfTruth = async () => {
+      try {
+        const session = getSession();
+        if (session?.user?.role === "owner" && session?.token) {
+           const payload: any = await findSubscription(session.token);
+           if (payload) {
+              const subRaw: SubscriptionData = {
+                 status: payload.isActive ? (payload.isTrial ? "trial" : "active") : "expired",
+                 trialStartedAt: payload.startAt,
+                 trialEndsAt: payload.endAt,
+                 nextBillingAt: payload.endAt,
+                 createdAt: payload.startAt || new Date().toISOString(),
+                 invoices: [],
+              };
+              
+              // Only overwrite if it actually differs or formally verifies (Persist does saveSession)
+              persist(subRaw);
+           }
+        }
+      } catch {
+        // network silent fallback drops explicitly defaulting back exactly on strictly cached bounds
+      }
+    };
+    
+    hydrateSourceOfTruth();
+  }, []);
 
   /* ================= SAVE ================= */
 
   const persist = (data: SubscriptionData) => {
     setSubscription(data);
+    try {
+      const session = getSession();
+      if (session) {
+         saveSession({ ...session, subscription: data });
+      }
+    } catch {
+      // ignore
+    }
   };
 
   /* ================= START TRIAL ================= */
