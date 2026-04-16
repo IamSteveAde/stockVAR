@@ -6,7 +6,7 @@ import Sidebar from "../components/dashboard/Sidebar";
 import Topbar from "../components/dashboard/Topbar";
 import { ProfileProvider, useProfile } from "../context/ProfileContext";
 import { BusinessProvider, useBusiness } from "../context/BusinessContext";
-import { SubscriptionProvider } from "../context/SubscriptionContext";
+import { SubscriptionProvider, useSubscription } from "../context/SubscriptionContext";
 import TrialBanner from "../components/billing/TrialBanner";
 
 /* ================= ROLE GUARD ================= */
@@ -14,6 +14,7 @@ import TrialBanner from "../components/billing/TrialBanner";
 function RoleGuard({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
   const { business, isHydrated } = useBusiness();
+  const { subscription } = useSubscription();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -35,14 +36,58 @@ function RoleGuard({ children }: { children: React.ReactNode }) {
       router.replace("/onboarding/create-business");
       return;
     }
-  }, [isHydrated, profile, business, pathname, router]);
+
+    // 🚫 Owner must have active sub, else trapped strictly to billing
+    const hasActiveSub = subscription?.status === "active" || subscription?.status === "trial";
+    if (profile.role === "owner" && !hasActiveSub && pathname !== "/dashboard/billing") {
+      router.replace("/dashboard/billing");
+      return;
+    }
+
+  }, [isHydrated, profile, business, subscription?.status, pathname, router]);
 
   if (!profile || !isHydrated) return null;
 
+  // 🚫 Global Sub Guard for Managers & Staff
+  const isEmployee = profile.role === "manager" || profile.role === "staff";
+  const hasActiveSub = subscription?.status === "active" || subscription?.status === "trial";
+  
+  if (isEmployee && !hasActiveSub) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-[#F9FAFB] flex items-center justify-center p-4">
+        <div className="max-w-xl w-full mx-auto bg-white p-8 rounded-xl shadow-lg border text-center space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Subscription required
+          </h2>
+
+          <p className="text-sm text-gray-600">
+            Your organisation's subscription has expired.
+          </p>
+
+          <p className="text-sm text-gray-600">
+            Please contact the <strong>account owner</strong> to
+            renew the subscription so you can continue using StockVAR.
+          </p>
+          
+          <div className="pt-6">
+            <button 
+              onClick={() => {
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = "/auth/login";
+              }}
+              className="px-6 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return <>{children}</>;
 }
-
-/* ================= LAYOUT ================= */
 
 export default function DashboardLayout({
   children,
