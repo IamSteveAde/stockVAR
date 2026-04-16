@@ -1,6 +1,8 @@
+import type { UserRole } from "@/types/auth";
+
 /* ================= STAFF ================= */
 
-export type StaffRole = "owner" | "manager" | "staff";
+export type StaffRole = UserRole;
 export type StaffStatus = "active" | "invited" | "archived";
 
 export type Staff = {

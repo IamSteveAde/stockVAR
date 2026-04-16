@@ -1,3 +1,5 @@
+import type { UserRole } from "@/types/auth";
+
 /* ================= AUDIT TYPES ================= */
 
 export type AuditAction =
@@ -24,7 +26,7 @@ export type AuditLog = {
   actor: {
     staffId: string;
     name: string;
-    role: "owner" | "manager" | "staff";
+    role: UserRole;
   };
 
   /* WHAT */

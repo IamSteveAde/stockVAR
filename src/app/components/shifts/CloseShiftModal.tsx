@@ -23,11 +23,13 @@ type Product = {
 const PRODUCTS_KEY = "stockvar_products";
 
 
+import type { UserRole } from "@/types/auth";
+
 type Props = {
   shift: Shift;
   currentUserId: string;
   currentUserEmail: string;
-  currentUserRole: "owner" | "manager" | "staff";
+  currentUserRole: UserRole;
   onCancel: () => void;
   onConfirm?: (
     products: { inventoryUid: string; count: number }[],

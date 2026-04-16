@@ -4,11 +4,13 @@ import { useState, useMemo } from "react";
 import { X } from "lucide-react";
 import { Shift, Staff } from "./types";
 
+import type { UserRole } from "@/types/auth";
+
 type Props = {
   shift: Shift;
   currentUserId: string;
   currentUserEmail: string;
-  currentUserRole: "owner" | "manager" | "staff";
+  currentUserRole: UserRole;
   onCancel: () => void;
   onConfirm: (pin: string) => Promise<void>;
 };

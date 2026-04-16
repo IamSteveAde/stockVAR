@@ -40,4 +40,9 @@ export const NAVIGATION: Record<UserRole, NavItemKey[]> = {
     "new-entry",
     "profile",
   ],
+
+  admin: [
+    "dashboard",
+    "profile",
+  ],
 };
