@@ -84,7 +84,7 @@ export type Shift = {
   /**
    * Staff assigned to work this shift
    */
-  staff: Staff[];
+  staff: string;
 
   /**
    * ONE accountable staff member

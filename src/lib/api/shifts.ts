@@ -18,7 +18,9 @@ export type ShiftRecord = {
   clockInTime?: string | null;
   clockOutTime?: string | null;
   status: string;
-  staffResponsible: string;
+  shiftManager?: string;
+  staffResponsible?: string;
+  staff: string;
   baseShiftUid: string;
 };
 
