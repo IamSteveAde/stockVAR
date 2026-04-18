@@ -93,6 +93,7 @@ export default function ShiftTable() {
             startTime: s.startTime,
             endTime: s.endTime,
             staff: s.staff || "No staff linked",
+            shiftManager: s.shiftManager,
             status: s.status?.toLowerCase() === "ended" ? "ended" : (s.clockInTime && !s.clockOutTime) ? "running" : "planned",
             startedAt: s.clockInTime,
             endedAt: s.clockOutTime,
@@ -235,6 +236,7 @@ export default function ShiftTable() {
                 Timeline
               </th>
               <th className="px-6 py-4 text-left">Staff</th>
+              <th className="px-6 py-4 text-left">Shift Manager</th>
               <th className="px-6 py-4 text-right">
                 Actions
               </th>
@@ -286,6 +288,13 @@ export default function ShiftTable() {
                 <td className="px-6 py-4">
                   <span className="text-sm font-medium text-[#0F766E]">
                     {s.staff}
+                  </span>
+                </td>
+
+                {/* ShiftManager */}
+                <td className="px-6 py-4">
+                  <span className="text-sm text-gray-700 capitalize">
+                    {s.shiftManager || "—"}
                   </span>
                 </td>
 

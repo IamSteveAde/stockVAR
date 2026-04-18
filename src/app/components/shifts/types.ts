@@ -85,6 +85,7 @@ export type Shift = {
    * Staff assigned to work this shift
    */
   staff: string;
+  shiftManager?: string;
 
   /**
    * ONE accountable staff member
