@@ -49,7 +49,7 @@ export default function MyCurrentShift() {
       </p>
 
       <p className="text-sm mt-1">
-        Responsible: {currentShift.staffResponsible || "Unknown"}
+        Responsible: {currentShift.shiftManager || "Unknown"}
       </p>
     </div>
   );

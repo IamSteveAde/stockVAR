@@ -155,7 +155,7 @@ export default function VarStatus() {
           shiftId: shift.id,
           label: shift.label,
           date: shift.endedAt.split(",")[0],
-          staff: shift.staff.map((s) => s.fullName),
+          staff: [shift.staff],
           affectedItems,
           totalVariance,
         });

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AuditLog, AUDIT_KEY } from "../../../lib/audit";
+import { AuditLog, normalizeAuditLog } from "../../../lib/audit";
+import { getProfileAuditTrail } from "@/lib/api/profile";
+import { getSession } from "@/lib/api/auth";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /* ================= CONSTANTS ================= */
@@ -25,12 +27,31 @@ export default function AuditTable() {
   /* ================= LOAD ================= */
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(AUDIT_KEY);
-      setLogs(raw ? JSON.parse(raw) : []);
-    } catch {
-      setLogs([]);
+    let mounted = true;
+
+    async function loadLogs() {
+      const token = getSession()?.token;
+      if (!token) return;
+
+      try {
+        const response = await getProfileAuditTrail(token) as any;
+        const trailArray = response?.trail || response;
+        if (mounted && Array.isArray(trailArray)) {
+          const parsed = trailArray
+            .map(normalizeAuditLog)
+            .filter((l): l is AuditLog => Boolean(l));
+          setLogs(parsed);
+        }
+      } catch (err) {
+        if (mounted) setLogs([]);
+      }
     }
+
+    loadLogs();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   /* ================= FILTER ================= */
@@ -216,15 +237,6 @@ export default function AuditTable() {
 
                 <td className="px-6 py-4 text-xs">
                   {log.description}
-                  {log.changes?.delta !==
-                    undefined && (
-                    <span className="ml-2 text-gray-500">
-                      ({log.changes.delta > 0
-                        ? "+"
-                        : ""}
-                      {log.changes.delta})
-                    </span>
-                  )}
                 </td>
 
                 <td className="px-6 py-4 text-xs">

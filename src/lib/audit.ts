@@ -66,6 +66,36 @@ export function readAuditLogs(): AuditLog[] {
   return []; // Fall back removed
 }
 
+export function normalizeAuditLog(raw: any): AuditLog | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const action = raw.action;
+  const description = raw.detail || raw.description || raw.action;
+  const createdAt = raw.createdAt;
+  const actor = raw.staff || raw.actor;
+
+  if (!action || typeof action !== "string") return null;
+  if (!createdAt || typeof createdAt !== "string") return null;
+  if (!actor || typeof actor !== "object") return null;
+
+  return {
+    id: raw.id || crypto.randomUUID(),
+    action: action as any,
+    description: description || "",
+    createdAt,
+    actor: {
+      staffId: actor.staffId || "unknown",
+      name: actor.name || "Unknown",
+      role: actor.role?.toLowerCase() || "staff",
+    },
+    entity: {
+      type: (raw.entity?.toLowerCase() as any) || "system",
+      name: raw.product && raw.product !== "N/A" ? raw.product : undefined,
+    },
+    shift: raw.shift && raw.shift !== "N/A" ? { id: "unknown", label: raw.shift } : undefined,
+  };
+}
+
 export function writeAuditLog(
   log: Omit<AuditLog, "id" | "createdAt">
 ) {

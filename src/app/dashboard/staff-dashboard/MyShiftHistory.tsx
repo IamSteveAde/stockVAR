@@ -49,7 +49,7 @@ export default function MyShiftHistory() {
                 {new Date(s.date).toLocaleDateString()} • {s.startTime} – {s.endTime}
               </p>
               <p className="text-xs">
-                Responsible: {s.staffResponsible || "Unknown"}
+                Responsible: {s.shiftManager || "Unknown"}
               </p>
             </li>
           ))}
