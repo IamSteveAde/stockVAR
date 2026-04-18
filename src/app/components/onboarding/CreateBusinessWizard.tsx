@@ -44,8 +44,23 @@ export default function CreateBusinessWizard() {
   const { updateBusiness } = useBusiness();
   const { startTrial } = useSubscription();
 
-  const [step, setStep] = useState(0);
-  const [emailVerified, setEmailVerified] = useState(false);
+  const [step, setStep] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const session = getSession();
+      // Skip Email Verification (0) if already verified and proceedToProfileCreation is true
+      if (session?.isVerified && session?.proceedToProfileCreation) {
+        return 1;
+      }
+    }
+    return 0; // Default to Email Verification step
+  });
+  
+  const [emailVerified, setEmailVerified] = useState(() => {
+    if (typeof window !== "undefined") {
+      return getSession()?.isVerified ?? false;
+    }
+    return false;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get email from active session (user already signed up)

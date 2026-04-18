@@ -37,57 +37,34 @@ export default function Login() {
         return;
       }
 
-      // Step 2: Sync profile identities securely based on explicit Role limitations
-      let profileData: any = null;
-
-      try {
-        if (session.user?.role === "owner") {
-          profileData = await getMyBusinessProfile(session.token);
-          if (profileData) markOnboardingComplete();
-        } else {
-          profileData = await getMyProfile(session.token);
-        }
-
-        const preferredFullName =
-          profileData?.fullName?.trim() ||
-          session.user?.fullName?.trim() ||
-          readSignupName().trim();
-        const preferredEmail =
-          profileData?.email?.trim() || session.user?.email;
-
-        saveSession({
-          ...session,
-          user: {
-            ...session.user,
-            fullName: preferredFullName || session.user?.fullName,
-            email: preferredEmail,
-          },
-        });
-      } catch {
-        // Non-blocking: fallback to the session returned from auth endpoint.
-      }
-
       setSuccess("Login successful. Redirecting...");
 
-      // Step 3: Route securely leveraging exact Auth metadata
+      // Step 2: Route securely leveraging exact Auth metadata
       setTimeout(() => {
         const role = session.user?.role;
-        const hasCompletedOnboarding = session.proceedToProfileCreation === false;
-
-        // Admin bypass natively targets custom admin interface
+        
+        // Admin exception
         if (role === "admin") {
           router.push("/admin");
+          return;
         }
-        // Staff always goes to shift terminal
-        else if (role === "staff") {
-          router.push("/dashboard/shift");
-        }
-        // Owner checks for onboarding explicitly natively provided inside token payload
-        else if (role === "owner" && !hasCompletedOnboarding) {
+        
+        // 1. Check if user is verified (All non-admins must verify)
+        if (!session.isVerified) {
           router.push("/onboarding/create-business");
+          return;
         }
-        // Everyone else (successfully onboarded Owners + Managers) hits the Main Dashboard
-        else {
+        
+        // 2. If verified and is owner, check if they can proceed to profile creation
+        if (role === "owner" && session.proceedToProfileCreation) {
+          router.push("/onboarding/create-business");
+          return;
+        }
+        
+        // 3. Otherwise take them directly to their respective dashboards where profile is organically gotten
+        if (role === "staff") {
+          router.push("/dashboard/shift");
+        } else {
           router.push("/dashboard");
         }
       }, 800);

@@ -15,6 +15,7 @@ export type AuthSession = {
   proceedToProfileCreation?: boolean;
   isFirstLogin?: boolean;
   subscription?: SubscriptionData;
+  isVerified?: boolean;
 };
 
 type LoginResponse = {
@@ -33,9 +34,7 @@ type LoginResponse = {
     accessType?: string;
     proceedToProfileCreation?: boolean;
     isFirstLogin?: boolean;
-    emailVerified?: boolean;
-    email_verified?: boolean;
-    isEmailVerified?: boolean;
+    isVerified:boolean;
     verified?: boolean;
     subscription?: {
       subscriptionRef?: string;
@@ -184,24 +183,20 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
   const jwtPayload = decodeJwt(token);
   const jwtVerified = isEmailVerifiedFromPayload(jwtPayload);
 
-  const emailVerifiedFromData =
-    res.data?.emailVerified ??
-    res.data?.email_verified ??
-    res.data?.isEmailVerified ??
-    res.data?.verified ??
-    res.data?.user?.emailVerified ??
-    res.data?.user?.email_verified ??
-    res.data?.user?.isEmailVerified ??
-    res.data?.user?.verified;
+  const isEmailVerified = res.data?.isVerified
+    // res.data?.emailVerified ??
+    // res.data?.email_verified ??
+    // res.data?.isEmailVerified ??
+    // res.data?.verified ??
+    // res.data?.user?.emailVerified ??
+    // res.data?.user?.email_verified ??
+    // res.data?.user?.isEmailVerified ??
+    // res.data?.user?.verified;
 
-  const isEmailVerified =
-    emailVerifiedFromData ?? jwtVerified;
+  // const isEmailVerified =
+    // emailVerifiedFromData ?? jwtVerified;
 
-  if (isEmailVerified === false) {
-    throw new Error(
-      "Your email is not verified yet. Please verify your email before logging in."
-    );
-  }
+  // Removing abrupt hard-error constraint allowing UI routing to proceed conditionally
 
   const role = normalizeRole(res.data?.accessType ?? "owner");
 
@@ -232,6 +227,7 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
     proceedToProfileCreation: res.data?.proceedToProfileCreation,
     isFirstLogin: res.data?.isFirstLogin,
     subscription: subscriptionRaw,
+    isVerified: isEmailVerified,
   };
   saveSession(session);
   return session;
@@ -283,7 +279,9 @@ export function saveSession(session: AuthSession) {
     user: {
       email: session.user?.email
     },
-    subscription: session.subscription
+    subscription: session.subscription,
+    proceedToProfileCreation: session.proceedToProfileCreation,
+    isVerified: session.isVerified
   };
   
   localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(minimalSession));
