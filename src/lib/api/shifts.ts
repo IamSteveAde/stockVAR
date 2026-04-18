@@ -69,6 +69,7 @@ const SHIFT_PATHS = {
   start: ["/api/shift/start"],
   end: ["/api/shift/end"],
   linkedStaff: ["api/shift/linked-staff"],
+  delete: ["api/shift/delete"],
 };
 
 export async function createShift(payload: CreateShiftPayload, token: string) {
@@ -110,6 +111,18 @@ export async function endShift(payload: EndShiftPayload, token: string) {
     {
       method: "POST",
       body: payload,
+      token,
+    }
+  );
+  return unwrapData(res);
+}
+
+export async function deleteShift(shiftUid: string, token: string) {
+  const res = await apiFetchFirstSuccess<ApiEnvelope<any> | any>(
+    SHIFT_PATHS.delete,
+    {
+      method: "POST",
+      body: { shiftUid },
       token,
     }
   );

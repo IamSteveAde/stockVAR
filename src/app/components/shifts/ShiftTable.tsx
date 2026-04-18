@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { writeAuditLog } from "../../../lib/audit";
 import {
   ChevronLeft,
@@ -21,6 +22,7 @@ import {
   createShift as createShiftApi,
   endShift as endShiftApi,
   startShift as startShiftApi,
+  deleteShift as deleteShiftApi,
   listShifts,
   listLinkedStaff,
   type LinkedStaffRecord,
@@ -205,29 +207,26 @@ export default function ShiftTable() {
 
   /* ================= DELETE ================= */
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteShift || !canManageShifts) return;
 
-    setShifts((prev) =>
-      prev.filter((s) => s.id !== deleteShift.id)
-    );
+    try {
+      const token = getSession()?.token;
+      if (!token) {
+        throw new Error("Your session has expired. Please log in again.");
+      }
 
-    // writeAuditLog({
-    //   actor: {
-    //     staffId: profile.id,
-    //     name: profile.fullName,
-    //     role: profile.role,
-    //   },
-    //   action: "SHIFT_DELETE",
-    //   description: "Shift deleted",
-    //   entity: {
-    //     type: "shift",
-    //     id: deleteShift.id,
-    //     name: deleteShift.label,
-    //   },
-    // });
-
-    setDeleteShift(null);
+      await deleteShiftApi(deleteShift.id, token);
+      
+      // Update local state and trigger refresh
+      setShifts((prev) => prev.filter((s) => s.id !== deleteShift.id));
+      setDeleteShift(null);
+      setRefreshKey((k) => k + 1);
+      
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to delete shift.");
+    }
   };
 
   /* ================= SORT SHIFTS (PRIORITY ORDER) ================= */

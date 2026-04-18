@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
 import "./globals.css";
 
 
@@ -19,7 +18,8 @@ import { Toaster } from "react-hot-toast";
 /* -------------------------------------
    FONT
 ------------------------------------- */
-const dmsans = DM_Sans({ subsets: ["latin"] });
+// Bypassing next/font/google due to Turbopack network request failure
+// font-family natively mapped in globals.css
 
 /* -------------------------------------
    METADATA — DIGITAL INCLUSION INITIATIVE
@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={dmsans.className}>
+      <body className="font-sans antialiased text-[#111827] bg-[#F9FAFB]">
         <SubscriptionProvider>
            <AppContextProvider>
           <ThemeProvider
