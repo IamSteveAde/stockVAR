@@ -11,4 +11,6 @@ export type ProfileData = {
   profileUrl: string;
   status: string;
   lastPasswordChange?: string;
+  accessLevel?: string;
+  businessName?: string;
 };

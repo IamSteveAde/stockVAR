@@ -12,7 +12,7 @@ export default function AccountLayout() {
     <div className="max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-semibold">Account Settings</h1>
 
-      <BusinessInfo />
+      {/* <BusinessInfo /> */}
       <Billing />
       <Permissions />
       <Security />

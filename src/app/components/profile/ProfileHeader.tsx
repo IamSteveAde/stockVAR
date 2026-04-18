@@ -14,7 +14,7 @@ export default function ProfileHeader() {
     >
       <div className="flex items-center gap-5">
         {/* Avatar */}
-        <div className="relative h-20 w-20 shrink-0 rounded-full overflow-hidden">
+        {/* <div className="relative h-20 w-20 shrink-0 rounded-full overflow-hidden">
           <Image
             key={profile.profileUrl} // ✅ THIS FIXES IT
             src={profile.profileUrl}
@@ -23,7 +23,7 @@ export default function ProfileHeader() {
             className="object-cover rounded-full"
             unoptimized // ✅ IMPORTANT for data URLs
           />
-        </div>
+        </div> */}
 
         {/* Info */}
         <div className="space-y-1">
@@ -31,7 +31,7 @@ export default function ProfileHeader() {
             id="profile-heading"
             className="text-xl font-semibold text-gray-900"
           >
-            {profile.fullName}
+            {profile.businessName}
           </h2>
 
           <div className="flex items-center gap-3 text-sm">

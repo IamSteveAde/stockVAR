@@ -101,14 +101,14 @@ export default function PersonalInfoCard({
 
       {/* Avatar */}
       <div className="flex items-center gap-4">
-        <div className="relative h-20 w-20 rounded-full overflow-hidden border">
+        {/* <div className="relative h-20 w-20 rounded-full overflow-hidden border">
           <Image
-            src={draft.profileUrl}
+            src={profile.profileUrl}
             alt="Profile avatar"
             fill
             className="object-cover"
           />
-        </div>
+        </div> */}
 
         {editing && (
           <label className="cursor-pointer text-sm text-[#0F766E] font-medium">
@@ -127,7 +127,7 @@ export default function PersonalInfoCard({
       {/* Fields */}
       <Field
         label="Full name"
-        value={draft.fullName}
+        value={profile.fullName}
         icon={User}
         editable={editing}
         onChange={(v) =>
@@ -137,7 +137,7 @@ export default function PersonalInfoCard({
 
       <Field
         label="Phone number"
-        value={draft.phoneNumber}
+        value={profile.phoneNumber}
         icon={Phone}
         editable={editing}
         onChange={(v) =>
@@ -147,7 +147,7 @@ export default function PersonalInfoCard({
 
       <Field
         label="Email address"
-        value={draft.email}
+        value={profile.email}
         icon={Mail}
         locked
       />
