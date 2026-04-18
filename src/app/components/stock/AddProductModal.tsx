@@ -107,6 +107,26 @@ export default function AddProductModal({
             <option value="litres">Litres</option>
             <option value="bags">Bags</option>
             <option value="pcs">Pieces</option>
+            {/* kg, g, mg, lb, oz, litres, ml, cl, bags, sacks, cartons, boxes, packs, crates, baskets, bundles, pieces, units, heads, bunches, cloves, bulbs, sticks */}
+            <option value="g">Grams</option>
+            <option value="mg">Milligrams</option>
+            <option value="lb">Pounds</option>
+            <option value="oz">Ounces</option>
+            <option value="ml">Millilitres</option>
+            <option value="cl">Centilitres</option>
+            <option value="sacks">Sacks</option>
+            <option value="cartons">Cartons</option>
+            <option value="boxes">Boxes</option>
+            <option value="packs">Packs</option>
+            <option value="crates">Crates</option>
+            <option value="baskets">Baskets</option>
+            <option value="bundles">Bundles</option>
+            <option value="units">Units</option>
+            <option value="heads">Heads</option>
+            <option value="bunches">Bunches</option>
+            <option value="cloves">Cloves</option>
+            <option value="bulbs">Bulbs</option>
+            <option value="sticks">Sticks</option>
           </select>
         </div>
 
