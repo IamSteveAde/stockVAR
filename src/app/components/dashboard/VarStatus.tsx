@@ -1,173 +1,51 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  Calendar,
-  ArrowRight,
-  Users,
-} from "lucide-react";
+import { AlertTriangle, Calendar, ArrowRight, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Shift } from "../shifts/types";
-
-/* ================= STORAGE KEYS ================= */
-
-const PRODUCTS_KEY = "stockvar_products";
-const SHIFTS_KEY = "stockvar_shifts";
-const LOGS_KEY = "stockvar_inventory_logs";
+import { getManagerOwnerVarOverview, type VarOverviewResponse } from "@/lib/api/dashboard";
+import { getSession } from "@/lib/api/auth";
 
 /* ================= TYPES ================= */
 
-type Product = {
-  sku: string;
-  name: string;
-  unit: string;
-};
+// We use the types from the dashboard API library instead.
 
-type InventoryLog = {
-  sku: string;
-  quantity: number;
-  action: "in" | "out";
-  shiftId: string;
-};
-
-type StockSnapshot = {
-  sku: string;
-  quantity: number;
-};
-
-type ShiftVarianceSummary = {
-  shiftId: string;
-  label: string;
-  date: string;
-  staff: string[];
-  affectedItems: number;
-  totalVariance: number;
-};
 
 /* ================= COMPONENT ================= */
 
 export default function VarStatus() {
   const router = useRouter();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [logs, setLogs] = useState<InventoryLog[]>([]);
-  const [dateRange, setDateRange] =
-    useState<"today" | "7d" | "1m">("7d");
+  const [dateRange, setDateRange] = useState<"today" | "7d" | "1m">("7d");
+  const [data, setData] = useState<VarOverviewResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   /* ================= LOAD DATA ================= */
 
   useEffect(() => {
-    const load = () => {
-      setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
-      setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
-      setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
-    };
+    async function fetchData() {
+      const token = getSession()?.token;
+      if (!token) return;
 
-    load();
-    window.addEventListener("stockvar:updated", load);
-    return () =>
-      window.removeEventListener("stockvar:updated", load);
-  }, []);
-
-  /* ================= DATE WINDOW ================= */
-
-  const dateWindow = useMemo(() => {
-    const ended = shifts
-      .filter((s) => s.status === "ended" && s.endedAt)
-      .map((s) => new Date(s.endedAt!).getTime());
-
-    if (!ended.length) return null;
-
-    const latest = Math.max(...ended);
-    let from = 0;
-
-    if (dateRange === "today") {
-      const d = new Date(latest);
-      d.setHours(0, 0, 0, 0);
-      from = d.getTime();
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Note: The API endpoint structure currently might not support the dateRange parameter
+        // based on the provided spec, so we fetch the general overview.
+        const res = await getManagerOwnerVarOverview(token);
+        setData(res);
+      } catch (err: any) {
+        setError(err.message || "Failed to load variance overview");
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    if (dateRange === "7d") from = latest - 7 * 86400000;
-    if (dateRange === "1m") from = latest - 30 * 86400000;
+    fetchData();
+  }, [dateRange]);
 
-    return { from, to: latest };
-  }, [dateRange, shifts]);
-
-  /* ================= BUILD SUMMARY ================= */
-
-  const summary = useMemo<ShiftVarianceSummary[]>(() => {
-    if (!dateWindow) return [];
-
-    const results: ShiftVarianceSummary[] = [];
-
-    shifts.forEach((shift) => {
-      if (
-        shift.status !== "ended" ||
-        !shift.openingSnapshot ||
-        !shift.closingSnapshot ||
-        !shift.endedAt
-      )
-        return;
-
-      const endedTs = new Date(shift.endedAt).getTime();
-      if (endedTs < dateWindow.from || endedTs > dateWindow.to)
-        return;
-
-      let affectedItems = 0;
-      let totalVariance = 0;
-
-      products.forEach((p) => {
-        const opening =
-          shift.openingSnapshot!.find(
-            (i: StockSnapshot) => i.sku === p.sku
-          )?.quantity || 0;
-
-        const closing =
-          shift.closingSnapshot!.find(
-            (i: StockSnapshot) => i.sku === p.sku
-          )?.quantity || 0;
-
-        const shiftLogs = logs.filter(
-          (l) => l.shiftId === shift.id && l.sku === p.sku
-        );
-
-        const added = shiftLogs
-          .filter((l) => l.action === "in")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const used = shiftLogs
-          .filter((l) => l.action === "out")
-          .reduce((s, l) => s + l.quantity, 0);
-
-        const expected = opening + added - used;
-        const variance = closing - expected;
-
-        if (variance !== 0) {
-          affectedItems += 1;
-          totalVariance += Math.abs(variance);
-        }
-      });
-
-      if (affectedItems > 0) {
-        results.push({
-          shiftId: shift.id,
-          label: shift.label,
-          date: shift.endedAt.split(",")[0],
-          staff: [shift.staff],
-          affectedItems,
-          totalVariance,
-        });
-      }
-    });
-
-    return results.sort(
-      (a, b) => b.totalVariance - a.totalVariance
-    );
-  }, [shifts, products, logs, dateWindow]);
-
-  const worstShift = summary[0];
+  const worstShift = data?.highestVarShift;
 
   /* ================= UI ================= */
 
@@ -205,7 +83,15 @@ export default function VarStatus() {
       </div>
 
       {/* Content */}
-      {summary.length === 0 ? (
+      {isLoading ? (
+        <div className="py-10 text-center text-sm text-gray-400">
+          Loading overview...
+        </div>
+      ) : error ? (
+        <div className="py-10 text-center text-sm text-red-500">
+          {error}
+        </div>
+      ) : !data || (data.affectedShift === 0 && data.totalDiscrepancies === 0) ? (
         <div className="py-10 text-center text-sm text-gray-400">
           No variance detected
         </div>
@@ -218,7 +104,7 @@ export default function VarStatus() {
                 Affected shifts
               </p>
               <p className="text-lg font-semibold">
-                {summary.length}
+                {data.affectedShift}
               </p>
             </div>
 
@@ -227,10 +113,7 @@ export default function VarStatus() {
                 Total discrepancies
               </p>
               <p className="text-lg font-semibold text-red-600">
-                {summary.reduce(
-                  (s, r) => s + r.affectedItems,
-                  0
-                )}
+                {data.totalDiscrepancies}
               </p>
             </div>
           </div>
@@ -243,19 +126,19 @@ export default function VarStatus() {
                 Highest variance shift
               </div>
 
-              <p className="font-medium">
-                {worstShift.label} shift
+              <p className="font-medium text-[#111827]">
+                {worstShift.name} shift
               </p>
 
               <p className="text-xs text-gray-600">
-                {worstShift.date} •{" "}
-                {worstShift.affectedItems} items affected
+                {new Date(worstShift.date).toLocaleDateString()} •{" "}
+                {worstShift.itemsAffected} items affected
               </p>
 
               <div className="flex items-center gap-2 text-xs text-gray-600">
                 <Users size={12} />
-                <span className="truncate">
-                  {worstShift.staff.join(", ")}
+                <span className="truncate text-gray-900">
+                  {worstShift.staffInCharge}
                 </span>
               </div>
             </div>

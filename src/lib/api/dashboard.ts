@@ -14,6 +14,9 @@ managerOwnerMetrics: [
 managerOwnerVarSummary: [
     "/api/dashboard/base/var-summary"
 ],
+managerOwnerVarOverview: [
+    "/api/dashboard/base/var-overview"
+],
 };
 
 export type StaffMetricType = "all" | "completed" | "responsible";
@@ -75,4 +78,23 @@ const res = await apiFetchFirstSuccess<ApiEnvelope<VarSummaryResponse> | VarSumm
     { token }
 );
 return unwrapData(res);
+}
+
+export type VarOverviewResponse = {
+  affectedShift: number;
+  totalDiscrepancies: number;
+  highestVarShift: {
+    name: string;
+    date: string;
+    itemsAffected: number;
+    staffInCharge: string;
+  } | null;
+};
+
+export async function getManagerOwnerVarOverview(token: string) {
+  const res = await apiFetchFirstSuccess<ApiEnvelope<VarOverviewResponse> | VarOverviewResponse>(
+    DASHBOARD_PATHS.managerOwnerVarOverview,
+    { token }
+  );
+  return unwrapData(res);
 }
