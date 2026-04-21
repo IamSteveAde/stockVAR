@@ -1,6 +1,7 @@
 import ReportsTabs from "@/app/components/reports/ReportsTabs";
 import RoleGuard from "@/app/components/auth/RoleGuard";
 import TrialGuard from "@/app/components/guards/TrialGuard";
+import DataExport from "../account/component/DataExport";
 
 export default function ReportsPage() {
   return (
@@ -19,7 +20,7 @@ export default function ReportsPage() {
 
       {/* Reports content */}
       <ReportsTabs />
-      
+      <DataExport />      
     </div>
     </RoleGuard>
     </TrialGuard>
