@@ -7,15 +7,43 @@ export default function HelpPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
-    // Mock request
+    const form = e.currentTarget;
+
+    const subject = (form.elements.namedItem("subject") as HTMLInputElement).value;
+    const category = (form.elements.namedItem("category") as HTMLSelectElement).value;
+    const message = (form.elements.namedItem("message") as HTMLTextAreaElement).value;
+
+    const whatsappMessage = `
+📩 *StockVAR Support Request*
+
+*Subject:* ${subject}
+*Category:* ${category}
+
+*Message:*
+${message}
+
+🕒 ${new Date().toLocaleString()}
+
+---
+Sent via StockVAR App
+    `;
+
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const url = `https://wa.me/2347048048164?text=${encodedMessage}`;
+
+    // Open WhatsApp
+    window.open(url, "_blank");
+
+    // Simulate completion
     setTimeout(() => {
       setLoading(false);
       setSent(true);
-    }, 1200);
+      form.reset();
+    }, 800);
   };
 
   return (
@@ -44,8 +72,8 @@ export default function HelpPage() {
             </h2>
 
             <p className="text-sm text-gray-600 max-w-md mx-auto">
-              Thanks for reaching out. Our support team will get back to you
-              within the same day.
+              Your message has been sent via WhatsApp. Our support team will
+              respond shortly.
             </p>
           </div>
         ) : (
@@ -58,6 +86,7 @@ export default function HelpPage() {
                   Subject
                 </label>
                 <input
+                  name="subject"
                   required
                   type="text"
                   placeholder="e.g. Stock not updating correctly"
@@ -71,6 +100,7 @@ export default function HelpPage() {
                   Category
                 </label>
                 <select
+                  name="category"
                   required
                   className="w-full rounded-lg border px-4 py-3 text-sm outline-none focus:border-[#0F766E]"
                 >
@@ -89,6 +119,7 @@ export default function HelpPage() {
                   Message
                 </label>
                 <textarea
+                  name="message"
                   required
                   rows={5}
                   placeholder="Describe the issue you're experiencing..."
@@ -103,7 +134,7 @@ export default function HelpPage() {
                 className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-[#0F766E] text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-[#0B5F58] transition disabled:opacity-60"
               >
                 <Mail size={16} />
-                {loading ? "Sending..." : "Send message"}
+                {loading ? "Opening WhatsApp..." : "Send message"}
               </button>
 
               {/* SLA note */}
