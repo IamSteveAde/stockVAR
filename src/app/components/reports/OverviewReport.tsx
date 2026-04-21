@@ -207,62 +207,77 @@ export default function OverviewReport() {
   return (
     <div className="space-y-6">
       {/* ================= FILTER BAR ================= */}
-      <div className="bg-white rounded-xl shadow-sm p-4 flex flex-wrap gap-3 justify-between items-center">
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setDraftShiftIds(selectedShiftIds);
-              setOpenFilter("shift");
-            }}
-            className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm"
-          >
-            Shifts
-            <ChevronDown size={16} />
-          </button>
+<div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
 
-          <button
-            onClick={() => {
-              setDraftSkus(selectedSkus);
-              setOpenFilter("product");
-            }}
-            className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm"
-          >
-            Products
-            <ChevronDown size={16} />
-          </button>
+  {/* Header */}
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900">
+        Filter Results
+      </h3>
+      <p className="text-xs text-gray-500">
+        Narrow down results by shift or product to find what matters faster.
+      </p>
+    </div>
 
-          {selectedShiftIds.length > 0 && (
-            <button
-              onClick={() => {
-                setSelectedShiftIds([]);
-                setPage(1);
-              }}
-              className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-[#0F766E]/20"
-            >
-              {selectedShiftIds.length} Shift{selectedShiftIds.length > 1 ? "s" : ""}
-              <X size={14} className="ml-1 opacity-60" />
-            </button>
-          )}
+    <span className="text-sm text-gray-500">
+      {totalCount} item(s)
+    </span>
+  </div>
 
-          {selectedSkus.length > 0 && (
-            <button
-              onClick={() => {
-                setSelectedSkus([]);
-                setPage(1);
-              }}
-              className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-[#0F766E]/20"
-            >
-              {selectedSkus.length} Product{selectedSkus.length > 1 ? "s" : ""}
-              <X size={14} className="ml-1 opacity-60" />
-            </button>
-          )}
-        </div>
+  {/* Filters */}
+  <div className="flex flex-wrap gap-2 items-center">
+    {/* Filter buttons */}
+    <button
+      onClick={() => {
+        setDraftShiftIds(selectedShiftIds);
+        setOpenFilter("shift");
+      }}
+      className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition"
+    >
+      Filter by Shifts
+      <ChevronDown size={16} />
+    </button>
 
-        <span className="text-sm text-gray-500">
-          {totalCount} item(s)
-        </span>
-      </div>
+    <button
+      onClick={() => {
+        setDraftSkus(selectedSkus);
+        setOpenFilter("product");
+      }}
+      className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition"
+    >
+      Filter by Products
+      <ChevronDown size={16} />
+    </button>
 
+    {/* Active filters */}
+    {selectedShiftIds.length > 0 && (
+      <button
+        onClick={() => {
+          setSelectedShiftIds([]);
+          setPage(1);
+        }}
+        className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition hover:bg-[#0F766E]/20"
+      >
+        {selectedShiftIds.length} Shift{selectedShiftIds.length > 1 ? "s" : ""}
+        <X size={14} className="ml-1 opacity-60" />
+      </button>
+    )}
+
+    {selectedSkus.length > 0 && (
+      <button
+        onClick={() => {
+          setSelectedSkus([]);
+          setPage(1);
+        }}
+        className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition hover:bg-[#0F766E]/20"
+      >
+        {selectedSkus.length} Product{selectedSkus.length > 1 ? "s" : ""}
+        <X size={14} className="ml-1 opacity-60" />
+      </button>
+    )}
+  </div>
+</div>
       {/* ================= SHIFT FILTER MODAL ================= */}
       {openFilter === "shift" && (
   <FilterModal
