@@ -212,7 +212,7 @@ export default function OverviewReport() {
   {/* Header */}
   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
     <div>
-      <h3 className="text-sm font-semibold text-gray-900">
+      <h3 className="text-sm text-black font-semibold">
         Filter Results
       </h3>
       <p className="text-xs text-gray-500">
