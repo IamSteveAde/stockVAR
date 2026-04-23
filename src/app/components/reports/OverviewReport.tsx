@@ -26,7 +26,7 @@ import { getSession } from "@/lib/api/auth";
 import { apiFetchFirstSuccess } from "@/lib/api/client";
 import { unwrapData, ApiEnvelope, PaginationMeta } from "@/lib/api/response";
 import { getReportsOverview, ReportRow } from "@/lib/api/reports";
-import { listShifts, ShiftRecord } from "@/lib/api/shifts";
+import { listShifts, ShiftRecord, ListUniqueEndedShiftsForFilter } from "@/lib/api/shifts";
 import type { ListProductsResponse } from "@/lib/api/stock";
 
 /* ================= TYPES ================= */
@@ -50,12 +50,12 @@ const VARIANCE_COLORS: Record<VarianceStatus, string> = {
 function formatShiftLabel(shift: ShiftRecord) {
   const date = shift.date
     ? new Date(shift.date).toLocaleDateString(undefined, {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
     : "";
-  return `${shift.name} • ${date}\nStaff: ${shift.staffResponsible || "Unknown"}`;
+  return `${shift.name} • ${date}\nManager: ${shift.shiftManager || "Unknown"}`;
 }
 
 /* ================= COMPONENT ================= */
@@ -94,8 +94,8 @@ export default function OverviewReport() {
         const token = getSession()?.token;
         if (!token) return;
 
-        const shiftsRes = await listShifts(token, 1, 10, "Ended");
-        
+        const shiftsRes = await ListUniqueEndedShiftsForFilter(token, 1, 10); //use list unique shifts here.
+
         let allProducts: any[] = [];
         let pPage = 1;
         let pHasNext = true;
@@ -111,8 +111,7 @@ export default function OverviewReport() {
         }
 
         if (isMounted) {
-          const endedShifts = (shiftsRes.shifts || []).filter(s => s.status?.toLowerCase() === "ended");
-          setShifts(endedShifts);
+          setShifts(shiftsRes.shifts || []);
           setHasMoreShifts(!shiftsRes.meta?.isLastPage);
           setProducts(allProducts.map(p => ({ sku: p.uid, name: p.name, unit: p.unit })));
         }
@@ -130,12 +129,11 @@ export default function OverviewReport() {
       const token = getSession()?.token;
       if (!token) return;
       const nextPage = shiftPage + 1;
-      const res = await listShifts(token, nextPage, 50, "Ended");
-      const ended = (res.shifts || []).filter(s => s.status?.toLowerCase() === "ended");
-      setShifts(prev => [...prev, ...ended]);
+      const res = await ListUniqueEndedShiftsForFilter(token, nextPage, 10);
+      setShifts(prev => [...prev, ...(res.shifts || [])]);
       setHasMoreShifts(!res.meta?.isLastPage);
       setShiftPage(nextPage);
-    } catch {}
+    } catch { }
   };
 
   /* ================= FETCH SERVER DATA ================= */
@@ -163,7 +161,7 @@ export default function OverviewReport() {
         if (isMounted) setIsLoading(false);
       }
     };
-    
+
     loadOverview();
     return () => { isMounted = false; };
   }, [selectedSkus, selectedShiftIds, page]);
@@ -195,10 +193,10 @@ export default function OverviewReport() {
         r.variance === 0
           ? ("perfect" as VarianceStatus)
           : r.variance < 0
-          ? ("negative" as VarianceStatus)
-          : ("positive" as VarianceStatus),
+            ? ("negative" as VarianceStatus)
+            : ("positive" as VarianceStatus),
     })),
-  [serverRows]);
+    [serverRows]);
 
 
 
@@ -207,130 +205,130 @@ export default function OverviewReport() {
   return (
     <div className="space-y-6">
       {/* ================= FILTER BAR ================= */}
-<div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
+      <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
 
-  {/* Header */}
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-    <div>
-      <h3 className="text-sm text-black font-semibold">
-        Filter Results
-      </h3>
-      <p className="text-xs text-gray-500">
-        Narrow down results by shift or product to find what matters faster.
-      </p>
-    </div>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div>
+            <h3 className="text-sm text-black font-semibold">
+              Filter Results
+            </h3>
+            <p className="text-xs text-gray-500">
+              Narrow down results by shift or product to find what matters faster.
+            </p>
+          </div>
 
-    <span className="text-sm text-gray-500">
-      {totalCount} item(s)
-    </span>
-  </div>
+          <span className="text-sm text-gray-500">
+            {totalCount} item(s)
+          </span>
+        </div>
 
-  {/* Filters */}
-  <div className="flex flex-wrap gap-2 items-center">
-    {/* Filter buttons */}
-    <button
-      onClick={() => {
-        setDraftShiftIds(selectedShiftIds);
-        setOpenFilter("shift");
-      }}
-      className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition"
-    >
-      Filter by Shifts
-      <ChevronDown size={16} />
-    </button>
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Filter buttons */}
+          <button
+            onClick={() => {
+              setDraftShiftIds(selectedShiftIds);
+              setOpenFilter("shift");
+            }}
+            className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition"
+          >
+            Filter by Shifts
+            <ChevronDown size={16} />
+          </button>
 
-    <button
-      onClick={() => {
-        setDraftSkus(selectedSkus);
-        setOpenFilter("product");
-      }}
-      className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition"
-    >
-      Filter by Products
-      <ChevronDown size={16} />
-    </button>
+          <button
+            onClick={() => {
+              setDraftSkus(selectedSkus);
+              setOpenFilter("product");
+            }}
+            className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition"
+          >
+            Filter by Products
+            <ChevronDown size={16} />
+          </button>
 
-    {/* Active filters */}
-    {selectedShiftIds.length > 0 && (
-      <button
-        onClick={() => {
-          setSelectedShiftIds([]);
-          setPage(1);
-        }}
-        className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition hover:bg-[#0F766E]/20"
-      >
-        {selectedShiftIds.length} Shift{selectedShiftIds.length > 1 ? "s" : ""}
-        <X size={14} className="ml-1 opacity-60" />
-      </button>
-    )}
+          {/* Active filters */}
+          {selectedShiftIds.length > 0 && (
+            <button
+              onClick={() => {
+                setSelectedShiftIds([]);
+                setPage(1);
+              }}
+              className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition hover:bg-[#0F766E]/20"
+            >
+              {selectedShiftIds.length} Shift{selectedShiftIds.length > 1 ? "s" : ""}
+              <X size={14} className="ml-1 opacity-60" />
+            </button>
+          )}
 
-    {selectedSkus.length > 0 && (
-      <button
-        onClick={() => {
-          setSelectedSkus([]);
-          setPage(1);
-        }}
-        className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition hover:bg-[#0F766E]/20"
-      >
-        {selectedSkus.length} Product{selectedSkus.length > 1 ? "s" : ""}
-        <X size={14} className="ml-1 opacity-60" />
-      </button>
-    )}
-  </div>
-</div>
+          {selectedSkus.length > 0 && (
+            <button
+              onClick={() => {
+                setSelectedSkus([]);
+                setPage(1);
+              }}
+              className="flex items-center gap-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/20 px-3 py-1.5 rounded-lg text-sm transition hover:bg-[#0F766E]/20"
+            >
+              {selectedSkus.length} Product{selectedSkus.length > 1 ? "s" : ""}
+              <X size={14} className="ml-1 opacity-60" />
+            </button>
+          )}
+        </div>
+      </div>
       {/* ================= SHIFT FILTER MODAL ================= */}
       {openFilter === "shift" && (
-  <FilterModal
-    title="Select shifts"
-    items={shifts.filter((s) => s.status?.toLowerCase() === "ended")}
-    getLabel={(s) => formatShiftLabel(s)}
-    getId={(s) => s.uid}
-    isActive={(s) => draftShiftIds.includes(s.uid)}
-    onToggle={(s) =>
-      setDraftShiftIds((p) =>
-        p.includes(s.uid)
-          ? p.filter((x) => x !== s.uid)
-          : [...p, s.uid]
-      )
-    }
-    onSelectAll={() =>
-      setDraftShiftIds(
-        shifts
-          .filter((s) => s.status?.toLowerCase() === "ended")
-          .map((s) => s.uid)
-      )
-    }
-    onClear={() => setDraftShiftIds([])}
-    onApply={applyShiftFilter}
-    onClose={() => setOpenFilter(null)}
-    onLoadMore={loadMoreShifts}
-    externalHasMore={hasMoreShifts}
-  />
-)}
+        <FilterModal
+          title="Select shifts"
+          items={shifts.filter((s) => s.status?.toLowerCase() === "ended")}
+          getLabel={(s) => formatShiftLabel(s)}
+          getId={(s) => s.uid}
+          isActive={(s) => draftShiftIds.includes(s.uid)}
+          onToggle={(s) =>
+            setDraftShiftIds((p) =>
+              p.includes(s.uid)
+                ? p.filter((x) => x !== s.uid)
+                : [...p, s.uid]
+            )
+          }
+          onSelectAll={() =>
+            setDraftShiftIds(
+              shifts
+                .filter((s) => s.status?.toLowerCase() === "ended")
+                .map((s) => s.uid)
+            )
+          }
+          onClear={() => setDraftShiftIds([])}
+          onApply={applyShiftFilter}
+          onClose={() => setOpenFilter(null)}
+          onLoadMore={loadMoreShifts}
+          externalHasMore={hasMoreShifts}
+        />
+      )}
 
       {/* ================= PRODUCT FILTER MODAL ================= */}
       {openFilter === "product" && (
-  <FilterModal
-    title="Select products"
-    items={products}
-    getLabel={(p) => p.name}
-    getId={(p) => p.sku}
-    isActive={(p) => draftSkus.includes(p.sku)}
-    onToggle={(p) =>
-      setDraftSkus((s) =>
-        s.includes(p.sku)
-          ? s.filter((x) => x !== p.sku)
-          : [...s, p.sku]
-      )
-    }
-    onSelectAll={() =>
-      setDraftSkus(products.map((p) => p.sku))
-    }
-    onClear={() => setDraftSkus([])}
-    onApply={applyProductFilter}
-    onClose={() => setOpenFilter(null)}
-  />
-)}
+        <FilterModal
+          title="Select products"
+          items={products}
+          getLabel={(p) => p.name}
+          getId={(p) => p.sku}
+          isActive={(p) => draftSkus.includes(p.sku)}
+          onToggle={(p) =>
+            setDraftSkus((s) =>
+              s.includes(p.sku)
+                ? s.filter((x) => x !== p.sku)
+                : [...s, p.sku]
+            )
+          }
+          onSelectAll={() =>
+            setDraftSkus(products.map((p) => p.sku))
+          }
+          onClear={() => setDraftSkus([])}
+          onApply={applyProductFilter}
+          onClose={() => setOpenFilter(null)}
+        />
+      )}
 
       {/* ================= CHART + EXPLANATION ================= */}
       {varianceChartData.length > 0 && (
@@ -382,25 +380,25 @@ export default function OverviewReport() {
                   setOpenVariance(true);
                 }}
               >
-             <LabelList
-  dataKey="variance"
-  position="inside"
-  formatter={(value: any) =>
-    typeof value === "number" ? value : ""
-  }
-  style={{
-    fill: "#fff",
-    fontWeight: 600,
-    fontSize: 12,
-  }}
-/>
+                <LabelList
+                  dataKey="variance"
+                  position="inside"
+                  formatter={(value: any) =>
+                    typeof value === "number" ? value : ""
+                  }
+                  style={{
+                    fill: "#fff",
+                    fontWeight: 600,
+                    fontSize: 12,
+                  }}
+                />
 
                 {varianceChartData.map((d, i) => (
-  <Cell
-    key={i}
-    fill={VARIANCE_COLORS[d.status]}
-  />
-))}
+                  <Cell
+                    key={i}
+                    fill={VARIANCE_COLORS[d.status]}
+                  />
+                ))}
 
               </Bar>
             </BarChart>
@@ -409,46 +407,45 @@ export default function OverviewReport() {
       )}
 
       {openVariance && selectedVariance && (
-  <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-    <div className="bg-white rounded-xl w-full max-w-md p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-lg text-green-700">
-          {selectedVariance.name}
-        </h3>
-        <button onClick={() => setOpenVariance(false)}>
-          <X />
-        </button>
-      </div>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-semibold text-lg text-green-700">
+                {selectedVariance.name}
+              </h3>
+              <button onClick={() => setOpenVariance(false)}>
+                <X />
+              </button>
+            </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <p className="text-gray-500">Expected</p>
-          <p className="font-semibold">
-            {selectedVariance.expected}
-          </p>
-        </div>
-        <div>
-          <p className="text-gray-500">Actual</p>
-          <p className="font-semibold">
-            {selectedVariance.actual}
-          </p>
-        </div>
-      </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">Expected</p>
+                <p className="font-semibold">
+                  {selectedVariance.expected}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500">Actual</p>
+                <p className="font-semibold">
+                  {selectedVariance.actual}
+                </p>
+              </div>
+            </div>
 
-      <div
-        className={`rounded-lg px-4 py-3 text-sm font-medium ${
-          selectedVariance.status === "perfect"
-            ? "bg-green-50 text-green-700"
-            : selectedVariance.status === "negative"
-            ? "bg-red-50 text-red-700"
-            : "bg-yellow-50 text-yellow-700"
-        }`}
-      >
-        Variance: {selectedVariance.variance} {selectedVariance.unit}
-      </div>
-    </div>
-  </div>
-)}
+            <div
+              className={`rounded-lg px-4 py-3 text-sm font-medium ${selectedVariance.status === "perfect"
+                  ? "bg-green-50 text-green-700"
+                  : selectedVariance.status === "negative"
+                    ? "bg-red-50 text-red-700"
+                    : "bg-yellow-50 text-yellow-700"
+                }`}
+            >
+              Variance: {selectedVariance.variance} {selectedVariance.unit}
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* ================= TABLE ================= */}
@@ -582,10 +579,7 @@ function FilterModal<T>({
   onClose: () => void;
   onLoadMore?: () => void;
   externalHasMore?: boolean;
-})
-
-
-{
+}) {
   const LIST_CHUNK_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(LIST_CHUNK_SIZE);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -650,11 +644,10 @@ function FilterModal<T>({
               <button
                 key={i}
                 onClick={() => onToggle(item)}
-                className={`w-full flex justify-between items-center px-3 py-2 rounded-lg text-sm ${
-                  active
+                className={`w-full flex justify-between items-center px-3 py-2 rounded-lg text-sm ${active
                     ? "bg-[#0F766E]/10 text-[#0F766E]"
                     : "hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 <span className="truncate">{getLabel(item)}</span>
                 {active && <Check size={16} />}
@@ -673,29 +666,29 @@ function FilterModal<T>({
         </div>
 
         <div className="flex justify-between items-center pt-3 border-t">
-  <div className="flex gap-3">
-    <button
-      onClick={onSelectAll}
-      className="text-sm text-[#0F766E] font-medium"
-    >
-      Select all
-    </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onSelectAll}
+              className="text-sm text-[#0F766E] font-medium"
+            >
+              Select all
+            </button>
 
-    <button
-      onClick={onClear}
-      className="text-sm text-gray-500"
-    >
-      Clear
-    </button>
-  </div>
+            <button
+              onClick={onClear}
+              className="text-sm text-gray-500"
+            >
+              Clear
+            </button>
+          </div>
 
-  <button
-    onClick={onApply}
-    className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
-  >
-    Apply
-  </button>
-</div>
+          <button
+            onClick={onApply}
+            className="bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm"
+          >
+            Apply
+          </button>
+        </div>
 
       </div>
     </div>

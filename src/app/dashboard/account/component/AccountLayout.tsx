@@ -16,7 +16,7 @@ export default function AccountLayout() {
       <Billing />
       <Permissions />
       <Security />
-      <DataExport />
+      {/* <DataExport /> */}
       <DangerZone />
     </div>
   );

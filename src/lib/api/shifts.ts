@@ -72,6 +72,7 @@ const SHIFT_PATHS = {
   end: ["/api/shift/end"],
   linkedStaff: ["api/shift/linked-staff"],
   delete: ["api/shift/delete"],
+  uniqueList: ["api/shift/unique/list"],
 };
 
 export async function createShift(payload: CreateShiftPayload, token: string) {
@@ -135,4 +136,18 @@ export async function listLinkedStaff(shiftUid: string, page: number, token: str
   const paths = SHIFT_PATHS.linkedStaff.map((p) => `${p}?shiftUid=${shiftUid}&page=${page}`);
   const res = await apiFetchFirstSuccess<ApiEnvelope<ListLinkedStaffResponse> | ListLinkedStaffResponse>(paths, { token });
   return unwrapData(res);
+}
+
+export async function ListUniqueEndedShiftsForFilter(token: string, page = 1, limit = 10) {
+  const paths = SHIFT_PATHS.uniqueList.map(p => `${p}?page=${page}&limit=${limit}&type=Ended`);
+  const res = await apiFetchFirstSuccess<ApiEnvelope<any> | any>(
+    paths,
+    { token }
+  );
+  // The response structure is { data: { data: ShiftRecord[], meta: PaginationMeta } }
+  const unwrapped = unwrapData(res);
+  return {
+    shifts: unwrapped.data as ShiftRecord[],
+    meta: unwrapped.meta as PaginationMeta
+  };
 }
