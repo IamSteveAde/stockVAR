@@ -81,6 +81,8 @@ const REPORTS_PATHS = {
   varianceAlerts: ["api/report/variance-alerts", "api/reports/varianceAlerts"],
   productVariance: ["api/report/product-variance", "api/reports/productVariance"],
   shiftContext: ["api/report/shift-context", "api/reports/shiftContext"],
+  varianceReports: ["api/report/variance/reports"],
+  inventoryReports: ["api/report/inventory/reports"],
 };
 
 export async function getReportsOverview(
@@ -166,4 +168,32 @@ export async function getShiftContext(
     { token }
   );
   return unwrapData(res);
+}
+
+export async function downloadVarianceReport(token: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "");
+  const url = `${baseUrl}/${REPORTS_PATHS.varianceReports[0]}`;
+  
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to download variance report");
+  return res;
+}
+
+export async function downloadInventoryReport(token: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "");
+  const url = `${baseUrl}/${REPORTS_PATHS.inventoryReports[0]}`;
+  
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to download inventory report");
+  return res;
 }

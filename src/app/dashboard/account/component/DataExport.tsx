@@ -7,6 +7,8 @@ import {
   Download,
   Loader2,
 } from "lucide-react";
+import { getSession } from "@/lib/api/auth";
+import { downloadVarianceReport, downloadInventoryReport } from "@/lib/api/reports";
 
 type ExportType = "stock" | "reports";
 
@@ -16,28 +18,48 @@ export default function DataExport() {
   );
 
   const handleExport = async (type: ExportType) => {
+    const session = getSession();
+    if (!session?.token) {
+      alert("Please log in to export data.");
+      return;
+    }
+
     setExporting(type);
 
-    // ⏳ simulate export delay
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const response = type === "stock" 
+        ? await downloadInventoryReport(session.token)
+        : await downloadVarianceReport(session.token);
 
-    // 🔽 simulate file download
-    const blob = new Blob(
-      [`Exported ${type} data`],
-      { type: "text/csv" }
-    );
-    const url = URL.createObjectURL(blob);
+      const blob = await response.blob();
+      
+      // Try to get filename from Content-Disposition header
+      const contentDisp = response.headers.get("Content-Disposition");
+      let filename = type === "stock" ? "stock-data.pdf" : "reports-data.pdf";
+      
+      if (contentDisp && contentDisp.includes("filename=")) {
+        const parts = contentDisp.split("filename=");
+        if (parts[1]) {
+          filename = parts[1].replace(/["']/g, "");
+        }
+      }
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download =
-      type === "stock"
-        ? "stock-data.csv"
-        : "reports-data.csv";
-    a.click();
-
-    URL.revokeObjectURL(url);
-    setExporting(null);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error: any) {
+      console.error("Export failed:", error);
+      alert(error.message || "Export failed. Please try again later.");
+    } finally {
+      setExporting(null);
+    }
   };
 
   return (
