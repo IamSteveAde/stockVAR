@@ -15,7 +15,7 @@ import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
 import { getSession, clearSession, isTokenExpired } from "@/lib/api/auth";
 import { createStaff, listStaff } from "@/lib/api/staff";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /* ================= TYPES ================= */
 
@@ -52,6 +52,8 @@ const saveStaff = (data: Staff[]) => {
 export default function StaffTable() {
   const { profile } = useProfile();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const search = searchParams.get("search") || undefined;
   const [staff, setStaff] = useState<Staff[]>([]);
   const [page, setPage] = useState(1);
   const [openAdd, setOpenAdd] = useState(false);
@@ -71,7 +73,7 @@ export default function StaffTable() {
       }
 
       try {
-        const response = await listStaff(token, page, PAGE_SIZE);
+        const response = await listStaff(token, page, PAGE_SIZE, undefined, search);
         if (mounted && response && response.staff) {
           const normalized: Staff[] = response.staff.map((entry: any) => ({
             id: String(entry.uid),
@@ -105,7 +107,7 @@ export default function StaffTable() {
     return () => {
       mounted = false;
     };
-  }, [page]);
+  }, [page, search]);
 
   /* Persist */
   useEffect(() => {

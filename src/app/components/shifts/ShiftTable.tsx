@@ -25,7 +25,7 @@ import {
   deleteShift as deleteShiftApi,
   listShifts,
 } from "@/lib/api/shifts";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 
 
@@ -62,6 +62,9 @@ export default function ShiftTable() {
   const canManageShifts =
     profile.role === "owner" || profile.role === "manager";
 
+  const searchParams = useSearchParams();
+  const search = searchParams.get("search") || undefined;
+
   const [shifts, setShifts] = useState<Shift[]>([]);
 
   const [page, setPage] = useState(1);
@@ -84,7 +87,7 @@ export default function ShiftTable() {
       if (!token) return;
 
       try {
-        const response: any = await listShifts(token, page, PAGE_SIZE);
+        const response: any = await listShifts(token, page, PAGE_SIZE, undefined, search);
         if (mounted && response && response.shifts) {
           const mapped = response.shifts.map((s: any) => ({
             id: s.uid || s.id,
@@ -110,7 +113,7 @@ export default function ShiftTable() {
 
     hydrate();
     return () => { mounted = false; };
-  }, [page, refreshKey]);
+  }, [page, refreshKey, search]);
 
   /* ================= START SHIFT ================= */
 

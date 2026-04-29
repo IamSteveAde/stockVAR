@@ -87,8 +87,8 @@ export async function createShift(payload: CreateShiftPayload, token: string) {
   return unwrapData(res);
 }
 
-export async function listShifts(token: string, page = 1, limit = 10, type?: string) {
-  const paths = SHIFT_PATHS.list.map(p => `${p}?page=${page}&limit=${limit}${type ? `&type=${type}` : ""}`);
+export async function listShifts(token: string, page = 1, limit = 10, type?: string, search?: string) {
+  const paths = SHIFT_PATHS.list.map(p => `${p}?page=${page}&limit=${limit}${type ? `&type=${type}` : ""}${search ? `&text=${encodeURIComponent(search)}` : ""}`);
   const res = await apiFetchFirstSuccess<ApiEnvelope<ListShiftsResponse> | ListShiftsResponse>(
     paths,
     { token }

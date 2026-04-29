@@ -21,7 +21,14 @@ import { Shift } from "../shifts/types";
 const PRODUCTS_KEY = "stockvar_products";
 const SHIFTS_KEY = "stockvar_shifts";
 const LOGS_KEY = "stockvar_inventory_logs";
-const STAFF_KEY = "stockvar_staff";
+
+import { apiFetchFirstSuccess } from "@/lib/api/client";
+import { getSession } from "@/lib/api/auth";
+
+type SearchResult = {
+  text: string;
+  source: string;
+};
 
 /* ================= TYPES ================= */
 
@@ -63,9 +70,13 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [logs, setLogs] = useState<InventoryLog[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
 
   const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [openSearch, setOpenSearch] = useState(false);
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openUserMenu, setOpenUserMenu] = useState(false);
@@ -77,7 +88,6 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
     setProducts(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"));
     setShifts(JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"));
     setLogs(JSON.parse(localStorage.getItem(LOGS_KEY) || "[]"));
-    setStaff(JSON.parse(localStorage.getItem(STAFF_KEY) || "[]"));
   }, []);
 
   /* ================= CLICK OUTSIDE ================= */
@@ -153,37 +163,93 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
 
   /* ================= SEARCH INDEX ================= */
 
-  const searchIndex = useMemo(() => {
-    return [
-      ...products.map((p) => ({
-        label: p.name,
-        type: "Product",
-        path: "/dashboard/stock",
-      })),
-      ...staff.map((s) => ({
-        label: s.fullName,
-        type: "Staff",
-        path: "/dashboard/staff",
-      })),
-      ...shifts.map((s) => ({
-        label: s.label,
-        type: "Shift",
-        path: "/dashboard/shift",
-      })),
-      {
-        label: "Stock Variance Report",
-        type: "Report",
-        path: "/dashboard/reports",
-      },
-    ];
-  }, [products, staff, shifts]);
+  useEffect(() => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSearchPage(1);
+      setHasNextPage(false);
+      return;
+    }
 
-  const searchResults =
-    query.length > 0
-      ? searchIndex.filter((i) =>
-          i.label.toLowerCase().includes(query.toLowerCase())
-        )
-      : [];
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      setSearchPage(1);
+      try {
+        const token = getSession()?.token;
+        if (!token) return;
+
+        const res: any = await apiFetchFirstSuccess(
+          [`api/search?text=${encodeURIComponent(query.trim())}&page=1`],
+          { token }
+        );
+
+        setSearchResults(res.data?.results || []);
+        setHasNextPage(!res.data?.meta?.isLastPage);
+      } catch (err) {
+        console.error("Search failed:", err);
+        setSearchResults([]);
+        setHasNextPage(false);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const loadMoreSearch = async () => {
+    if (!hasNextPage || isLoadingMore || isSearching) return;
+    
+    setIsLoadingMore(true);
+    const nextPage = searchPage + 1;
+    try {
+      const token = getSession()?.token;
+      if (!token) return;
+
+      const res: any = await apiFetchFirstSuccess(
+        [`api/search?text=${encodeURIComponent(query.trim())}&page=${nextPage}`],
+        { token }
+      );
+
+      setSearchResults(prev => [...prev, ...(res.data?.results || [])]);
+      setHasNextPage(!res.data?.meta?.isLastPage);
+      setSearchPage(nextPage);
+    } catch (err) {
+      console.error("Search load more failed:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleSearchScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // trigger when near bottom (10px)
+    if (scrollHeight - scrollTop <= clientHeight + 10) {
+      loadMoreSearch();
+    }
+  };
+
+  const handleSearchSelect = (result: SearchResult) => {
+    setQuery("");
+    setOpenSearch(false);
+    
+    const source = String(result.source || "").toLowerCase().trim();
+    let path = "";
+    
+    if (source.includes("product") || source.includes("stock") || source.includes("inventory")) {
+      path = `/dashboard/stock?search=${encodeURIComponent(result.text)}`;
+    } else if (source.includes("staff")) {
+      path = `/dashboard/staff?search=${encodeURIComponent(result.text)}`;
+    } else if (source.includes("shift")) {
+      path = `/dashboard/shift?search=${encodeURIComponent(result.text)}`;
+    } else {
+      // Fallback
+      console.warn("Unknown search source:", result);
+      path = `/dashboard`;
+    }
+    
+    router.push(path);
+  };
 
   /* ================= UI ================= */
 
@@ -223,26 +289,36 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
           />
 
           {openSearch && query && (
-            <div className="absolute top-11 w-full bg-white rounded-xl shadow-lg border">
-              {searchResults.length === 0 ? (
+            <div 
+              className="absolute top-11 w-full bg-white rounded-xl shadow-lg border max-h-96 overflow-y-auto"
+              onScroll={handleSearchScroll}
+            >
+              {isSearching ? (
                 <div className="px-4 py-3 text-sm text-gray-500">
-                  No results
+                  Searching...
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-gray-500">
+                  No results found
                 </div>
               ) : (
-                searchResults.map((r, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      setQuery("");
-                      setOpenSearch(false);
-                      router.push(r.path);
-                    }}
-                    className="w-full text-left px-4 py-3 hover:bg-gray-50"
-                  >
-                    <p className="text-xs text-gray-400">{r.type}</p>
-                    <p className="font-medium">{r.label}</p>
-                  </button>
-                ))
+                <>
+                  {searchResults.map((r, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSearchSelect(r)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b last:border-0"
+                    >
+                      <p className="text-xs text-gray-400 capitalize">{r.source}</p>
+                      <p className="font-medium text-gray-900">{r.text}</p>
+                    </button>
+                  ))}
+                  {isLoadingMore && (
+                    <div className="px-4 py-3 text-sm text-center text-gray-500">
+                      Loading more...
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

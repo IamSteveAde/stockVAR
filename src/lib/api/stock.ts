@@ -65,8 +65,8 @@ export async function createProduct(payload: CreateProductPayload, token: string
     return unwrapData(res);
 }
 
-export async function listProducts(token: string, page = 1, limit = 10) {
-    const paths = STOCK_PATHS.listProducts.map(p => `${p}?page=${page}&limit=${limit}`);
+export async function listProducts(token: string, page = 1, limit = 10, search?: string) {
+    const paths = STOCK_PATHS.listProducts.map(p => `${p}?page=${page}&limit=${limit}${search ? `&text=${encodeURIComponent(search)}` : ""}`);
     const res = await apiFetchFirstSuccess<ApiEnvelope<ListProductsResponse> | ListProductsResponse>(
         paths,
         { token }

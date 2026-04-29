@@ -16,7 +16,7 @@ import { useProfile } from "@/app/context/ProfileContext";
 
 import { getSession } from "@/lib/api/auth";
 import { createProduct, listProducts } from "@/lib/api/stock";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /* ================= TYPES ================= */
 
@@ -50,6 +50,8 @@ const now = () => new Date().toLocaleString();
 export default function ProductsTable() {
   const PAGE_SIZE = 10;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const search = searchParams.get("search") || undefined;
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -70,7 +72,7 @@ export default function ProductsTable() {
         return;
       }
       try {
-        const response: any = await listProducts(token, page, PAGE_SIZE);
+        const response: any = await listProducts(token, page, PAGE_SIZE, search);
         if (mounted && response && response.products) {
           const mapped = response.products.map((p: any) => ({
             id: p.uid || p.id,
@@ -99,7 +101,7 @@ export default function ProductsTable() {
     };
     hydrate();
     return () => { mounted = false; };
-  }, [page]);
+  }, [page, search]);
 
   /* Persist */
   useEffect(() => {
