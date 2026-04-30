@@ -10,9 +10,11 @@ import type { ProfileData } from "@/app/types/profile";
 //     avatar?: string;
 // };
 
-export type UpdateProfilePayload = Partial<
-    Pick<ProfileData, "fullName" | "phoneNumber" | "email" | "profileUrl" | "status">
->;
+export type UpdateProfilePayload = {
+    name?: string;
+    phoneNo?: string;
+    [key: string]: any;
+};
 
 const PROFILE_PATHS = {
     me: ["api/profile/me"],

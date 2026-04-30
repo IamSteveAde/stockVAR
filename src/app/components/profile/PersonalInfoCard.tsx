@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
   User,
   Phone,
   Mail,
   Lock,
-  Camera,
   Save,
   Pencil,
   X,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import { updateMyProfile } from "@/lib/api/profile";
+import { getSession } from "@/lib/api/auth";
 
 import type { ProfileData } from "../../types/profile";
 
@@ -26,6 +27,7 @@ export default function PersonalInfoCard({
 }: Props) {
   const [draft, setDraft] = useState<ProfileData>(profile);
   const [editing, setEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const startEdit = () => {
     setDraft(profile);
@@ -37,25 +39,25 @@ export default function PersonalInfoCard({
     setEditing(false);
   };
 
-  const saveChanges = () => {
-    onSave(draft);
-    setEditing(false);
-  };
+  const saveChanges = async () => {
+    setIsSaving(true);
+    try {
+      const token = getSession()?.token;
+      if (!token) throw new Error("Authentication required");
 
-  const handleAvatarUpload = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+      await updateMyProfile({
+        name: draft.fullName,
+        phoneNo: draft.phoneNumber,
+      }, token);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setDraft({
-        ...draft,
-        profileUrl: reader.result as string,
-      });
-    };
-    reader.readAsDataURL(file);
+      toast.success("Profile updated successfully");
+      onSave(draft);
+      setEditing(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -90,44 +92,20 @@ export default function PersonalInfoCard({
             </button>
             <button
               onClick={saveChanges}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#0F766E] px-4 py-2 text-sm text-white hover:bg-[#0B5F58]"
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#0F766E] px-4 py-2 text-sm text-white hover:bg-[#0B5F58] disabled:opacity-50"
             >
               <Save size={16} />
-              Save changes
+              {isSaving ? "Saving..." : "Save changes"}
             </button>
           </div>
         )}
       </header>
 
-      {/* Avatar */}
-      <div className="flex items-center gap-4">
-        {/* <div className="relative h-20 w-20 rounded-full overflow-hidden border">
-          <Image
-            src={profile.profileUrl}
-            alt="Profile avatar"
-            fill
-            className="object-cover"
-          />
-        </div> */}
-
-        {editing && (
-          <label className="cursor-pointer text-sm text-[#0F766E] font-medium">
-            <Camera size={16} className="inline mr-1" />
-            Change photo
-            <input
-              type="file"
-              className="hidden"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-            />
-          </label>
-        )}
-      </div>
-
       {/* Fields */}
       <Field
         label="Full name"
-        value={profile.fullName}
+        value={editing ? draft.fullName : profile.fullName}
         icon={User}
         editable={editing}
         onChange={(v) =>
@@ -137,7 +115,7 @@ export default function PersonalInfoCard({
 
       <Field
         label="Phone number"
-        value={profile.phoneNumber}
+        value={editing ? draft.phoneNumber : profile.phoneNumber}
         icon={Phone}
         editable={editing}
         onChange={(v) =>
