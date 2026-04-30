@@ -45,6 +45,8 @@ export type AddEntryPayload = {
 
 const STOCK_PATHS = {
     createProduct: ["api/stock/product/create"],
+    updateProduct: ["api/stock/product/update"],
+    updateProductStatus: ["api/stock/product/status/update"],
     listProducts: ["api/stock/product/list"],
     listInventory: ["api/stock/inventory/list"],
     adjustInventory: [
@@ -63,6 +65,30 @@ export async function createProduct(payload: CreateProductPayload, token: string
         }
     );
     return unwrapData(res);
+}
+
+export async function updateProduct(payload: { uid: string; name: string; unit: string }, token: string) {
+    const res = await apiFetchFirstSuccess<any>(
+        STOCK_PATHS.updateProduct,
+        {
+            method: "PUT",
+            body: payload,
+            token,
+        }
+    );
+    return res;
+}
+
+export async function updateProductStatus(payload: { uid: string; status: "Archived" | "Active" }, token: string) {
+    const res = await apiFetchFirstSuccess<any>(
+        STOCK_PATHS.updateProductStatus,
+        {
+            method: "POST",
+            body: payload,
+            token,
+        }
+    );
+    return res;
 }
 
 export async function listProducts(token: string, page = 1, limit = 10, search?: string) {

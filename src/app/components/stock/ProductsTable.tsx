@@ -10,12 +10,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import AddProductModal from "./AddProductModal";
-import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
+import toast from "react-hot-toast";
 
 
 import { getSession } from "@/lib/api/auth";
-import { createProduct, listProducts } from "@/lib/api/stock";
+import { createProduct, listProducts, updateProduct, updateProductStatus } from "@/lib/api/stock";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /* ================= TYPES ================= */
@@ -147,7 +147,7 @@ export default function ProductsTable() {
     }
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editing) return;
 
     if (productExists(editing.name, editing.id)) {
@@ -155,80 +155,59 @@ export default function ProductsTable() {
       return;
     }
 
-    const before = products.find((p) => p.id === editing.id);
+    try {
+      const token = getSession()?.token;
+      if (!token) throw new Error("Authentication required");
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === editing.id
-          ? { ...editing, updatedAt: now() }
-          : p
-      )
-    );
+      await updateProduct({ 
+        uid: editing.sku, 
+        name: editing.name, 
+        unit: editing.unit 
+      }, token);
 
-    writeAuditLog({
-      actor: {
-        staffId: (profile as any).id,
-        name: profile.fullName,
-        role: profile.role,
-      },
-      action: "PRODUCT_EDIT",
-      description: "Product updated",
-      entity: {
-        type: "product",
-        id: editing.sku,
-        name: editing.name,
-      },
-      changes: {
-        before,
-        after: editing,
-      },
-    });
-
-    setEditing(null);
-    setError(null);
+      toast.success("Product detail updated.");
+      setEditing(null);
+      setError(null);
+      
+      // Refresh the page
+      window.location.reload();
+    } catch (err: any) {
+      if (err.status === 400) {
+        toast.error(err.message || "Product detail updated.");
+      } else {
+        setError(err.message || "Failed to update product");
+        toast.error(err.message || "Failed to update product");
+      }
+    }
   };
 
 
-  const toggleArchive = (id: string | number) => {
+  const toggleArchive = async (id: string | number) => {
     const product = products.find((p) => p.id === id);
     if (!product) return;
 
     const updatedStatus =
-      product.status === "active" ? "archived" : "active";
+      product.status === "active" ? "Archived" : "Active";
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-            ...p,
-            status: updatedStatus,
-            updatedAt: now(),
-          }
-          : p
-      )
-    );
+    try {
+      const token = getSession()?.token;
+      if (!token) throw new Error("Authentication required");
 
-    writeAuditLog({
-      actor: {
-        staffId: (profile as any).id,
-        name: profile.fullName,
-        role: profile.role,
-      },
-      action: "PRODUCT_ARCHIVE",
-      description:
-        updatedStatus === "archived"
-          ? "Product archived"
-          : "Product unarchived",
-      entity: {
-        type: "product",
-        id: product.sku,
-        name: product.name,
-      },
-      changes: {
-        before: { status: product.status },
-        after: { status: updatedStatus },
-      },
-    });
+      await updateProductStatus({
+        uid: product.sku,
+        status: updatedStatus,
+      }, token);
+
+      toast.success(`Product ${updatedStatus.toLowerCase()} successfully.`);
+      window.location.reload();
+    } catch (err: any) {
+      if (err.status === 400) {
+        toast.error(err.message || "Failed to update product status.");
+      } else {
+        setError(err.message || "Failed to update product status.");
+        toast.error(err.message || "Failed to update product status.");
+      }
+    }
   };
 
 
@@ -471,10 +450,31 @@ export default function ProductsTable() {
               }
               className="w-full border rounded-lg px-3 py-2 text-sm"
             >
-              <option value="kg">Kg</option>
-              <option value="litres">Litres</option>
-              <option value="bags">Bags</option>
-              <option value="pcs">Pieces</option>
+              <option value="">Select unit</option>
+            <option value="kg">Kg</option>
+            <option value="litres">Litres</option>
+            <option value="bags">Bags</option>
+            <option value="pcs">Pieces</option>
+            {/* kg, g, mg, lb, oz, litres, ml, cl, bags, sacks, cartons, boxes, packs, crates, baskets, bundles, pieces, units, heads, bunches, cloves, bulbs, sticks */}
+            <option value="g">Grams</option>
+            <option value="mg">Milligrams</option>
+            <option value="lb">Pounds</option>
+            <option value="oz">Ounces</option>
+            <option value="ml">Millilitres</option>
+            <option value="cl">Centilitres</option>
+            <option value="sacks">Sacks</option>
+            <option value="cartons">Cartons</option>
+            <option value="boxes">Boxes</option>
+            <option value="packs">Packs</option>
+            <option value="crates">Crates</option>
+            <option value="baskets">Baskets</option>
+            <option value="bundles">Bundles</option>
+            <option value="units">Units</option>
+            <option value="heads">Heads</option>
+            <option value="bunches">Bunches</option>
+            <option value="cloves">Cloves</option>
+            <option value="bulbs">Bulbs</option>
+            <option value="sticks">Sticks</option>
             </select>
 
             <div className="flex justify-end gap-2 pt-2">

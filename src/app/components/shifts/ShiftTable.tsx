@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { writeAuditLog } from "../../../lib/audit";
 import {
   ChevronLeft,
   ChevronRight,

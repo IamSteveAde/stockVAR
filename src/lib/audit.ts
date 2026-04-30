@@ -96,22 +96,3 @@ export function normalizeAuditLog(raw: any): AuditLog | null {
   };
 }
 
-export function writeAuditLog(
-  log: Omit<AuditLog, "id" | "createdAt">
-) {
-  // localStorage fallback completely removed in favor of strict backend boundaries
-
-  const entry: AuditLog = {
-    ...log,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-  };
-
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(
-      new CustomEvent("audit:updated", {
-        detail: entry,
-      })
-    );
-  }
-}

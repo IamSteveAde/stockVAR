@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
 
 

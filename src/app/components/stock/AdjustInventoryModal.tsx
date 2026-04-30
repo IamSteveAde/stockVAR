@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { writeAuditLog } from "../../../lib/audit";
 import { useProfile } from "@/app/context/ProfileContext";
 
 
@@ -50,27 +49,6 @@ export default function AdjustInventoryModal({
         sku,
         quantity: qty,
         action,
-      });
-
-      writeAuditLog({
-        actor: {
-          staffId: (profile as any).id,
-          name: profile.fullName,
-          role: profile.role,
-        },
-        action: "INVENTORY_ADJUST",
-        description:
-          action === "add"
-            ? "Inventory increased"
-            : "Inventory reduced",
-        entity: {
-          type: "inventory",
-          id: sku,
-          name: product.name,
-        },
-        changes: {
-          delta: action === "add" ? qty : -qty,
-        },
       });
 
       onClose();
