@@ -34,6 +34,7 @@ export type CreateStaffPayload = {
 const STAFF_PATHS = {
   list: ["api/staff/list"],
   create: ["api/staff/create"],
+  delete: ["api/staff/delete"],
 };
 
 export async function listStaff(token: string, page = 1, limit = 10, filter?: string, search?: string) {
@@ -55,4 +56,16 @@ export async function createStaff(payload: CreateStaffPayload, token: string) {
     }
   );
   return unwrapData(res);
+}
+
+export async function deleteStaffApi(uid: string, token: string) {
+  const res = await apiFetchFirstSuccess<any>(
+    STAFF_PATHS.delete,
+    {
+      method: "POST",
+      body: { uid },
+      token,
+    }
+  );
+  return res;
 }

@@ -4,17 +4,15 @@ import { useEffect, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  MoreVertical,
-  Archive,
   Trash2,
   KeyRound,
-  RotateCcw,
 } from "lucide-react";
 import AddStaffModal from "./AddStaffModal";
 import { useProfile } from "@/app/context/ProfileContext";
 import { getSession, clearSession, isTokenExpired } from "@/lib/api/auth";
-import { createStaff, listStaff } from "@/lib/api/staff";
+import { createStaff, listStaff, deleteStaffApi } from "@/lib/api/staff";
 import { useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 
 /* ================= TYPES ================= */
 
@@ -56,7 +54,6 @@ export default function StaffTable() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [page, setPage] = useState(1);
   const [openAdd, setOpenAdd] = useState(false);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -180,31 +177,18 @@ export default function StaffTable() {
     }
   };
 
-  const toggleArchive = (id: string) => {
-    setStaff((prev) =>
-      prev.map((s) => {
-        if (s.id !== id) return s;
+  const deleteStaff = async (id: string) => {
+    try {
+      const token = getSession()?.token;
+      if (!token) throw new Error("Authentication required");
 
-        const newStatus =
-          s.status === "archived" ? "active" : "archived";
-
-        /* ===== AUDIT ===== */
-
-
-
-        return {
-          ...s,
-          status: newStatus,
-        };
-      })
-    );
-
-    setOpenMenu(null);
-  };
-
-  const deleteStaff = (id: string) => {
-    setStaff((prev) => prev.filter((s) => s.id !== id));
-    setOpenMenu(null);
+      await deleteStaffApi(id, token);
+      
+      setStaff((prev) => prev.filter((s) => s.id !== id));
+      toast.success("Staff member deleted successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete staff member");
+    }
   };
 
   return (
@@ -249,25 +233,10 @@ export default function StaffTable() {
               </span>
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => toggleArchive(s.id)}
-                className="flex-1 inline-flex items-center justify-center gap-1 border rounded-lg py-2 text-xs"
-              >
-                {s.status === "archived" ? (
-                  <>
-                    <RotateCcw size={12} /> Unarchive
-                  </>
-                ) : (
-                  <>
-                    <Archive size={12} /> Archive
-                  </>
-                )}
-              </button>
-
+            <div className="flex pt-2">
               <button
                 onClick={() => deleteStaff(s.id)}
-                className="flex-1 inline-flex items-center justify-center gap-1 border rounded-lg py-2 text-xs text-red-600"
+                className="w-full inline-flex items-center justify-center gap-1 border border-red-200 bg-red-50 rounded-lg py-2 text-xs text-red-600 hover:bg-red-100 transition"
               >
                 <Trash2 size={12} /> Delete
               </button>
@@ -308,41 +277,14 @@ export default function StaffTable() {
                   <StatusBadge status={s.status} />
                 </td>
 
-                <td className="px-6 py-4 text-right relative">
+                <td className="px-6 py-4 text-right">
                   <button
-                    onClick={() =>
-                      setOpenMenu(openMenu === s.id ? null : s.id)
-                    }
-                    className="p-2 rounded hover:bg-gray-100"
+                    onClick={() => deleteStaff(s.id)}
+                    className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition"
+                    title="Delete Staff"
                   >
-                    <MoreVertical size={16} />
+                    <Trash2 size={18} />
                   </button>
-
-                  {openMenu === s.id && (
-                    <div className="absolute right-6 top-12 z-10 w-44 rounded-lg border bg-white shadow-lg text-sm">
-                      <button
-                        onClick={() => toggleArchive(s.id)}
-                        className="flex w-full items-center gap-2 px-4 py-2 hover:bg-gray-50"
-                      >
-                        {s.status === "archived" ? (
-                          <>
-                            <RotateCcw size={14} /> Unarchive
-                          </>
-                        ) : (
-                          <>
-                            <Archive size={14} /> Archive
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => deleteStaff(s.id)}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </div>
-                  )}
                 </td>
               </tr>
             ))}
