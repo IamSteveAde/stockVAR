@@ -6,9 +6,14 @@ import {
   Calendar,
   Receipt,
   X,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { useSubscription } from "@/app/context/SubscriptionContext";
 import type { Invoice } from "@/app/types/subscription";
+import { downloadSubscriptionInvoice } from "@/lib/api/business";
+import { getSession } from "@/lib/api/auth";
+import toast from "react-hot-toast";
 
 /* ================= HELPERS ================= */
 
@@ -27,6 +32,47 @@ const formatDate = (iso: string) =>
 export default function Billing() {
   const { subscription } = useSubscription();
   const [openInvoices, setOpenInvoices] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadInvoice = async () => {
+    const session = getSession();
+    if (!session?.token) {
+      toast.error("Please log in to download invoice.");
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const response = await downloadSubscriptionInvoice(session.token);
+      const blob = await response.blob();
+      
+      const contentDisp = response.headers.get("Content-Disposition");
+      let filename = "invoice.pdf";
+      
+      if (contentDisp && contentDisp.includes("filename=")) {
+        const parts = contentDisp.split("filename=");
+        if (parts[1]) {
+          filename = parts[1].replace(/["']/g, "");
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error: any) {
+      console.error("Download failed:", error);
+      toast.error(error.message || "Failed to download invoice.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!subscription) {
     return (
@@ -90,11 +136,29 @@ export default function Billing() {
 
         {/* Actions */}
         <div className="flex gap-3 flex-wrap pt-2">
-          <button
+          {/* <button
             onClick={() => setOpenInvoices(true)}
             className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
             View invoices
+          </button> */}
+          
+          <button
+            onClick={handleDownloadInvoice}
+            disabled={isDownloading}
+            className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+          >
+            {isDownloading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Downloading…
+              </>
+            ) : (
+              <>
+                <Download size={16} />
+                Download invoice
+              </>
+            )}
           </button>
         </div>
       </section>

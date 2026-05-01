@@ -49,6 +49,7 @@ const BUSINESS_PATHS = {
   update: ["api/profile/me/business"],
   subscriptionInit: ["api/subscription/initialize"],
   subscriptionFind: ["api/subscription/find"],
+  subscriptionDownload: ["api/subscription/download"],
 };
 
 function toBackendPayload(payload: CreateBusinessPayload | UpdateBusinessPayload) {
@@ -192,4 +193,18 @@ export async function findSubscription(token: string) {
     }
   );
   return unwrapData(res);
+}
+
+export async function downloadSubscriptionInvoice(token: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "");
+  const url = `${baseUrl}/${BUSINESS_PATHS.subscriptionDownload[0]}`;
+  
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to download invoice");
+  return res;
 }
