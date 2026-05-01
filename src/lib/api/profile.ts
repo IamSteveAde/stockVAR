@@ -19,6 +19,7 @@ export type UpdateProfilePayload = {
 const PROFILE_PATHS = {
     me: ["api/profile/me"],
     updateMe: ["api/profile/me"],
+    deactivateBusiness: ["api/profile/me/business"],
     // createProfile: ["api/profile/create-profile", "api/profile/createProfile"],
     auditTrail: ["api/audit-trail/list"],
 };
@@ -61,4 +62,15 @@ export async function getProfileAuditTrail(token: string) {
         { token }
     );
     return unwrapData(res);
+}
+
+export async function deactivateBusiness(token: string) {
+    const res = await apiFetchFirstSuccess<any>(
+        PROFILE_PATHS.deactivateBusiness,
+        {
+            method: "DELETE",
+            token,
+        }
+    );
+    return res;
 }

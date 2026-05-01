@@ -6,10 +6,16 @@ import {
   Power,
   X,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import { deactivateBusiness } from "@/lib/api/profile";
+import { getSession, clearSession } from "@/lib/api/auth";
+import { useRouter } from "next/navigation";
 
 export default function DangerZone() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [typed, setTyped] = useState("");
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const router = useRouter();
 
   const CONFIRM_TEXT = "DEACTIVATE";
 
@@ -66,16 +72,33 @@ export default function DangerZone() {
           typed={typed}
           setTyped={setTyped}
           canConfirm={canConfirm}
+          isDeactivating={isDeactivating}
           onCancel={() => {
             setConfirmOpen(false);
             setTyped("");
           }}
-          onConfirm={() => {
-            // 🔥 REAL API CALL GOES HERE
-            console.log("Business deactivated");
+          onConfirm={async () => {
+            setIsDeactivating(true);
+            try {
+              const token = getSession()?.token;
+              if (!token) throw new Error("Authentication required");
 
-            setConfirmOpen(false);
-            setTyped("");
+              await deactivateBusiness(token);
+              
+              toast.success("Account deactivated successfully");
+              setConfirmOpen(false);
+              setTyped("");
+              clearSession();
+              router.push("/auth/login");
+            } catch (err: any) {
+              if (err.status === 400 || err.status === "error") {
+                toast.error(err.message);
+              } else {
+                toast.error(err.message || "Failed to deactivate account");
+              }
+            } finally {
+              setIsDeactivating(false);
+            }
           }}
         />
       )}
@@ -92,6 +115,7 @@ function ConfirmDeactivateModal({
   typed,
   setTyped,
   canConfirm,
+  isDeactivating,
   onCancel,
   onConfirm,
 }: {
@@ -99,6 +123,7 @@ function ConfirmDeactivateModal({
   typed: string;
   setTyped: (v: string) => void;
   canConfirm: boolean;
+  isDeactivating?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -156,11 +181,11 @@ function ConfirmDeactivateModal({
             Cancel
           </button>
           <button
-            disabled={!canConfirm}
+            disabled={!canConfirm || isDeactivating}
             onClick={onConfirm}
             className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-40"
           >
-            Deactivate
+            {isDeactivating ? "Deactivating..." : "Deactivate"}
           </button>
         </div>
       </div>
