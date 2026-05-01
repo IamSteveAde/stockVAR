@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { useProfile } from "@/app/context/ProfileContext";
 import { formatDistanceToNow } from "date-fns";
+import { setPassword, getSession } from "@/lib/api/auth";
+import toast from "react-hot-toast";
 
 /* ================= MAIN ================= */
 
@@ -81,6 +83,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [show, setShow] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = () => {
     if (!current || !next || !confirm) {
@@ -98,17 +101,28 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
     return "";
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const validationError = validate();
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    // 🔐 Replace with real API call
-    console.log("Password updated");
+    setIsSubmitting(true);
+    setError("");
 
-    onClose();
+    try {
+      const token = getSession()?.token;
+      if (!token) throw new Error("Authentication required");
+
+      await setPassword({ password: next }, token);
+      toast.success("Password updated successfully");
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Failed to update password");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -172,9 +186,10 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 text-sm rounded-lg bg-[#0F766E] text-white hover:bg-[#0d645d]"
+            disabled={isSubmitting}
+            className="px-4 py-2 text-sm rounded-lg bg-[#0F766E] text-white hover:bg-[#0d645d] disabled:opacity-50"
           >
-            Update password
+            {isSubmitting ? "Updating..." : "Update password"}
           </button>
         </div>
       </div>
