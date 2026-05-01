@@ -30,8 +30,8 @@ export default function AdminRestaurants() {
               id: b.uid || b.id,
               name: b.name,
               city: b.city || "Unknown",
-              owner: b.owner?.name || "Unknown",
-              ownerEmail: b.owner?.email || "No email",
+              owner: b.owner?.name?.split("::")[0] || "Unknown",
+              ownerEmail: b.owner?.email?.split("::")[0] || "No email",
               staffCount: b.staffSize || 0,
               subscriptionStatus: b.subscriptionStatus?.toLowerCase() || "expired",
             }));
